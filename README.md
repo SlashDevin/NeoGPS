@@ -19,7 +19,7 @@ In an attempt to be reusable in a variety of different programming styles, this 
 * configurable message fields
 * multiple protocols from same device
 
-(This is the plain Arduino version of the [CosaGPS](https://github.com/SlashDevin/NeoGPS) library for [Cosa](https://github.com/mikaelpatel/Cosa).)
+(This is the plain Arduino version of the [CosaGPS](https://github.com/SlashDevin/CosaGPS) library for [Cosa](https://github.com/mikaelpatel/Cosa).)
 
 Data Model
 ==========
