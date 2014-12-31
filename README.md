@@ -1,7 +1,7 @@
 NeoGPS
 ======
 
-This fully-configurable [Cosa](https://github.com/mikaelpatel/Cosa) library uses _**minimal**_ RAM and CPU time, 
+This fully-configurable Arduino library uses _**minimal**_ RAM and CPU time, 
 requiring as few as _**10 bytes of RAM**_.  It supports the following protocols:
 * NMEA 0183
 * u-blox NEO-6
@@ -19,7 +19,7 @@ In an attempt to be reusable in a variety of different programming styles, this 
 * configurable message fields
 * multiple protocols from same device
 
-(A plain vanilla Arduino implementation is coming soon...)
+(This is the plain Arduino version of the [CosaGPS](https://github.com/SlashDevin/NeoGPS) library for [Cosa](https://github.com/mikaelpatel/Cosa).)
 
 Data Model
 ==========
@@ -82,12 +82,11 @@ Examples
 ======
 Several programs are provided to demonstrate how to use the classes in these different styles:
 
-* [CosaNMEAGPS](CosaNMEAGPS.ino) - sync, polled, not fused, standard NMEA only
-* [CosaGPSDevice](CosaGPSDevice.ino) - async, polled, fused, standard NMEA only
-* [CosaGPSEvent](CosaGPSEvent.ino) - async, event, fused, standard NMEA only
-* [CosaUBXNMEA](CosaUBXNMEA.ino) - sync, polled, not fused, standard NMEA + ublox proprietary NMEA
-* [CosaUBXGPS](CosaUBXGPS.ino) - sync, polled, fused, ublox protocol
-* [CosaGPSTest.ino](CosaGPSText.ino) - sync, polled, not fused, standard NMEA only (This is a self-test program.  Various strings are passed to `decode` and the expected pass or fail results are displayed.  No GPS device is required.)
+* [NMEA](NMEA.ino) - sync, polled, not fused, standard NMEA only
+* [NMEAfused](NMEAfused.ino) - sync, polled, fused, standard NMEA only
+* [NMEAUBX](NMEAUBX.ino) - sync, polled, fused, standard NMEA + ublox proprietary NMEA
+* [UBX](UBX.ino) - sync, polled, fused, ublox protocol
+* [NMEATest.ino](NMEATest.ino) - sync, polled, not fused, standard NMEA only (This is a self-test program.  Various strings are passed to `decode` and the expected pass or fail results are displayed.  No GPS device is required.)
 
 Preprocessor symbol `USE_FLOAT` can be used in [GPSfix.cpp](GPSfix.cpp) to select integer or floating-point output.
 
