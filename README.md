@@ -82,11 +82,12 @@ Examples
 ======
 Several programs are provided to demonstrate how to use the classes in these different styles:
 
-* [NMEA](NMEA.ino) - sync, polled, not fused, standard NMEA only
-* [NMEAfused](NMEAfused.ino) - sync, polled, fused, standard NMEA only
-* [NMEAUBX](NMEAUBX.ino) - sync, polled, fused, standard NMEA + ublox proprietary NMEA
-* [UBX](UBX.ino) - sync, polled, fused, ublox protocol
-* [NMEATest.ino](NMEATest.ino) - sync, polled, not fused, standard NMEA only (This is a self-test program.  Various strings are passed to `decode` and the expected pass or fail results are displayed.  No GPS device is required.)
+* [NMEA](examples/NMEA.ino) - sync, polled, not fused, standard NMEA only
+* [NMEAblink](examples/NMEAmin.ino) - sync, polled, not fused, standard NMEA only, minimal example, only blinks LED
+* [NMEAfused](examplesNMEAfused.ino) - sync, polled, fused, standard NMEA only
+* [PUBX](examples/PUBX.ino) - sync, polled, fused, standard NMEA + ublox proprietary NMEA
+* [ublox](examples/ublox.ino) - sync, polled, fused, ublox protocol
+* [NMEAtest.ino](examples/NMEAtest.ino) - sync, polled, not fused, standard NMEA only (This is a self-test program.  Various strings are passed to `decode` and the expected pass or fail results are displayed.  No GPS device is required.)
 
 Preprocessor symbol `USE_FLOAT` can be used in [GPSfix.cpp](GPSfix.cpp) to select integer or floating-point output.
 

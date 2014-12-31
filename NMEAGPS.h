@@ -36,14 +36,14 @@ class Stream;
  *
  * Only RMC and ZDA contain date information.  Other
  * sentences contain time information.  Both date and time are 
- * required if you will be doing time_t-to-clock_t operations.
+ * required if you will be doing tmElements_t-to-time_t operations.
  */
 
-//#define NMEAGPS_PARSE_GGA
+#define NMEAGPS_PARSE_GGA
 //#define NMEAGPS_PARSE_GLL
 //#define NMEAGPS_PARSE_GSA
 //#define NMEAGPS_PARSE_GSV
-//#define NMEAGPS_PARSE_RMC
+#define NMEAGPS_PARSE_RMC
 //#define NMEAGPS_PARSE_VTG
 //#define NMEAGPS_PARSE_ZDA
 

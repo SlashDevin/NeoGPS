@@ -545,7 +545,7 @@ void NMEAGPS::poll( Stream *device, nmea_msg_t msg )
   static const char * const poll_msgs[] __PROGMEM = { pm0, pm1, pm2, pm3, pm4, pm5, pm6 };
 
   if ((NMEA_FIRST_MSG <= msg) && (msg <= NMEA_LAST_MSG))
-    send( device, (str_P) pgm_read_word(&poll_msgs[msg-NMEA_FIRST_MSG]) );
+    send_P( device, (str_P) pgm_read_word(&poll_msgs[msg-NMEA_FIRST_MSG]) );
 }
 
 
