@@ -11,7 +11,7 @@ Goals
 In an attempt to be reusable in a variety of different programming styles, this library supports:
 * resource-constrained environments (e.g., ATTINY targets)
 * sync or async operation (main `loop()` vs interrupt processing)
-* event or polling (Event::Handler vs. fix() call)
+* event or polling (deferred handling vs. continuous fix() calls in `loop()`)
 * fused or not fused (multiple reports into one fix)
 * optional buffering of fixes
 * optional floating point
