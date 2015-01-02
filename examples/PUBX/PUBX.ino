@@ -49,7 +49,27 @@ static void traceIt()
   trace << seconds << ',';
 #endif
 
-  trace << fused << '\n';
+  trace << fused;
+
+#ifdef NMEAGPS_PARSE_SATELLITES
+  trace << ',' << '[';
+  for (uint8_t i=0; i < fused.satellites; i++) {
+    trace << gps.satellites[i].id;
+#ifdef NMEAGPS_PARSE_GSV
+    trace << ' ' << 
+      gps.satellites[i].elevation << '/' << gps.satellites[i].azimuth;
+    trace << '@';
+    if (gps.satellites[i].tracked)
+      trace << gps.satellites[i].snr;
+    else
+      trace << '-';
+#endif
+    trace << ',';
+  }
+  trace << ']';
+#endif
+
+  trace << '\n';
 
 } // traceIt
 
@@ -130,6 +150,11 @@ void loop()
     if (gps.decode( Serial1.read() ) == NMEAGPS::DECODE_COMPLETED) {
 //      trace << ((uint8_t) gps.nmeaMessage) << ' ';
       sentenceReceived();
+
+// Make sure that the only sentence we care about is enabled
+#ifndef NMEAGPS_PARSE_PUBX_00
+#error NMEAGPS_PARSE_PUBX_00 must be defined in ubxNMEA.h!
+#endif
 
       if (gps.nmeaMessage == (NMEAGPS::nmea_msg_t) ubloxNMEA::PUBX_00) {
 #if !defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)

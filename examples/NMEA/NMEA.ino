@@ -19,10 +19,30 @@ static NMEAGPS gps;
 static void sentenceReceived()
 {
 #if !defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
+  //  Date/Time not enabled, just output the interval number
   trace << seconds << ',';
 #endif
 
-  trace << gps.fix() <<'\n';
+  trace << gps.fix();
+
+#ifdef NMEAGPS_PARSE_SATELLITES
+  trace << ',';
+  for (uint8_t i=0; i < gps.fix().satellites; i++) {
+    trace << gps.satellites[i].id;
+#ifdef NMEAGPS_PARSE_GSV
+    trace << ' ' << 
+      gps.satellites[i].elevation << '/' << gps.satellites[i].azimuth;
+    trace << '@';
+    if (gps.satellites[i].tracked)
+      trace << gps.satellites[i].snr;
+    else
+      trace << '-';
+#endif
+    trace << ',';
+  }
+#endif
+
+  trace << '\n';
 
 } // sentenceReceived
 

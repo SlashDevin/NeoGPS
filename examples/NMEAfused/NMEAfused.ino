@@ -9,10 +9,10 @@
 
 #include "NMEAGPS.h"
 
-#if !defined( NMEAGPS_PARSE_GGA) & !defined( NMEAGPS_PARSE_GLL) & \
-    !defined( NMEAGPS_PARSE_GSA) & !defined( NMEAGPS_PARSE_GSV) & \
-    !defined( NMEAGPS_PARSE_RMC) & !defined( NMEAGPS_PARSE_VTG) & \
-    !defined( NMEAGPS_PARSE_ZDA )
+#if !defined( NMEAGPS_PARSE_GGA ) & !defined( NMEAGPS_PARSE_GLL ) & \
+    !defined( NMEAGPS_PARSE_GSA ) & !defined( NMEAGPS_PARSE_GSV ) & \
+    !defined( NMEAGPS_PARSE_RMC ) & !defined( NMEAGPS_PARSE_VTG ) & \
+    !defined( NMEAGPS_PARSE_ZDA ) & !defined( NMEAGPS_PARSE_GST )
 
 #if defined(GPS_FIX_DATE)| defined(GPS_FIX_TIME)
 #error No NMEA sentences enabled: no fix data available for fusing.
@@ -35,12 +35,32 @@ static gps_fix fused;
 
 static void traceIt()
 {
-
 #if !defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
+  //  Date/Time not enabled, just output the interval number
   trace << seconds << ',';
 #endif
 
-  trace << fused << '\n';
+  trace << fused;
+
+#ifdef NMEAGPS_PARSE_SATELLITES
+  trace << ',' << '[';
+  for (uint8_t i=0; i < fused.satellites; i++) {
+    trace << gps.satellites[i].id;
+#ifdef NMEAGPS_PARSE_GSV
+    trace << ' ' << 
+      gps.satellites[i].elevation << '/' << gps.satellites[i].azimuth;
+    trace << '@';
+    if (gps.satellites[i].tracked)
+      trace << gps.satellites[i].snr;
+    else
+      trace << '-';
+#endif
+    trace << ',';
+  }
+  trace << ']';
+#endif
+
+  trace << '\n';
 
 } // traceIt
 
@@ -124,10 +144,15 @@ void loop()
       sentenceReceived();
 
 #if !defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
-      //  No date/time fields enabled, use received GPRMC sentence as a pulse
-      if (gps.nmeaMessage == NMEAGPS::NMEA_RMC) {
-        seconds++;
-      }
+
+// Make sure that the only sentence we care about is enabled
+#ifndef NMEAGPS_PARSE_RMC
+#error NMEAGPS_PARSE_RMC must be defined in NMEAGPS.h!
 #endif
+      if (gps.nmeaMessage == NMEAGPS::NMEA_RMC)
+        //  No date/time fields enabled, use received GPRMC sentence as a pulse
+        seconds++;
+#endif
+
     }
 }

@@ -71,6 +71,11 @@ void NMEAGPS::rxEnd( bool ok )
   rxState = NMEA_IDLE;
 
   if (ok) {
+    // pretend that a ',' terminated the last field in case
+    //   the parsers need it.
+    chrCount++;
+    parseField(',');
+
     coherent = true;
 #ifdef NMEAGPS_STATS
     statistics.parser_ok++;
@@ -177,6 +182,7 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
 static const char gpgga[] __PROGMEM =  "GPGGA";
 static const char gpgll[] __PROGMEM =  "GPGLL";
 static const char gpgsa[] __PROGMEM =  "GPGSA";
+static const char gpgst[] __PROGMEM =  "GPGST";
 static const char gpgsv[] __PROGMEM =  "GPGSV";
 static const char gprmc[] __PROGMEM =  "GPRMC";
 static const char gpvtg[] __PROGMEM =  "GPVTG";
@@ -186,6 +192,7 @@ const char * const NMEAGPS::std_nmea[] __PROGMEM = {
   gpgga,
   gpgll,
   gpgsa,
+  gpgst,
   gpgsv,
   gprmc,
   gpvtg,
@@ -319,8 +326,87 @@ bool NMEAGPS::parseField(char chr)
           break;
 
         case NMEA_GSA:
+#ifdef NMEAGPS_PARSE_GSA
+          switch (fieldIndex) {
+              case 2:
+                if (chrCount == 0) {
+                  if (chr == '1') {
+                    m_fix.status = gps_fix::STATUS_NONE;
+                    m_fix.valid.status = true;
+                  } else if ((chr == '2') || (chr == '3')) {
+                    m_fix.status = gps_fix::STATUS_STD;
+                    m_fix.valid.status = true;
+                  } else if (chr == ',')
+                    m_fix.valid.status = false;
+                } else if (chr != ',')
+                  m_fix.valid.status = false;
+                break;
+              CASE_PDOP(15);
+              CASE_HDOP(16);
+              CASE_VDOP(17);
+#ifdef NMEAGPS_PARSE_SATELLITES
+
+              // It's not clear how this sentence relates to GSV.  GSA only
+              // only allows 12 satellites, while GSV allows any number.  
+              // In the absence of guidance, GSV shall have priority over GSA 
+              // with repect to populating the satellites array.  Ignore the
+              // satellite fields if GSV is enabled.
+
+#ifndef NMEAGPS_PARSE_GSV
+
+              case 1: break; // allows "default:" case for SV fields
+              case 3:
+                if (chrCount == 0) {
+                  m_fix.satellites = 0;
+                  m_fix.valid.satellites = true;
+                }
+              default:
+                if (chr == ',') {
+                  if (chrCount > 0)
+                    m_fix.satellites++;
+                } else
+                  return parseInt( satellites[m_fix.satellites].id, chr );
+                break;
+#endif
+#endif
+          }
+#endif
+          break;
+
+        case NMEA_GST:
+#ifdef NMEAGPS_PARSE_GST
+//if ((fieldIndex == 1) && (chrCount == 0)) trace << PSTR("GST ");
+//trace << chr;
+          switch (fieldIndex) {
+            CASE_TIME(1);
+            CASE_LAT_ERR(6);
+            CASE_LON_ERR(7);
+            CASE_ALT_ERR(8);
+          }
+#endif
+          break;
+
         case NMEA_GSV:
-            break;
+#ifdef NMEAGPS_PARSE_GSV
+          switch (fieldIndex) {
+              CASE_SV_MSG_NO(2);
+              CASE_SAT(3);
+#ifdef NMEAGPS_PARSE_SATELLITES
+              case 1: break; // allows "default:" case for SV fields
+              default:
+                if (sat_index < MAX_SATELLITES) {
+//if ((fieldIndex % 4) == 0) trace << PSTR(" si ") << sat_index;
+                  switch (fieldIndex % 4) {
+                    CASE_SV_id(0);
+                    CASE_SV_elev(1);
+                    CASE_SV_az(2);
+                    SV_snr(default);
+                  }
+                }
+#endif
+          }
+#endif
+          break;
                   
         case NMEA_RMC:
 #ifdef NMEAGPS_PARSE_RMC
@@ -478,6 +564,22 @@ bool NMEAGPS::parseFloat( gps_fix::whole_frac & val, char chr, uint8_t max_decim
   return true;
 }
 
+bool NMEAGPS::parseFloat( uint16_t & val, char chr, uint8_t max_decimal )
+{
+  if (chrCount == 0) {
+    decimal = 0;
+    val = 0;
+  }
+  if (chr == ',') {
+    while (decimal++ <= max_decimal)
+      val *= 10;
+  } else if (chr == '.')
+    decimal = 1;
+  else if (decimal++ <= max_decimal)
+    val = val*10 + (chr - '0');
+  return true;
+}
+
 #ifdef GPS_FIX_LOCATION
 
 inline uint8_t
@@ -538,11 +640,12 @@ void NMEAGPS::poll( Stream *device, nmea_msg_t msg )
   static const char pm0[] __PROGMEM = "EIGPQ,GGA";
   static const char pm1[] __PROGMEM = "EIGPQ,GLL";
   static const char pm2[] __PROGMEM = "EIGPQ,GSA";
-  static const char pm3[] __PROGMEM = "EIGPQ,GSV";
-  static const char pm4[] __PROGMEM = "EIGPQ,RMC";
-  static const char pm5[] __PROGMEM = "EIGPQ,VTG";
-  static const char pm6[] __PROGMEM = "EIGPQ,ZDA";
-  static const char * const poll_msgs[] __PROGMEM = { pm0, pm1, pm2, pm3, pm4, pm5, pm6 };
+  static const char pm3[] __PROGMEM = "EIGPQ,GST";
+  static const char pm4[] __PROGMEM = "EIGPQ,GSV";
+  static const char pm5[] __PROGMEM = "EIGPQ,RMC";
+  static const char pm6[] __PROGMEM = "EIGPQ,VTG";
+  static const char pm7[] __PROGMEM = "EIGPQ,ZDA";
+  static const char * const poll_msgs[] __PROGMEM = { pm0, pm1, pm2, pm3, pm4, pm5, pm6, pm7 };
 
   if ((NMEA_FIRST_MSG <= msg) && (msg <= NMEA_LAST_MSG))
     send_P( device, (str_P) pgm_read_word(&poll_msgs[msg-NMEA_FIRST_MSG]) );

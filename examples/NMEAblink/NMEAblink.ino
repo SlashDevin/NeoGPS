@@ -14,7 +14,7 @@ static const int led = 13;
 void setup()
 {
   // Start the UART for the GPS device
-  Serial1.begin(9600);
+  Serial.begin(9600);
   pinMode(led, OUTPUT);
 }
 

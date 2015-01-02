@@ -4,6 +4,8 @@
 
 #include "Streamers.h"
 
+//#define USE_FLOAT
+
 Stream & operator <<( Stream &outs, const gps_fix &fix )
 {
   if (fix.valid.status)
@@ -87,9 +89,37 @@ Stream & operator <<( Stream &outs, const gps_fix &fix )
 #endif
 
 #ifdef USE_FLOAT
+
 #ifdef GPS_FIX_HDOP
   if (fix.valid.hdop)
     outs.print( (fix.hdop * 0.001), 3 );
+  outs << ',';
+#endif
+#ifdef GPS_FIX_VDOP
+  if (fix.valid.vdop)
+    outs.print( (fix.vdop * 0.001) 3 );
+  outs << ',';
+#endif
+#ifdef GPS_FIX_PDOP
+  if (fix.valid.pdop)
+    outs.print( (fix.pdop * 0.001), 3 );
+  outs << ',';
+#endif
+
+#ifdef GPS_FIX_LAT_ERR
+  if (fix.valid.lat_err)
+    outs.print( fix.lat_err(), 2 );
+  outs << ',';
+#endif
+#ifdef GPS_FIX_LON_ERR
+  if (fix.valid.lon_err)
+    outs.print( fix.lon_err(), 2 );
+  outs << ',';
+#endif
+#ifdef GPS_FIX_ALT_ERR
+  if (fix.valid.alt_err)
+    outs.print( fix.alt_err(), 2 );
+  outs << ',';
 #endif
 
 #else
@@ -97,7 +127,35 @@ Stream & operator <<( Stream &outs, const gps_fix &fix )
 #ifdef GPS_FIX_HDOP
   if (fix.valid.hdop)
     outs << fix.hdop;
+  outs << ',';
 #endif
+#ifdef GPS_FIX_VDOP
+  if (fix.valid.vdop)
+    outs << fix.vdop;
+  outs << ',';
+#endif
+#ifdef GPS_FIX_PDOP
+  if (fix.valid.pdop)
+    outs << fix.pdop;
+  outs << ',';
+#endif
+
+#ifdef GPS_FIX_LAT_ERR
+  if (fix.valid.lat_err)
+    outs << fix.lat_err_cm;
+  outs << ',';
+#endif
+#ifdef GPS_FIX_LON_ERR
+  if (fix.valid.lon_err)
+    outs << fix.lon_err_cm;
+  outs << ',';
+#endif
+#ifdef GPS_FIX_ALT_ERR
+  if (fix.valid.alt_err)
+    outs << fix.alt_err_cm;
+  outs << ',';
+#endif
+
 #endif
 
   return outs;

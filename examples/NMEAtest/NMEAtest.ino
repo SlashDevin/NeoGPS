@@ -14,8 +14,6 @@
 
 #include "Streamers.h"
 
-Stream & trace = Serial;
-
 #include "NMEAGPS.h"
 
 /*

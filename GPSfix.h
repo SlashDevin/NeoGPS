@@ -45,6 +45,11 @@
 #define GPS_FIX_HEADING
 #define GPS_FIX_SATELLITES
 //#define GPS_FIX_HDOP
+//#define GPS_FIX_VDOP
+//#define GPS_FIX_PDOP
+//#define GPS_FIX_LAT_ERR
+//#define GPS_FIX_LON_ERR
+//#define GPS_FIX_ALT_ERR
 
 /**
  * A structure for holding a GPS fix: time, position, velocity, etc.
@@ -123,15 +128,36 @@ public:
     float heading() const { return hdg.float_00(); };
 #endif
 
-#ifdef GPS_FIX_HDOP
-  /**
-   * Horizontal Dilution of Precision.  This is a measure of the current satellite
+ /**
+   * Dilution of Precision is a measure of the current satellite
    * constellation geometry WRT how 'good' it is for determining a position.  This
    * is _independent_ of signal strength and many other factors that may be
    * internal to the receiver.  It _cannot_ be used to determine position accuracy
    * in meters.
    */
-  uint16_t           hdop; // x 1000
+#ifdef GPS_FIX_HDOP
+  uint16_t           hdop; // Horizontal Dilution of Precision x 1000
+#endif
+#ifdef GPS_FIX_VDOP
+  uint16_t           vdop; // Horizontal Dilution of Precision x 1000
+#endif
+#ifdef GPS_FIX_PDOP
+  uint16_t           pdop; // Horizontal Dilution of Precision x 1000
+#endif
+
+#ifdef GPS_FIX_LAT_ERR
+  uint16_t lat_err_cm;
+  float lat_err() const { return lat_err_cm / 100.0; }
+#endif
+
+#ifdef GPS_FIX_LON_ERR
+  uint16_t lon_err_cm;
+  float lon_err() const { return lon_err_cm / 100.0; }
+#endif
+
+#ifdef GPS_FIX_ALT_ERR
+  uint16_t alt_err_cm;
+  float alt_err() const { return alt_err_cm / 100.0; }
 #endif
 
 #ifdef GPS_FIX_SATELLITES
@@ -199,6 +225,24 @@ public:
 #ifdef GPS_FIX_HDOP
     bool hdop:1;
 #endif
+#ifdef GPS_FIX_VDOP
+    bool vdop:1;
+#endif
+#ifdef GPS_FIX_PDOP
+    bool pdop:1;
+#endif
+
+#ifdef GPS_FIX_LAT_ERR
+    bool lat_err:1;
+#endif
+
+#ifdef GPS_FIX_LON_ERR
+    bool lon_err:1;
+#endif
+
+#ifdef GPS_FIX_ALT_ERR
+    bool alt_err:1;
+#endif
 
     void init()
       {
@@ -246,6 +290,22 @@ public:
 
 #ifdef GPS_FIX_HDOP
     hdop = 0;
+#endif
+#ifdef GPS_FIX_VDOP
+    vdop = 0;
+#endif
+#ifdef GPS_FIX_PDOP
+    pdop = 0;
+#endif
+
+#ifdef GPS_FIX_LAT_ERR
+    lat_err_cm = 0;
+#endif
+#ifdef GPS_FIX_LON_ERR
+    lon_err_cm = 0;
+#endif
+#ifdef GPS_FIX_ALT_ERR
+    alt_err_cm = 0;
 #endif
 
     valid.init();
@@ -309,6 +369,31 @@ public:
 #ifdef GPS_FIX_HDOP
       if (r.valid.hdop)
         hdop = r.hdop;
+#endif
+
+#ifdef GPS_FIX_VDOP
+      if (r.valid.vdop)
+        hdop = r.vdop;
+#endif
+
+#ifdef GPS_FIX_PDOP
+      if (r.valid.pdop)
+        hdop = r.pdop;
+#endif
+
+#ifdef GPS_FIX_LAT_ERR
+      if (r.valid.lat_err)
+        lat_err_cm = r.lat_err_cm;
+#endif
+
+#ifdef GPS_FIX_LON_ERR
+      if (r.valid.lon_err)
+        lon_err_cm = r.lon_err_cm;
+#endif
+
+#ifdef GPS_FIX_ALT_ERR
+      if (r.valid.alt_err)
+        alt_err_cm = r.alt_err_cm;
 #endif
 
       valid |= r.valid;

@@ -43,6 +43,7 @@ class Stream;
 //#define NMEAGPS_PARSE_GLL
 //#define NMEAGPS_PARSE_GSA
 //#define NMEAGPS_PARSE_GSV
+//#define NMEAGPS_PARSE_GST
 #define NMEAGPS_PARSE_RMC
 //#define NMEAGPS_PARSE_VTG
 //#define NMEAGPS_PARSE_ZDA
@@ -58,6 +59,18 @@ class Stream;
 #define NMEAGPS_VIRTUAL virtual
 #else
 #define NMEAGPS_VIRTUAL
+#endif
+
+/**
+ * Enable/disable tracking the current satellite array.
+ */
+
+#define NMEAGPS_PARSE_SATELLITES
+
+#ifdef NMEAGPS_PARSE_SATELLITES
+#ifndef GPS_FIX_SATELLITES
+#error GPS_FIX_SATELLITES must be defined in GPSfix.h!
+#endif
 #endif
 
 /**
@@ -85,6 +98,7 @@ public:
         NMEA_GGA,
         NMEA_GLL,
         NMEA_GSA,
+        NMEA_GST,
         NMEA_GSV,
         NMEA_RMC,
         NMEA_VTG,
@@ -360,8 +374,54 @@ PARSE_FIELD(i+3,EW);
       m_fix.valid.satellites = parseInt( m_fix.satellites, chr );
       return true;
     }
+
 #else
 #define CASE_SAT(i)
+#endif
+
+    // Optional SATELLITE VIEW array    -----------------------
+#ifdef NMEAGPS_PARSE_SATELLITES
+public:
+    struct satellite_view_t
+    {
+      uint8_t  id;
+      uint8_t  elevation; // 0..99 deg
+      uint16_t azimuth;   // 0..359 deg
+      uint8_t  snr;       // 0..99 dBHz
+      bool     tracked;
+    } __attribute__((packed));
+
+    static const uint8_t MAX_SATELLITES = 32;
+    satellite_view_t satellites[ MAX_SATELLITES ];
+
+protected:
+    uint8_t sat_index; // only used during parsing
+#define CASE_SV_MSG_NO(i) \
+  case i: if (parseInt( sat_index, chr ) && (chr == ',')) \
+            sat_index = (sat_index - 1) * 4; \
+          break;
+
+#define CASE_SV_id(i) \
+  case i: return parseInt( satellites[sat_index].id, chr );
+#define CASE_SV_elev(i) \
+  case i: return parseInt( satellites[sat_index].elevation, chr );
+#define CASE_SV_az(i) \
+  case i: return parseInt( satellites[sat_index].azimuth, chr );
+#define SV_snr(c) \
+  c: \
+    if (chr == ',') { \
+      sat_index++; \
+      satellites[sat_index].tracked = (chrCount == 0); \
+    } else \
+      parseInt( satellites[sat_index].snr, chr ); \
+    break;
+
+#else
+#define CASE_SV_MSG_NO(i)
+#define CASE_SV_id(i)
+#define CASE_SV_elev(i)
+#define CASE_SV_az(i)
+#define CASE_SV_snr(i)
 #endif
 
     // Optional Horizontal Dilution of Precision    -----------------------
@@ -370,26 +430,83 @@ PARSE_FIELD(i+3,EW);
 
     bool parseHDOP( char chr )
     {
-      if (chrCount == 0) {
-        decimal = 0;
-        m_fix.hdop = 0;
-      }
-      if (chr == ',') {
-        m_fix.valid.hdop = true;
-        while (decimal++ <= 3)
-          m_fix.hdop *= 10;
-      } else if (chr == '.')
-        decimal = 1;
-      else if (decimal++ <= 3)
-        m_fix.hdop = m_fix.hdop*10 + (chr - '0');
+      m_fix.valid.hdop = parseFloat( m_fix.hdop, chr, 3 );
       return true;
     }
 #else
 #define CASE_HDOP(i)
 #endif
 
+    // Optional Vertical Dilution of Precision    -----------------------
+#ifdef GPS_FIX_VDOP
+#define CASE_VDOP(i) PARSE_FIELD(i,VDOP)
+
+    bool parseVDOP( char chr )
+    {
+      m_fix.valid.vdop = parseFloat( m_fix.vdop, chr, 3 );
+      return true;
+    }
+#else
+#define CASE_VDOP(i)
+#endif
+
+    // Optional Position Dilution of Precision    -----------------------
+#ifdef GPS_FIX_PDOP
+#define CASE_PDOP(i) PARSE_FIELD(i,PDOP)
+
+    bool parsePDOP( char chr )
+    {
+      m_fix.valid.pdop = parseFloat( m_fix.pdop, chr, 3 );
+      return true;
+    }
+#else
+#define CASE_PDOP(i)
+#endif
+
+    // Optional Latitude error    -----------------------
+#ifdef GPS_FIX_LAT_ERR
+#define CASE_LAT_ERR(i) PARSE_FIELD(i,_lat_err)
+
+    bool parse_lat_err( char chr )
+    {
+      m_fix.valid.lat_err = parseFloat( m_fix.lat_err_cm, chr, 2 );
+      return true;
+    }
+#else
+#define CASE_LAT_ERR(i)
+#endif
+
+    // Optional Longitude error    -----------------------
+#ifdef GPS_FIX_LON_ERR
+#define CASE_LON_ERR(i) PARSE_FIELD(i,_lon_err)
+
+    bool parse_lon_err( char chr )
+    {
+      m_fix.valid.lon_err = parseFloat( m_fix.lon_err_cm, chr, 2 );
+      return true;
+    }
+#else
+#define CASE_LON_ERR(i)
+#endif
+
+    // Optional Altitude error    -----------------------
+#ifdef GPS_FIX_ALT_ERR
+#define CASE_ALT_ERR(i) PARSE_FIELD(i,_alt_err)
+
+    bool parse_alt_err( char chr )
+    {
+      m_fix.valid.alt_err = parseFloat( m_fix.alt_err_cm, chr, 2 );
+      return true;
+    }
+#else
+#define CASE_ALT_ERR(i)
+#endif
+
     // Helper method for parsing floating-point numbers into a /whole_frac/
     bool parseFloat( gps_fix::whole_frac & val, char chr, uint8_t max_decimal );
+
+    // Helper method for parsing floating-point numbers into a uint16_t
+    bool parseFloat( uint16_t & val, char chr, uint8_t max_decimal );
 
     // Helper method for parsing integers
     bool parseInt( uint8_t &val, uint8_t chr )
@@ -404,6 +521,17 @@ PARSE_FIELD(i+3,EW);
       return true;
     }
 
+    bool parseInt( uint16_t &val, uint8_t chr )
+    {
+      bool is_comma = (chr == ',');
+      if (chrCount == 0) {
+        if (is_comma)
+          return false;
+        val = (chr - '0');
+      } else if (!is_comma)
+        val = (val*10) + (chr - '0');
+      return true;
+    }
 } __attribute__((packed));
 
 #endif
