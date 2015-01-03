@@ -32,6 +32,7 @@ namespace ublox {
         UBX_NAV_VELNED  = 0x12, // Current Velocity
         UBX_NAV_TIMEGPS = 0x20, // Current GPS Time
         UBX_NAV_TIMEUTC = 0x21, // Current UTC Time
+        UBX_NAV_SVINFO  = 0x30, // Space Vehicle Information
         UBX_ID_UNK   = 0xFF
       }  __attribute__((packed));
 
@@ -293,6 +294,56 @@ namespace ublox {
 
         nav_timeutc_t() : msg_t( UBX_NAV, UBX_NAV_TIMEUTC, UBX_MSG_LEN(*this) ) {};
     }  __attribute__((packed));
+
+    // Space Vehicle Information
+    struct nav_svinfo_t : msg_t {
+        uint32_t time_of_week;   // mS
+        uint8_t  num_channels;
+        enum { ANTARIS_OR_4, UBLOX_5, UBLOX_6 } chipgen:8;
+        uint16_t reserved2;
+        struct sv_t {
+          uint8_t channel; // 255 = no channel
+          uint8_t id;      // Satellite ID
+          bool    used_for_nav:1;
+          bool    diff_corr   :1; // differential correction available
+          bool    orbit_avail :1; // orbit info available
+          bool    orbit_eph   :1; // orbit info is ephemeris
+          bool    unhealthy   :1; // SV should not be used
+          bool    orbit_alm   :1; // orbit info is Almanac Plus
+          bool    orbit_AOP   :1; // orbit info is AssistNow Autonomous
+          bool    smoothed    :1; // Carrier smoothed pseudorange used
+          enum {
+              IDLE, 
+              SEARCHING, 
+              ACQUIRED, 
+              UNUSABLE, 
+              CODE_LOCK, 
+              CODE_AND_CARRIER_LOCK_1,
+              CODE_AND_CARRIER_LOCK_2,
+              CODE_AND_CARRIER_LOCK_3
+            }
+              quality:8;
+          uint8_t  snr;           // dbHz
+          uint8_t  elevation;     // degrees
+          uint16_t azimuth;       // degrees
+          uint32_t pr_res;        // pseudo range residual in cm
+        };
+
+        //  Calculate the number of bytes required to hold the
+        //  specified number of channels.
+        static uint16_t size_for( uint8_t channels )
+          { return sizeof(nav_svinfo_t) + (uint16_t)channels * sizeof(sv_t); }
+
+        // Initialze the msg_hdr for the specified number of channels
+        void init( uint8_t max_channels )
+        {
+          msg_class = UBX_NAV;
+          msg_id    = UBX_NAV_SVINFO;
+          length    = size_for( max_channels ) - sizeof(ublox::msg_t);
+        }
+
+      }  __attribute__((packed));
+
 };
 
 #endif

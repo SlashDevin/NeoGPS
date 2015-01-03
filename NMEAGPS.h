@@ -62,15 +62,22 @@ class Stream;
 #endif
 
 /**
- * Enable/disable tracking the current satellite array.
+ * Enable/disable tracking the current satellite array and,
+ * optionally, all the info for each satellite.
  */
 
 #define NMEAGPS_PARSE_SATELLITES
+//#define NMEAGPS_PARSE_SATELLITE_INFO
 
 #ifdef NMEAGPS_PARSE_SATELLITES
 #ifndef GPS_FIX_SATELLITES
 #error GPS_FIX_SATELLITES must be defined in GPSfix.h!
 #endif
+#endif
+
+#if defined(NMEAGPS_PARSE_SATELLITE_INFO) & \
+    !defined(NMEAGPS_PARSE_SATELLITES)
+#error NMEAGPS_PARSE_SATELLITES must be defined!
 #endif
 
 /**
@@ -385,44 +392,22 @@ public:
     struct satellite_view_t
     {
       uint8_t  id;
+#ifdef NMEAGPS_PARSE_SATELLITE_INFO
       uint8_t  elevation; // 0..99 deg
       uint16_t azimuth;   // 0..359 deg
       uint8_t  snr;       // 0..99 dBHz
       bool     tracked;
+#endif
     } __attribute__((packed));
 
-    static const uint8_t MAX_SATELLITES = 32;
+    static const uint8_t MAX_SATELLITES = 20;
     satellite_view_t satellites[ MAX_SATELLITES ];
 
 protected:
     uint8_t sat_index; // only used during parsing
-#define CASE_SV_MSG_NO(i) \
-  case i: if (parseInt( sat_index, chr ) && (chr == ',')) \
-            sat_index = (sat_index - 1) * 4; \
-          break;
 
-#define CASE_SV_id(i) \
-  case i: return parseInt( satellites[sat_index].id, chr );
-#define CASE_SV_elev(i) \
-  case i: return parseInt( satellites[sat_index].elevation, chr );
-#define CASE_SV_az(i) \
-  case i: return parseInt( satellites[sat_index].azimuth, chr );
-#define SV_snr(c) \
-  c: \
-    if (chr == ',') { \
-      sat_index++; \
-      satellites[sat_index].tracked = (chrCount == 0); \
-    } else \
-      parseInt( satellites[sat_index].snr, chr ); \
-    break;
-
-#else
-#define CASE_SV_MSG_NO(i)
-#define CASE_SV_id(i)
-#define CASE_SV_elev(i)
-#define CASE_SV_az(i)
-#define CASE_SV_snr(i)
 #endif
+
 
     // Optional Horizontal Dilution of Precision    -----------------------
 #ifdef GPS_FIX_HDOP

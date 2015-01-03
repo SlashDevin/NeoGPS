@@ -9,9 +9,7 @@
 
 #include "ubxGPS.h"
 
-#if !defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
 static uint32_t seconds = 0L;
-#endif
 
 //--------------------------
 
@@ -30,35 +28,56 @@ public:
       }
         state:8;
 
+    uint32_t last_rx;
+    uint32_t last_trace;
+    uint32_t last_sentence;
+
+
     bool ok_to_process;
     
     MyGPS( Stream *device ) : ubloxGPS( device )
       {
         state = GETTING_STATUS;
+        last_rx = 0L;
+        last_trace = 0L;
+        last_sentence = 0L;
         ok_to_process = false;
       };
 
     //--------------------------
 
+    void begin()
+      {
+        last_rx = millis();
+        last_trace = seconds;
+      }
+
+    //--------------------------
+
     void run()
     {
-      static uint32_t last = 0;
-      uint32_t ms = millis();
-      if (last == 0) last = ms;
+      bool rx = false;
 
-      if ((ms - last) > 2000L) {
-        last = ms;
-        trace << F("RESTART!\n");
-        if (state != GETTING_STATUS) {
-          state = GETTING_STATUS;
-          enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_STATUS );
+      while (Serial1.available()) {
+        rx = true;
+        if (decode( Serial1.read() ) == DECODE_COMPLETED) {
+          if (ok_to_process)
+            processSentence();
         }
-      } else {
-        while (Serial1.available()) {
-          if (decode( Serial1.read() ) == DECODE_COMPLETED) {
-            last = ms;
-            if (ok_to_process)
-              processSentence();
+      }
+
+      uint32_t ms = millis();
+
+      if (rx)
+        last_rx = ms;
+
+      else {
+        if (ok_to_process && ((ms - last_rx) > 2000L)) {
+          last_rx = ms;
+          trace << F("RESTART!\n");
+          if (state != GETTING_STATUS) {
+            state = GETTING_STATUS;
+            enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_STATUS );
           }
         }
       }
@@ -80,11 +99,11 @@ public:
         if (!ok && (rx().msg_class != ublox::UBX_UNK)) {
 //trace << F("u ") << (uint8_t) rx().msg_class << F("/") << (uint8_t) rx().msg_id << '\n';
           ok = true;
-#if !defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
+
+          // Use the STATUS message as a pulse-per-second
           if ((rx().msg_class == ublox::UBX_NAV) &&
               (rx().msg_id == ublox::UBX_NAV_STATUS))
             seconds++;
-#endif
         }
 
         if (ok) {
@@ -141,15 +160,25 @@ public:
 
 #endif
 
-#if defined(GPS_FIX_LOCATION) | defined(GPS_FIX_ALTITUDE)
+#if (defined(GPS_FIX_LOCATION) | defined(GPS_FIX_ALTITUDE)) & \
+    defined(UBLOX_PARSE_POSLLH)
+
                 if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_POSLLH ))
                   trace << F("enable POSLLH failed!\n");
 #endif
 
-#if defined(GPS_FIX_SPEED) | defined(GPS_FIX_HEADING)
+#if (defined(GPS_FIX_SPEED) | defined(GPS_FIX_HEADING)) & \
+    defined(UBLOX_PARSE_VELNED)
                 if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_VELNED ))
                   trace << F("enable VELNED failed!\n");
 #endif
+
+#if defined(NMEAGPS_PARSE_SATELLITES) & \
+    defined(UBLOX_PARSE_SVINFO)
+                if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_SVINFO ))
+                  trace << PSTR("enable SVINFO failed!\n");
+#endif
+
               }
               break;
 
@@ -171,21 +200,15 @@ public:
                              (merged.dateTime.Month != fix().dateTime.Month) ||
                              (merged.dateTime.Year  != fix().dateTime.Year)));
 #else
-              //  No date/time configured, so let's assume it's a new interval
-              //  if it has been a while since the last sentence was received.
-              static uint32_t last_sentence = 0L;
-
+              //  No date/time configured, so let's assume it's a new
+              //  interval if it a new STATUS message was received.
               newInterval = (seconds != last_sentence);
-              last_sentence = seconds;
 #endif
 //trace << F("ps mvd ") << merged.valid.date << F("/") << fix().valid.date;
 //trace << F(", mvt ") << merged.valid.time << F("/") << fix().valid.time;
 //trace << merged.dateTime << F("/") << fix().dateTime;
 //trace << F(", ni = ") << newInterval << '\n';
               if (newInterval) {
-
-                // Log the previous interval
-                traceIt();
 
                 //  Since we're into the next time interval, we throw away
                 //     all of the previous fix and start with what we
@@ -200,6 +223,8 @@ public:
           }
         }
 
+        last_sentence = seconds;
+
         ok_to_process = old_otp;
 
         return ok;
@@ -209,11 +234,48 @@ public:
 
     void traceIt()
     {
+      if ((state == RUNNING) && (last_trace != 0)) {
+
 #if !defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
-      trace << seconds << ',';
+        trace << seconds << ',';
 #endif
 
-      trace << merged << '\n';
+        trace << merged;
+
+#if defined(NMEAGPS_PARSE_SATELLITES)
+        if (merged.valid.satellites) {
+          trace << ',' << '[';
+
+          uint8_t i_max = merged.satellites;
+          if (i_max > MAX_SATELLITES)
+            i_max = MAX_SATELLITES;
+
+          for (uint8_t i=0; i < i_max; i++) {
+            trace << satellites[i].id;
+#if defined(NMEAGPS_PARSE_SATELLITE_INFO)
+            trace << ' ' << 
+              satellites[i].elevation << '/' << satellites[i].azimuth;
+            trace << '@';
+            if (satellites[i].tracked)
+              trace << satellites[i].snr;
+            else
+              trace << '-';
+#endif
+            trace << ',';
+          }
+          trace << ']';
+        }
+#else
+#ifdef GPS_FIX_SATELLITES
+        trace << merged.satellites << ',';
+#endif
+#endif
+
+        trace << '\n';
+
+      }
+
+      last_trace = seconds;
 
     } // traceIt
 
@@ -235,6 +297,8 @@ void setup()
 
   // Start the UART for the GPS device
   Serial1.begin(9600);
+
+  gps.begin();
 
   // Turn off the preconfigured NMEA standard messages
   for (uint8_t i=NMEAGPS::NMEA_FIRST_MSG; i<=NMEAGPS::NMEA_LAST_MSG; i++) {
@@ -258,4 +322,10 @@ void setup()
 void loop()
 {
   gps.run();
+  if ((gps.last_trace != seconds) &&
+      (millis() - gps.last_rx > 5)) {
+    // It's been 5ms since we received anything,
+    // log what we have so far...
+    gps.traceIt();
+  }
 }

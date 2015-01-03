@@ -61,8 +61,7 @@
  *
  * @section Limitations
  * Reports are not really fused with an algorithm; if present in 
- * the source and the status != NONE, they are simply replaced in 
- * the destination.
+ * the source, they are simply replaced in the destination.
  *
  */
 

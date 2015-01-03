@@ -25,21 +25,36 @@ static void sentenceReceived()
 
   trace << gps.fix();
 
-#ifdef NMEAGPS_PARSE_SATELLITES
-  trace << ',';
-  for (uint8_t i=0; i < gps.fix().satellites; i++) {
-    trace << gps.satellites[i].id;
-#ifdef NMEAGPS_PARSE_GSV
-    trace << ' ' << 
-      gps.satellites[i].elevation << '/' << gps.satellites[i].azimuth;
-    trace << '@';
-    if (gps.satellites[i].tracked)
-      trace << gps.satellites[i].snr;
-    else
-      trace << '-';
+#if defined(NMEAGPS_PARSE_SATELLITES)
+  if (gps.fix().valid.satellites) {
+    trace << ',' << '[';
+
+    uint8_t i_max = gps.fix().satellites;
+    if (i_max > NMEAGPS::MAX_SATELLITES)
+      i_max = NMEAGPS::MAX_SATELLITES;
+
+    for (uint8_t i=0; i < i_max; i++) {
+      trace << gps.satellites[i].id;
+#if defined(NMEAGPS_PARSE_SATELLITE_INFO)
+      trace << ' ' << 
+        gps.satellites[i].elevation << '/' << gps.satellites[i].azimuth;
+      trace << '@';
+      if (gps.satellites[i].tracked)
+        trace << gps.satellites[i].snr;
+      else
+        trace << '-';
 #endif
-    trace << ',';
+      trace << ',';
+    }
+    trace << ']';
   }
+
+#else
+
+#ifdef GPS_FIX_SATELLITES
+  trace << gps.fix().satellites << ',';
+#endif
+
 #endif
 
   trace << '\n';

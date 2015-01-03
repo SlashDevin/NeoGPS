@@ -100,13 +100,16 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
               break;
             case 1:
               rx().msg_id = (msg_id_t) chr;
-//trace << 'x' << (uint8_t) rx().msg_class << '/' << (uint8_t) rx().msg_id;
               break;
             case 2:
               rx().length = chr;
               break;
             case 3:
               rx().length += chr << 8;
+              if (rx().length > 512) {
+                rxBegin();
+                rxState = (rxState_t) UBX_IDLE;
+              }
               chrCount = 0;
               rxState = (rxState_t) UBX_RECEIVING_DATA;
               
@@ -132,7 +135,7 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
           if (storage && (chrCount < storage->length))
             ((uint8_t *)storage)[ sizeof(msg_t)+chrCount ] = chr;
 
-parseField( chr );
+          parseField( chr );
 
           if (ack_same_as_sent) {
             if (((chrCount == 0) && (sent.msg_class != (msg_class_t)chr)) ||
@@ -337,11 +340,11 @@ bool ubloxGPS::parseField( char c )
 
     switch (rx().msg_class) {
 
-      case UBX_NAV:
+      case UBX_NAV: //=================================================
 //if (chrCount == 0) trace << F( " NAV ");
         switch (rx().msg_id) {
 
-          case UBX_NAV_STATUS:
+          case UBX_NAV_STATUS: //--------------------------------------
 //if (chrCount == 0) trace << F( "stat ");
 #ifdef UBLOX_PARSE_STATUS
             switch (chrCount) {
@@ -367,7 +370,7 @@ bool ubloxGPS::parseField( char c )
 #endif
             break;
 
-          case UBX_NAV_POSLLH:
+          case UBX_NAV_POSLLH: //--------------------------------------
 //if (chrCount == 0) trace << F( "velned ");
 #ifdef UBLOX_PARSE_POSLLH
             switch (chrCount) {
@@ -405,11 +408,38 @@ bool ubloxGPS::parseField( char c )
                 }
                 break;
 #endif
+
+#if defined( GPS_FIX_LAT_ERR ) | defined( GPS_FIX_LON_ERR )
+              case 20: case 21: case 22: case 23:
+                U1[ chrCount-20 ] = chr;
+                if (chrCount == 23) {
+                  uint16_t err_cm = U4/100;
+#ifdef GPS_FIX_LAT_ERR
+                  m_fix.lat_err_cm = err_cm;
+                  m_fix.valid.lat_err = true;
+#endif
+#ifdef GPS_FIX_LON_ERR
+                  m_fix.lon_err_cm = err_cm;
+                  m_fix.valid.lon_err = true;
+#endif
+                }
+                break;
+#endif
+
+#ifdef GPS_FIX_ALT_ERR
+              case 24: case 25: case 26: case 27:
+                U1[ chrCount-24 ] = chr;
+                if (chrCount == 27) {
+                  m_fix.alt_err_cm = U4/100;
+                  m_fix.valid.alt_err = true;
+                }
+                break;
+#endif
             }
 #endif
             break;
 
-          case UBX_NAV_VELNED:
+          case UBX_NAV_VELNED: //--------------------------------------
 //if (chrCount == 0) trace << F( "velned ");
 #ifdef UBLOX_PARSE_VELNED
             switch (chrCount) {
@@ -451,7 +481,7 @@ bool ubloxGPS::parseField( char c )
 #endif
             break;
 
-          case UBX_NAV_TIMEGPS:
+          case UBX_NAV_TIMEGPS: //--------------------------------------
 //if (chrCount == 0) trace << F( "timegps ");
 #ifdef UBLOX_PARSE_TIMEGPS
             switch (chrCount) {
@@ -465,7 +495,8 @@ bool ubloxGPS::parseField( char c )
                 break;
               case 11:
                 {
-                  ublox::nav_timegps_t::valid_t &v = *((ublox::nav_timegps_t::valid_t *) &chr);
+                  ublox::nav_timegps_t::valid_t &v =
+                    *((ublox::nav_timegps_t::valid_t *) &chr);
                   if (!v.leap_seconds)
                     GPSTime::leap_seconds = 0; // oops!
 //else trace << F("leap ") << GPSTime::leap_seconds << ' ';
@@ -486,7 +517,7 @@ bool ubloxGPS::parseField( char c )
 #endif
             break;
 
-          case UBX_NAV_TIMEUTC:
+          case UBX_NAV_TIMEUTC: //--------------------------------------
 //if (chrCount == 0) trace << F( " timeUTC ");
 #ifdef UBLOX_PARSE_TIMEUTC
 #if defined(GPS_FIX_TIME) | defined(GPS_FIX_DATE)
@@ -530,24 +561,68 @@ bool ubloxGPS::parseField( char c )
 #endif
             break;
 
+          case UBX_NAV_SVINFO: //--------------------------------------
+//if (chrCount == 0) trace << PSTR( "svinfo ");
+#ifdef UBLOX_PARSE_SVINFO
+            switch (chrCount) {
+
+#if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
+              case 0: case 1: case 2: case 3:
+                ok = parseTOW( chr );
+                break;
+#endif
+#ifdef GPS_FIX_SATELLITES
+              case 4:
+                m_fix.satellites = chr;
+                m_fix.valid.satellites = true;
+#ifdef NMEAGPS_PARSE_SATELLITES
+                sat_index = 0;
+                break;
+              default:
+                if ((chrCount >= 8) && (sat_index < MAX_SATELLITES)) {
+                  uint8_t i =
+                    (uint8_t) (chrCount - 8 - (12 * (uint16_t)sat_index));
+
+                  switch (i) {
+                    case 1: satellites[sat_index].id        = chr; break;
+#ifdef NMEAGPS_PARSE_SATELLITE_INFO
+                    case 0: satellites[sat_index].tracked   = (chr != 255); break;
+                    case 4: satellites[sat_index].snr       = chr; break;
+                    case 5: satellites[sat_index].elevation = chr; break;
+                    case 6: satellites[sat_index].azimuth   = chr; break;
+                    case 7:
+                      satellites[sat_index].azimuth += (chr << 8);
+                      break;
+#endif
+                    case 11: sat_index++; break;
+                  }
+                }
+#endif
+                break;
+#endif
+#endif
+            }
+            break;
+
           default:
             break;
         }
         break;
-      case UBX_RXM:
-      case UBX_INF:
-      case UBX_ACK:
-      case UBX_CFG:
+      case UBX_RXM: //=================================================
+      case UBX_INF: //=================================================
+      case UBX_ACK: //=================================================
+        break;
+      case UBX_CFG: //=================================================
         switch (rx().msg_id) {
-          case UBX_CFG_MSG:
+          case UBX_CFG_MSG: //--------------------------------------
 #ifdef UBLOX_PARSE_CFGMSG
 #endif
             break;
-          case UBX_CFG_RATE:
+          case UBX_CFG_RATE: //--------------------------------------
 #ifdef UBLOX_PARSE_CFGRATE
 #endif
             break;
-          case UBX_CFG_NAV5:
+          case UBX_CFG_NAV5: //--------------------------------------
 #ifdef UBLOX_PARSE_CFGNAV5
 #endif
             break;
@@ -555,7 +630,7 @@ bool ubloxGPS::parseField( char c )
             break;
         }
         break;
-      case UBX_MON:
+      case UBX_MON: //=================================================
         switch (rx().msg_id) {
           case UBX_MON_VER:
 #ifdef UBLOX_PARSE_MONVER
@@ -565,9 +640,9 @@ bool ubloxGPS::parseField( char c )
             break;
         }
         break;
-      case UBX_AID:
-      case UBX_TIM:
-      case UBX_NMEA:
+      case UBX_AID: //=================================================
+      case UBX_TIM: //=================================================
+      case UBX_NMEA: //=================================================
         break;
       default:
         break;

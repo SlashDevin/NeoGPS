@@ -51,22 +51,36 @@ static void traceIt()
 
   trace << fused;
 
-#ifdef NMEAGPS_PARSE_SATELLITES
-  trace << ',' << '[';
-  for (uint8_t i=0; i < fused.satellites; i++) {
-    trace << gps.satellites[i].id;
-#ifdef NMEAGPS_PARSE_GSV
-    trace << ' ' << 
-      gps.satellites[i].elevation << '/' << gps.satellites[i].azimuth;
-    trace << '@';
-    if (gps.satellites[i].tracked)
-      trace << gps.satellites[i].snr;
-    else
-      trace << '-';
+#if defined(NMEAGPS_PARSE_SATELLITES)
+  if (fused.valid.satellites) {
+    trace << ',' << '[';
+
+    uint8_t i_max = fused.satellites;
+    if (i_max > NMEAGPS::MAX_SATELLITES)
+      i_max = NMEAGPS::MAX_SATELLITES;
+
+    for (uint8_t i=0; i < i_max; i++) {
+      trace << gps.satellites[i].id;
+#if defined(NMEAGPS_PARSE_SATELLITE_INFO)
+      trace << ' ' << 
+        gps.satellites[i].elevation << '/' << gps.satellites[i].azimuth;
+      trace << '@';
+      if (gps.satellites[i].tracked)
+        trace << gps.satellites[i].snr;
+      else
+        trace << '-';
 #endif
-    trace << ',';
+      trace << ',';
+    }
+    trace << ']';
   }
-  trace << ']';
+
+#else
+
+#ifdef GPS_FIX_SATELLITES
+  trace << fused.satellites << ',';
+#endif
+
 #endif
 
   trace << '\n';
@@ -123,6 +137,7 @@ static void sentenceReceived()
   }
 
 } // sentenceReceived
+
 
 //--------------------------
 

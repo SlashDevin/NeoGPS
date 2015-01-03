@@ -41,6 +41,7 @@
 #define UBLOX_PARSE_TIMEUTC
 #define UBLOX_PARSE_POSLLH
 #define UBLOX_PARSE_VELNED
+#define UBLOX_PARSE_SVINFO
 //#define UBLOX_PARSE_CFGNAV5
 //#define UBLOX_PARSE_MONVER
  
@@ -146,6 +147,26 @@ public:
 
 protected:
 
+#if defined( GPS_FIX_LAT_ERR ) | defined( GPS_FIX_LON_ERR ) | \
+    defined( GPS_FIX_ALT_ERR )
+    // Well, crud.  The NAV_SVINFO message has 4-byte received errors in mm.
+    // These must be converted to the 2-byte gps_fix errors in cm.
+    // There's no easy way to perform this conversion as the bytes are
+    // being received, especially when the LSB is received first.
+    // Hold them here, then divide.
+    union {
+      uint32_t U4;
+      uint16_t U2[2];
+      uint8_t  U1[4];
+    };
+#endif
+
+    /*
+     * Some UBX messages can be larger than 256 bytes, so
+     * hide the 8-bit NMEAGPS::chrCount with this 16-bit version.
+     */
+    uint16_t chrCount;
+
     bool parseField( char chr );
 
     enum ubxState_t {
@@ -235,6 +256,7 @@ private:
       {
         msg_class = ublox::UBX_UNK;
         msg_id    = ublox::UBX_ID_UNK;
+        length    = 0;
         crc_a = 0;
         crc_b = 0;
       }
