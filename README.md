@@ -1,8 +1,9 @@
 NeoGPS
 ======
 
-This fully-configurable Arduino library uses _**minimal**_ RAM and CPU time, 
-requiring as few as _**10 bytes of RAM**_ and 1mS of CPU time per sentence.  
+This fully-configurable Arduino library uses _**minimal**_ RAM, PROGMEM and CPU time, 
+requiring as few as _**10 bytes of RAM**_, **866 bytes of PROGMEM**, and **less than 1mS of CPU time** per sentence.  
+
 It supports the following protocols and messages:
 
 ####NMEA 0183
@@ -71,24 +72,51 @@ gps_fix_t merged;
 merged |= gps_device.fix();
 ```
 
+Typical Configurations
+======================
+A few common configurations are defined as follows
+
+**Minimal**: no fix members, no messages (pulse-per-second only)
+
+**DTL**: date, time, lat/lon, GPRMC messsage only.
+
+**Nominal**: date, time, lat/lon, altitude, speed, heading, number of 
+satellites, HDOP, GPRMC and GPGGA messages.
+
+**Full**: Nominal plus VDOP, PDOP, lat/lon/alt errors, satellite array with satellite info, and all 8 messages.
+
+(**TinyGPS** uses the **Nominal** configuration.)
+
 RAM requirements
 =======
-As data is received from the device, various portions of a `fix` are modified.  In 
-fact, _**no buffering RAM is required**_.  Each character affects the internal state machine and may 
-also contribute to a data member (e.g., latitude).
+As data is received from the device, various portions of a `fix` are 
+modified.  In fact, _**no buffering RAM is required**_.  Each character 
+affects the internal state machine and may also contribute to a data member 
+(e.g., latitude). 
 
-The minimal `fix` configuration requires only 2 bytes, and the NMEA state machine requires 
-7 bytes, for a total of **10 bytes** (structure alignment may add 1 byte).
+The **Minimal** configuration requires only 2 bytes, and the NMEA state 
+machine requires 7 bytes, for a total of **10 bytes** (structure alignment 
+may add 1 byte). 
 
-A nominal `fix` configuration requires only 34 bytes, for a total of **41 bytes**.  For comparison, TinyGPS requires about 180 bytes (120 bytes for members plus about 60 bytes of string data), and TinyGPS++ requires about 240 bytes.
+The **DTL** configuration requires 18 bytes, for a total of **25 bytes**.
 
-The complete `fix` configuration requires 44 bytes, and the full NMEA message set configuration adds 130 bytes of satellite data, for a total of **174 bytes**.  For comparison, satellite tracking in TinyGPS++ requires over 1100 bytes.
+The **Nominal** configuration requires only 34 bytes, for a total of **41 
+bytes**.  For comparison, TinyGPS requires about 180 bytes (120 bytes for 
+members plus about 60 bytes of string data), and TinyGPS++ requires about 
+240 bytes.
+
+The **Full** configuration requires 44 bytes, and the full NMEA message set 
+configuration adds 130 bytes of satellite data, for a total of **174 
+bytes**.  For comparison, satellite tracking in TinyGPS++ requires over 1100 
+bytes.
 
 If your application only requires an accurate one pulse-per-second, you 
-can configure it to parse *no* sentence types and retain *no* data members.  Although the 
+can configure it to parse *no* sentence types and retain *no* data members. 
+This is the **Minimal** configuration.  Although the 
 `fix().status` can be checked, no valid flags are available.  Even 
-though no sentences are parsed and no data members are stored, the application will 
-still receive a `decoded` message type once per second:
+though no sentences are parsed and no data members are stored, the 
+application will  still receive a `decoded` message type once per second:
+
 ```
 while (uart1.available())
   if (gps.decode( uart1.getchar() )) {
@@ -126,7 +154,7 @@ conditionally compiled, which means they will not use any RAM, program space
 or CPU time.  The characters from those fields are simply skipped; they are 
 never copied into a buffer or processed.
 
-For comparison, the following sentences were parsed by **NeoGPS** and **TinyGPS** on a 16MHz Arduino Mega2560.
+For comparison, the following sentences were parsed by Nominal configurations of **NeoGPS** and **TinyGPS** on a 16MHz Arduino Mega2560.
 
 ```
 $GPGGA,092725.00,4717.11399,N,00833.91590,E,1,8,1.01,499.6,M,48.0,M,,0*5B
@@ -137,8 +165,21 @@ $GPRMC,083559.00,A,4717.11437,N,00833.91522,E,0.004,77.52,091202,,,A*57
 
 and **NeoGPS** takes 1106uS to completely parse a GPRMC sentence, and **TinyGPS** takes 1435uS.
  
-When configured to parse just date, time and location, **NeoGPS** takes 912uS to 
+The **DTL** configuration of **NeoGPS** takes 912uS to 
 completely parse a GPGGA sentence, and 971uS to completely parse a GPRMC sentence.
+
+Program Space requirements
+=======
+
+The **Minimal** configuration requires 866 bytes.
+
+The **DTL** configuration requires 2072 bytes.
+
+The **Nominal** configuration requires 2800 bytes.
+
+The **Full** configuration requires 3462 bytes.
+
+(All configuration numbers include 166 bytes PROGMEM.)
 
 Tradeoffs
 =========
