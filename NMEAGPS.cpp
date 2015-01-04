@@ -97,14 +97,16 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
 
   } else {
     switch (rxState) {
-      case NMEA_IDLE:
+      case NMEA_IDLE: //---------------------------
+          // Reject non-start characters
+
           res = DECODE_CHR_INVALID;
           nmeaMessage = NMEA_UNKNOWN;
-//trace << 'X' << formatHex(c >> 4) << formatHex(c);
           break;
 
-          // Wait until complete line is received
-      case NMEA_RECEIVING_DATA:
+      case NMEA_RECEIVING_DATA: //---------------------------
+          // Receive complete sentence
+
           if (c == '*') {   // Line finished, CRC follows
               rxState = NMEA_RECEIVING_CRC;
               chrCount = 0;
@@ -133,7 +135,6 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
                 }
 
               } else if (!parseField( c )) {
-//trace << PSTR("!pf @ ") << nmeaMessage << PSTR(":") << fieldIndex << PSTR("/") << chrCount << PSTR("'") << c << PSTR("'\n");
                 rxEnd( false );
               }
 
@@ -147,8 +148,7 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
           break;
           
           
-          // Receiving CRC characters
-      case NMEA_RECEIVING_CRC:
+      case NMEA_RECEIVING_CRC: //---------------------------
         {
           bool err;
           uint8_t nybble = parseHEX( c );
@@ -177,7 +177,7 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
 }
 
 /*
- * Sentence strings in PROGMEM
+ * NMEA Sentence strings
  */
 static const char gpgga[] __PROGMEM =  "GPGGA";
 static const char gpgll[] __PROGMEM =  "GPGLL";
@@ -212,10 +212,6 @@ const NMEAGPS::msg_table_t NMEAGPS::nmea_msg_table __PROGMEM =
 
 NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
 {
-//static char cmd[8];
-//cmd[chrCount] = c;
-//cmd[chrCount+1] = 0;
-//Serial.print( c );
   const msg_table_t *msgs = msg_table();
 
   for (;;) {
@@ -249,26 +245,25 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
           res = DECODE_CHR_OK;
           break;
         }
+
         if ((c == ',') && (rc == 0)) {
           // End of string and it still matches:  it's this one!
-//trace << PSTR(" -> ") << (uint8_t)entry << endl;
           res = DECODE_COMPLETED;
           break;
         }
-        // Mismatch, see if the next entry starts with the same characters.
+
+        // Mismatch, check another entry
         uint8_t next_msg = i+1;
         if (next_msg >= table_size) {
           // No more entries in this table.
-//Serial.print(cmd);
-//Serial.println( F(" -> xe") );
           break;
         }
+
+        //  See if the next entry starts with the same characters.
         const char *table_next = (const char *) pgm_read_word( &table[next_msg] );
         for (uint8_t j = 0; j < chrCount; j++)
           if (pgm_read_byte( &table_i[j] ) != pgm_read_byte( &table_next[j] )) {
             // Nope, a different start to this entry
-//Serial.print(cmd);
-//Serial.println( F(" -> ds") );
             break;
           }
         i = next_msg;
@@ -304,12 +299,12 @@ bool NMEAGPS::parseField(char chr)
         case NMEA_GGA:
 #ifdef NMEAGPS_PARSE_GGA
           switch (fieldIndex) {
-              CASE_TIME(1);
-              CASE_LOC(2);
-              CASE_FIX(6);
-              CASE_SAT(7);
-              CASE_HDOP(8);
-              CASE_ALT(9);
+              case 1: return parseTime( chr );
+              PARSE_LOC(2);
+              case 6: return parseFix( chr );
+              case 7: return parseSatellites( chr );
+              case 8: return parseHDOP( chr );
+              case 9: return parseAlt( chr );
           }
 #endif
           break;
@@ -317,10 +312,10 @@ bool NMEAGPS::parseField(char chr)
         case NMEA_GLL:
 #ifdef NMEAGPS_PARSE_GLL
           switch (fieldIndex) {
-              CASE_LOC(1);
-              CASE_TIME(5);
+              PARSE_LOC(1);
+              case 5: return parseTime( chr );
 //            case 6:  duplicate info
-              CASE_FIX(7);
+              case 7: return parseFix( chr );
           }
 #endif
           break;
@@ -341,9 +336,9 @@ bool NMEAGPS::parseField(char chr)
                 } else if (chr != ',')
                   m_fix.valid.status = false;
                 break;
-              CASE_PDOP(15);
-              CASE_HDOP(16);
-              CASE_VDOP(17);
+              case 15: return parsePDOP( chr );
+              case 16: return parseHDOP( chr );
+              case 17: return parseVDOP( chr );
 #ifdef NMEAGPS_PARSE_SATELLITES
 
               // It's not clear how this sentence relates to GSV.  GSA only
@@ -375,13 +370,11 @@ bool NMEAGPS::parseField(char chr)
 
         case NMEA_GST:
 #ifdef NMEAGPS_PARSE_GST
-//if ((fieldIndex == 1) && (chrCount == 0)) trace << PSTR("GST ");
-//trace << chr;
           switch (fieldIndex) {
-            CASE_TIME(1);
-            CASE_LAT_ERR(6);
-            CASE_LON_ERR(7);
-            CASE_ALT_ERR(8);
+            case 1: return parseTime( chr );
+            case 6: return parse_lat_err( chr );
+            case 7: return parse_lon_err( chr );
+            case 8: return parse_alt_err( chr );
           }
 #endif
           break;
@@ -389,18 +382,32 @@ bool NMEAGPS::parseField(char chr)
         case NMEA_GSV:
 #ifdef NMEAGPS_PARSE_GSV
           switch (fieldIndex) {
-              CASE_SV_MSG_NO(2);
-              CASE_SAT(3);
+              case 3: return parseSatellites( chr );
 #ifdef NMEAGPS_PARSE_SATELLITES
               case 1: break; // allows "default:" case for SV fields
+              case 2: // GSV message number (e.g., 2nd of n)
+                if (parseInt( sat_index, chr ) && (chr == ','))
+                  sat_index = (sat_index - 1) * 4;
+                break;
               default:
                 if (sat_index < MAX_SATELLITES) {
-//if ((fieldIndex % 4) == 0) trace << PSTR(" si ") << sat_index;
                   switch (fieldIndex % 4) {
-                    CASE_SV_id(0);
-                    CASE_SV_elev(1);
-                    CASE_SV_az(2);
-                    SV_snr(default);
+                    case 0: return parseInt( satellites[sat_index].id, chr );
+#ifdef NMEAGPS_PARSE_SATELLITE_INFO
+                    case 1: return parseInt( satellites[sat_index].elevation, chr );
+                    case 2: return parseInt( satellites[sat_index].azimuth, chr );
+                    case 3:
+                      if (chr == ',') {
+                        sat_index++;
+                        satellites[sat_index].tracked = (chrCount != 0);
+                      } else
+                        parseInt( satellites[sat_index].snr, chr );
+#else
+                    case 3:
+                      if (chr == ',')
+                        sat_index++;
+#endif
+                      break;
                   }
                 }
 #endif
@@ -411,13 +418,13 @@ bool NMEAGPS::parseField(char chr)
         case NMEA_RMC:
 #ifdef NMEAGPS_PARSE_RMC
           switch (fieldIndex) {
-              CASE_TIME(1);
-              CASE_FIX(2);
-              CASE_LOC(3);
-              CASE_SPEED(7);
-              CASE_HEADING(8);
-              CASE_DATE(9);
-              CASE_FIX(12);
+              case 1: return parseTime( chr );
+              case 2: return parseFix( chr );
+              PARSE_LOC(3);
+              case 7: return parseSpeed( chr );
+              case 8: return parseHeading( chr );
+              case 9: return parseDDMMYY( chr );
+              case 12: return parseFix( chr );
           }
 #endif
           break;
@@ -425,9 +432,9 @@ bool NMEAGPS::parseField(char chr)
         case NMEA_VTG:
 #ifdef NMEAGPS_PARSE_VTG
           switch (fieldIndex) {
-              CASE_HEADING(1);
-              CASE_SPEED(5);
-              CASE_FIX(9);
+              case 1: return parseHeading( chr );
+              case 5: return parseSpeed( chr );
+              case 9: return parseFix( chr );
           }
 #endif
           break;
@@ -435,7 +442,7 @@ bool NMEAGPS::parseField(char chr)
         case NMEA_ZDA:
 #ifdef NMEAGPS_PARSE_ZDA
           switch (fieldIndex) {
-            CASE_TIME(1);
+            case 1: return parseTime( chr );
 #ifdef GPS_FIX_DATE
             case 2: parseInt( m_fix.dateTime.Day , chr ); break;
             case 3: parseInt( m_fix.dateTime.Month, chr ); break;
@@ -450,19 +457,19 @@ bool NMEAGPS::parseField(char chr)
           break;
 
         default:
-            ok = false;
             break;
     }
 
     return ok;
 }
 
-#ifdef GPS_FIX_TIME
+//---------------------------------
 
 bool NMEAGPS::parseTime(char chr)
 {
   bool ok = true;
 
+#ifdef GPS_FIX_TIME
   switch (chrCount) {
       case 0: m_fix.dateTime.Hour    = (chr - '0')*10; break;
       case 1: m_fix.dateTime.Hour   += (chr - '0');    break;
@@ -480,16 +487,18 @@ bool NMEAGPS::parseTime(char chr)
           ok = false;
         break;
   }
+#endif
 
   return ok;
 }
-#endif
 
-#ifdef GPS_FIX_DATE
+//---------------------------------
 
 bool NMEAGPS::parseDDMMYY( char chr )
 {
   bool ok = true;
+
+#ifdef GPS_FIX_DATE
   switch (chrCount) {
     case 0: m_fix.dateTime.Day    = (chr - '0')*10; break;
     case 1: m_fix.dateTime.Day   += (chr - '0');    break;
@@ -505,10 +514,12 @@ bool NMEAGPS::parseDDMMYY( char chr )
         ok = false;
       break;
   }
+#endif
+
   return ok;
 }
 
-#endif
+//---------------------------------
 
 bool NMEAGPS::parseFix( char chr )
 {
@@ -534,6 +545,8 @@ bool NMEAGPS::parseFix( char chr )
 
   return ok;
 }
+
+//---------------------------------
 
 bool NMEAGPS::parseFloat( gps_fix::whole_frac & val, char chr, uint8_t max_decimal )
 {
@@ -564,6 +577,8 @@ bool NMEAGPS::parseFloat( gps_fix::whole_frac & val, char chr, uint8_t max_decim
   return true;
 }
 
+//---------------------------------
+
 bool NMEAGPS::parseFloat( uint16_t & val, char chr, uint8_t max_decimal )
 {
   if (chrCount == 0) {
@@ -580,7 +595,7 @@ bool NMEAGPS::parseFloat( uint16_t & val, char chr, uint8_t max_decimal )
   return true;
 }
 
-#ifdef GPS_FIX_LOCATION
+//---------------------------------
 
 inline uint8_t
 to_binary(uint8_t value)
@@ -592,6 +607,8 @@ to_binary(uint8_t value)
 
 bool NMEAGPS::parseDDDMM( int32_t & val, char chr )
 {
+#ifdef GPS_FIX_LOCATION
+
   // parse lat/lon dddmm.mmmm fields
 
   if (chrCount == 0) {
@@ -627,9 +644,131 @@ bool NMEAGPS::parseDDDMM( int32_t & val, char chr )
   } else if (decimal++ < 6) {
     val = val*10 + (chr - '0');
   }
+#endif
+
   return true;
 }
+
+//---------------------------------
+
+bool NMEAGPS::parseLat( char chr )
+{
+#ifdef GPS_FIX_LOCATION
+  return parseDDDMM( m_fix.lat, chr );
 #endif
+  return true;
+}
+
+bool NMEAGPS::parseNS( char chr )
+{
+#ifdef GPS_FIX_LOCATION
+  if (chr == 'S')
+    m_fix.lat = -m_fix.lat;
+#endif
+  return true;
+}
+
+bool NMEAGPS::parseLon( char chr )
+{
+#ifdef GPS_FIX_LOCATION
+  return parseDDDMM( m_fix.lon, chr );
+#endif
+  return true;
+}
+
+bool NMEAGPS::parseEW( char chr )
+{
+#ifdef GPS_FIX_LOCATION
+  if (chr == 'W')
+    m_fix.lon = -m_fix.lon;
+  m_fix.valid.location = true;
+#endif
+  return true;
+}
+
+//---------------------------------
+
+bool NMEAGPS::parseSpeed( char chr )
+{
+#ifdef GPS_FIX_SPEED
+  return m_fix.valid.speed = parseFloat( m_fix.spd, chr, 3 );
+#endif
+  return true;
+}
+
+bool NMEAGPS::parseHeading( char chr )
+{
+#ifdef GPS_FIX_HEADING
+  return m_fix.valid.heading = parseFloat( m_fix.hdg, chr, 2 );
+#endif
+  return true;
+}
+
+bool NMEAGPS::parseAlt(char chr )
+{
+#ifdef GPS_FIX_ALTITUDE
+  return m_fix.valid.altitude = parseFloat( m_fix.alt, chr, 2 );
+#endif
+  return true;
+}
+
+bool NMEAGPS::parseSatellites( char chr )
+{
+#ifdef GPS_FIX_SATELLITES
+  m_fix.valid.satellites = parseInt( m_fix.satellites, chr );
+#endif
+  return true;
+}
+
+bool NMEAGPS::parseHDOP( char chr )
+{
+#ifdef GPS_FIX_HDOP
+  m_fix.valid.hdop = parseFloat( m_fix.hdop, chr, 3 );
+#endif
+  return true;
+}
+
+bool NMEAGPS::parseVDOP( char chr )
+{
+#ifdef GPS_FIX_VDOP
+  m_fix.valid.vdop = parseFloat( m_fix.vdop, chr, 3 );
+#endif
+  return true;
+}
+
+bool NMEAGPS::parsePDOP( char chr )
+{
+#ifdef GPS_FIX_PDOP
+  m_fix.valid.pdop = parseFloat( m_fix.pdop, chr, 3 );
+#endif
+  return true;
+}
+
+bool NMEAGPS::parse_lat_err( char chr )
+{
+#ifdef GPS_FIX_lat_ERR
+  m_fix.valid.lat_err = parseFloat( m_fix.lat_err_cm, chr, 2 );
+#endif
+  return true;
+}
+
+bool NMEAGPS::parse_lon_err( char chr )
+{
+#ifdef GPS_FIX_lon_ERR
+  m_fix.valid.lon_err = parseFloat( m_fix.lon_err_cm, chr, 2 );
+#endif
+  return true;
+}
+
+bool NMEAGPS::parse_alt_err( char chr )
+{
+#ifdef GPS_FIX_alt_ERR
+  m_fix.valid.alt_err = parseFloat( m_fix.alt_err_cm, chr, 2 );
+#endif
+  return true;
+}
+
+//---------------------------------
 
 void NMEAGPS::poll( Stream *device, nmea_msg_t msg )
 {
@@ -685,25 +824,22 @@ void NMEAGPS::send( Stream *device, const char *msg )
   }
 }
 
+//---------------------------------
+
 void NMEAGPS::send_P( Stream *device, str_P msg )
 {
-//Serial.print("NMEAGPS::send \"");
   if (msg) {
     uint8_t crc = 0;
     const char *ptr = (const char *)msg;
     char chr = pgm_read_byte(ptr++);
-    if (chr && (chr != '$')) {
-//Serial.print( '$' );
+    if (chr && (chr != '$'))
       device->print('$');
-    }
     while (chr) {
       crc ^= chr;
-//Serial.print( chr );
       device->print( chr );
       chr = pgm_read_byte(ptr++);
     }
 
     send_trailer( device, crc );
   }
-//Serial.println( '\"' );
 }

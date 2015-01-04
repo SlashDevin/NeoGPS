@@ -31,14 +31,14 @@ bool ubloxNMEA::parseField(char chr)
               nmeaMessage = (nmea_msg_t) (nmeaMessage + chr - '0');
             break;
 #ifdef NMEAGPS_PARSE_PUBX_00
-          CASE_TIME(2);
-          CASE_LOC(3);
-          CASE_ALT(7);
+          case 2: return parseTime( chr );
+          PARSE_LOC(3);
+          case 7: return parseAlt( chr );
           case 8: ok = parseFix( chr ); break;
-          CASE_SPEED(11); // kph!
-          CASE_HEADING(12);
-          CASE_HDOP(15);
-          CASE_SAT(18);
+          case 11: return parseSpeed( chr ); // kph!
+          case 12: return parseHeading( chr );
+          case 15: return parseHDOP( chr );
+          case 18: return parseSatellites( chr );
 #endif
       }
       break;
@@ -46,8 +46,8 @@ bool ubloxNMEA::parseField(char chr)
     case PUBX_04:
 #ifdef NMEAGPS_PARSE_PUBX_04
       switch (fieldIndex) {
-          CASE_TIME(2);
-          CASE_DATE(3);
+          case 2: return parseTime( chr );
+          case 3: return parseDDMMYY( chr );
       }
 #endif
       break;

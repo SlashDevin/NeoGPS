@@ -33,7 +33,7 @@
  * DATE and TIME are somewhat coupled in that they share a single `time_t`,
  * but they have separate validity flags.
  *
- * See also note regarding the HDOP member, below.
+ * See also note regarding the DOP members, below.
  *
  */
 

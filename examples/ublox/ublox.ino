@@ -9,6 +9,11 @@
 
 #include "ubxGPS.h"
 
+#if defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
+// uncomment this to display just one pulse-per-day.
+//#define PULSE_PER_DAY
+#endif
+
 static uint32_t seconds = 0L;
 
 //--------------------------
@@ -93,11 +98,10 @@ public:
         bool ok = false;
 
         if (!ok && (nmeaMessage >= (nmea_msg_t)ubloxGPS::PUBX_00)) {
-//trace << F("n ") << (uint8_t) nmeaMessage << '\n';
           ok = true;
         }
+
         if (!ok && (rx().msg_class != ublox::UBX_UNK)) {
-//trace << F("u ") << (uint8_t) rx().msg_class << F("/") << (uint8_t) rx().msg_id << '\n';
           ok = true;
 
           // Use the STATUS message as a pulse-per-second
@@ -201,13 +205,10 @@ public:
                              (merged.dateTime.Year  != fix().dateTime.Year)));
 #else
               //  No date/time configured, so let's assume it's a new
-              //  interval if it a new STATUS message was received.
+              //  if the seconds have changed.
               newInterval = (seconds != last_sentence);
 #endif
-//trace << F("ps mvd ") << merged.valid.date << F("/") << fix().valid.date;
-//trace << F(", mvt ") << merged.valid.time << F("/") << fix().valid.time;
-//trace << merged.dateTime << F("/") << fix().dateTime;
-//trace << F(", ni = ") << newInterval << '\n';
+
               if (newInterval) {
 
                 //  Since we're into the next time interval, we throw away
@@ -236,7 +237,7 @@ public:
     {
       if ((state == RUNNING) && (last_trace != 0)) {
 
-#if !defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
+#if !defined(GPS_FIX_TIME) & !defined(PULSE_PER_DAY)
         trace << seconds << ',';
 #endif
 
@@ -265,14 +266,9 @@ public:
           }
           trace << ']';
         }
-#else
-#ifdef GPS_FIX_SATELLITES
-        trace << merged.satellites << ',';
-#endif
 #endif
 
         trace << '\n';
-
       }
 
       last_trace = seconds;

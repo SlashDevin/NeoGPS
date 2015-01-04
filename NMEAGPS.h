@@ -66,7 +66,7 @@ class Stream;
  * optionally, all the info for each satellite.
  */
 
-#define NMEAGPS_PARSE_SATELLITES
+//#define NMEAGPS_PARSE_SATELLITES
 //#define NMEAGPS_PARSE_SATELLITE_INFO
 
 #ifdef NMEAGPS_PARSE_SATELLITES
@@ -186,7 +186,7 @@ public:
     //  It will return false after a sentence's command and comma
     //  have been received (e.g., "$GPGGA,").
     //  If NMEAGPS processes characters in UART interrupts, /is_coherent/
-    //  could change at any time.
+    //  could change at any time (i.e., it would be /volatile/).
 
     bool is_coherent() const { return coherent; }
 
@@ -248,17 +248,18 @@ protected:
      * required.
      */
     struct msg_table_t {
-      uint8_t offset;
-      const msg_table_t *previous;
-      uint8_t size;
-      const char * const *table;
+      uint8_t             offset;  // nmea_msg_t enum starting value
+      const msg_table_t  *previous;
+      uint8_t             size;    // number of entries in table array
+      const char * const *table;   // array of NMEA sentence strings
     };
 
     static const char * const std_nmea[] __PROGMEM;
-    static const uint8_t std_nmea_size;
-    static const msg_table_t nmea_msg_table __PROGMEM;
+    static const uint8_t      std_nmea_size;
+    static const msg_table_t  nmea_msg_table __PROGMEM;
 
-    NMEAGPS_VIRTUAL const msg_table_t *msg_table() const { return &nmea_msg_table; };
+    NMEAGPS_VIRTUAL const msg_table_t *msg_table() const
+      { return &nmea_msg_table; };
 
     /*
      * Use the list of tables to recognize an NMEA sentence type.
@@ -271,120 +272,33 @@ protected:
     NMEAGPS_VIRTUAL bool parseField( char chr );
 
     /*
-     *  Helper macro for parsing a field in a message field switch statement.
-     */
-#define PARSE_FIELD(i,f) case i: return parse##f( chr );
-
-    /*
-     * Macros for parsing the primary field types into /fix/ members.
+     * Parse the primary NMEA field types into /fix/ members.
      */
 
-    // Optional TIME    -----------------------
-#ifdef GPS_FIX_TIME
-#define CASE_TIME(i) PARSE_FIELD(i,Time)
+    bool parseFix( char chr ); // aka STATUS or MODE
     bool parseTime( char chr );
-#else
-#define CASE_TIME(i)
-#endif
-
-    // Optional DATE    -----------------------
-#ifdef GPS_FIX_DATE
-#define CASE_DATE(i) PARSE_FIELD(i,DDMMYY)
     bool parseDDMMYY( char chr );
-#else
-#define CASE_DATE(i)
-#endif
+    bool parseLat( char chr );
+    bool parseNS( char chr );
+    bool parseLon( char chr );
+    bool parseEW( char chr );
+    bool parseSpeed( char chr );
+    bool parseHeading( char chr );
+    bool parseAlt(char chr );
+    bool parseHDOP( char chr );
+    bool parseVDOP( char chr );
+    bool parsePDOP( char chr );
+    bool parse_lat_err( char chr );
+    bool parse_lon_err( char chr );
+    bool parse_alt_err( char chr );
+    bool parseSatellites( char chr );
 
-    // Required STATUS    -----------------------
-#define CASE_FIX(i) PARSE_FIELD(i,Fix)
-    bool parseFix( char chr );
-
-    // Optional LOCATION    -----------------------
-#ifdef GPS_FIX_LOCATION
-#define CASE_LOC(i) PARSE_FIELD(i,Lat) \
+    // Helper macro for parsing the 4 consecutive fields of a location
+#define PARSE_FIELD(i,f) case i: return parse##f( chr );
+#define PARSE_LOC(i) PARSE_FIELD(i,Lat) \
 PARSE_FIELD(i+1,NS); \
 PARSE_FIELD(i+2,Lon); \
 PARSE_FIELD(i+3,EW);
-
-    bool parseDDDMM( int32_t & val, char chr );
-
-    bool parseLat( char chr )
-    {
-      return parseDDDMM( m_fix.lat, chr );
-    }
-
-    bool parseNS( char chr )
-    {
-      if (chr == 'S')
-        m_fix.lat = -m_fix.lat;
-      return true;
-    }
-
-    bool parseLon( char chr )
-    {
-      return parseDDDMM( m_fix.lon, chr );
-    }
-
-    bool parseEW( char chr )
-    {
-      if (chr == 'W')
-        m_fix.lon = -m_fix.lon;
-      m_fix.valid.location = true;
-      return true;
-    }
-#else
-#define CASE_LOC(i)
-#endif
-
-    // Optional SPEED    -----------------------
-#ifdef GPS_FIX_SPEED
-#define CASE_SPEED(i) PARSE_FIELD(i,Speed)
-
-    bool parseSpeed( char chr )
-    {
-      return m_fix.valid.speed = parseFloat( m_fix.spd, chr, 3 );
-    }
-#else
-#define CASE_SPEED(i)
-#endif
-
-    // Optional HEADING    -----------------------
-#ifdef GPS_FIX_HEADING
-#define CASE_HEADING(i) PARSE_FIELD(i,Heading)
-
-    bool parseHeading( char chr )
-    {
-      return m_fix.valid.heading = parseFloat( m_fix.hdg, chr, 2 );
-    }
-#else
-#define CASE_HEADING(i)
-#endif
-
-    // Optional ALTITUDE    -----------------------
-#ifdef GPS_FIX_ALTITUDE
-#define CASE_ALT(i) PARSE_FIELD(i,Alt)
-
-    bool parseAlt(char chr )
-    {
-      return m_fix.valid.altitude = parseFloat( m_fix.alt, chr, 2 );
-    }
-#else
-#define CASE_ALT(i)
-#endif
-
-    // Optional number of SATELLITES    -----------------------
-#ifdef GPS_FIX_SATELLITES
-#define CASE_SAT(i) PARSE_FIELD(i,Satellites)
-
-    bool parseSatellites( char chr )
-    {
-      m_fix.valid.satellites = parseInt( m_fix.satellites, chr );
-      return true;
-    }
-
-#else
-#define CASE_SAT(i)
-#endif
 
     // Optional SATELLITE VIEW array    -----------------------
 #ifdef NMEAGPS_PARSE_SATELLITES
@@ -408,92 +322,16 @@ protected:
 
 #endif
 
-
-    // Optional Horizontal Dilution of Precision    -----------------------
-#ifdef GPS_FIX_HDOP
-#define CASE_HDOP(i) PARSE_FIELD(i,HDOP)
-
-    bool parseHDOP( char chr )
-    {
-      m_fix.valid.hdop = parseFloat( m_fix.hdop, chr, 3 );
-      return true;
-    }
-#else
-#define CASE_HDOP(i)
-#endif
-
-    // Optional Vertical Dilution of Precision    -----------------------
-#ifdef GPS_FIX_VDOP
-#define CASE_VDOP(i) PARSE_FIELD(i,VDOP)
-
-    bool parseVDOP( char chr )
-    {
-      m_fix.valid.vdop = parseFloat( m_fix.vdop, chr, 3 );
-      return true;
-    }
-#else
-#define CASE_VDOP(i)
-#endif
-
-    // Optional Position Dilution of Precision    -----------------------
-#ifdef GPS_FIX_PDOP
-#define CASE_PDOP(i) PARSE_FIELD(i,PDOP)
-
-    bool parsePDOP( char chr )
-    {
-      m_fix.valid.pdop = parseFloat( m_fix.pdop, chr, 3 );
-      return true;
-    }
-#else
-#define CASE_PDOP(i)
-#endif
-
-    // Optional Latitude error    -----------------------
-#ifdef GPS_FIX_LAT_ERR
-#define CASE_LAT_ERR(i) PARSE_FIELD(i,_lat_err)
-
-    bool parse_lat_err( char chr )
-    {
-      m_fix.valid.lat_err = parseFloat( m_fix.lat_err_cm, chr, 2 );
-      return true;
-    }
-#else
-#define CASE_LAT_ERR(i)
-#endif
-
-    // Optional Longitude error    -----------------------
-#ifdef GPS_FIX_LON_ERR
-#define CASE_LON_ERR(i) PARSE_FIELD(i,_lon_err)
-
-    bool parse_lon_err( char chr )
-    {
-      m_fix.valid.lon_err = parseFloat( m_fix.lon_err_cm, chr, 2 );
-      return true;
-    }
-#else
-#define CASE_LON_ERR(i)
-#endif
-
-    // Optional Altitude error    -----------------------
-#ifdef GPS_FIX_ALT_ERR
-#define CASE_ALT_ERR(i) PARSE_FIELD(i,_alt_err)
-
-    bool parse_alt_err( char chr )
-    {
-      m_fix.valid.alt_err = parseFloat( m_fix.alt_err_cm, chr, 2 );
-      return true;
-    }
-#else
-#define CASE_ALT_ERR(i)
-#endif
-
-    // Helper method for parsing floating-point numbers into a /whole_frac/
+    // Parse floating-point numbers into a /whole_frac/
     bool parseFloat( gps_fix::whole_frac & val, char chr, uint8_t max_decimal );
 
-    // Helper method for parsing floating-point numbers into a uint16_t
+    // Parse floating-point numbers into a uint16_t
     bool parseFloat( uint16_t & val, char chr, uint8_t max_decimal );
 
-    // Helper method for parsing integers
+    // Parse NMEA lat/lon dddmm.mmmm degrees
+    bool parseDDDMM( int32_t & val, char chr );
+
+    // Parse integer into 8-bit int
     bool parseInt( uint8_t &val, uint8_t chr )
     {
       bool is_comma = (chr == ',');
@@ -506,6 +344,7 @@ protected:
       return true;
     }
 
+    // Parse integer into 16-bit int
     bool parseInt( uint16_t &val, uint8_t chr )
     {
       bool is_comma = (chr == ',');

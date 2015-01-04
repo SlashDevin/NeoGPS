@@ -8,9 +8,7 @@
 #include "NMEAGPS.h"
 #include "Streamers.h"
 
-#if !defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
 static uint32_t seconds = 0L;
-#endif
 
 static NMEAGPS gps;
 
@@ -18,7 +16,7 @@ static NMEAGPS gps;
 
 static void sentenceReceived()
 {
-#if !defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
+#if !defined(GPS_FIX_TIME) & !defined(GPS_FIX_DATE)
   //  Date/Time not enabled, just output the interval number
   trace << seconds << ',';
 #endif
@@ -48,13 +46,6 @@ static void sentenceReceived()
     }
     trace << ']';
   }
-
-#else
-
-#ifdef GPS_FIX_SATELLITES
-  trace << gps.fix().satellites << ',';
-#endif
-
 #endif
 
   trace << '\n';
@@ -93,10 +84,9 @@ void loop()
 
       if (gps.nmeaMessage == NMEAGPS::NMEA_RMC) {
         sentenceReceived();
-#if !defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
-        //  No date/time fields enabled, use received GPRMC sentence as a pulse
+
+        //  Use received GPRMC sentence as a pulse
         seconds++;
-#endif
       }
     }
 }

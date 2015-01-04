@@ -102,7 +102,7 @@ void setup()
   uint8_t validGGA_len = 0;
 
   // Insert a ' ' at each position of the test sentence
-  uint16_t insert_at=1;
+  uint8_t insert_at=1;
   do {
     const char *ptr = validGGA;
     uint8_t j = 0;
@@ -135,7 +135,7 @@ void setup()
   passed++;
 
   // Drop one character from each position in example sentence
-  for (uint16_t i=0; i < validGGA_len-3; i++) {
+  for (uint8_t i=0; i < validGGA_len-3; i++) {
     const char *ptr = validGGA;
     uint8_t j = 0;
     char dropped = 0;
@@ -157,7 +157,7 @@ void setup()
   passed++;
 
   // Mangle one character from each position in example sentence
-  for (uint16_t i=0; i < validGGA_len-3; i++) {
+  for (uint8_t i=0; i < validGGA_len-3; i++) {
     const char *ptr = validGGA;
     uint8_t j = 0;
     char replaced = 0;

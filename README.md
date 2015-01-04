@@ -2,7 +2,8 @@ NeoGPS
 ======
 
 This fully-configurable Arduino library uses _**minimal**_ RAM and CPU time, 
-requiring as few as _**10 bytes of RAM**_.  It supports the following protocols and messages:
+requiring as few as _**10 bytes of RAM**_ and 1mS of CPU time per sentence.  
+It supports the following protocols and messages:
 
 ####NMEA 0183
 * GPGGA - GPS system fix data
@@ -98,6 +99,46 @@ while (uart1.available())
 
 The `ubloxGPS` derived class adds 20 bytes to handle the more-complicated protocol, 
 plus 5 static bytes for converting GPS time and Time Of Week to UTC.
+
+Performance
+===========
+
+####**NeoGPS** is **50% faster _or more_**.
+
+Most libraries use extra buffers to accumulate parts of the sentence so they 
+can be parsed all at once.  For example, an extra field buffer may hold on 
+to all the characters between commas.  That buffer is then parsed into a 
+single data item, like `heading`.  Some libraries even hold on to the 
+*entire* sentence before attempting to parse it.  In addition to increasing 
+the RAM requirements, this requires **extra CPU time** to copy the bytes and 
+index through them... again.
+ 
+**NeoGPS** parses each character immediately into the data item.  When the 
+delimiting comma is received, the data item has been fully computed *in 
+place* and is marked as valid.
+
+Most libraries parse all fields of their selected sentences.  Although most 
+people use GPS for obtaining lat/long, some need only time, or even just one 
+pulse-per-second.
+
+**NeoGPS** configures each item separately.  Disabled items are 
+conditionally compiled, which means they will not use any RAM, program space 
+or CPU time.  The characters from those fields are simply skipped; they are 
+never copied into a buffer or processed.
+
+For comparison, the following sentences were parsed by **NeoGPS** and **TinyGPS** on a 16MHz Arduino Mega2560.
+
+```
+$GPGGA,092725.00,4717.11399,N,00833.91590,E,1,8,1.01,499.6,M,48.0,M,,0*5B
+$GPRMC,083559.00,A,4717.11437,N,00833.91522,E,0.004,77.52,091202,,,A*57
+```
+
+**NeoGPS** takes 1074uS to completely parse a GPGGA sentence, and **TinyGPS** takes 1448uS.
+
+and **NeoGPS** takes 1106uS to completely parse a GPRMC sentence, and **TinyGPS** takes 1435uS.
+ 
+When configured to parse just date, time and location, **CosaGPS** takes 912uS to 
+completely parse a GPGGA sentence, and 971uS to completely parse a GPRMC sentence.
 
 Tradeoffs
 =========

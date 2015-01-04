@@ -23,9 +23,12 @@
 
 #endif
 
-#if !defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
-static uint32_t seconds = 0L;
+#if defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
+// uncomment this to display just one pulse-per-day.
+//#define PULSE_PER_DAY
 #endif
+
+static uint32_t seconds = 0L;
 
 static NMEAGPS gps;
 
@@ -35,7 +38,7 @@ static gps_fix fused;
 
 static void traceIt()
 {
-#if !defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
+#if !defined(GPS_FIX_TIME) & !defined(PULSE_PER_DAY)
   //  Date/Time not enabled, just output the interval number
   trace << seconds << ',';
 #endif
@@ -65,13 +68,6 @@ static void traceIt()
     }
     trace << ']';
   }
-
-#else
-
-#ifdef GPS_FIX_SATELLITES
-  trace << fused.satellites << ',';
-#endif
-
 #endif
 
   trace << '\n';
@@ -92,7 +88,7 @@ static void sentenceReceived()
                  (fused.dateTime.Second != gps.fix().dateTime.Second) ||
                  (fused.dateTime.Minute != gps.fix().dateTime.Minute) ||
                  (fused.dateTime.Hour   != gps.fix().dateTime.Hour)));
-#elif defined(GPS_FIX_DATE)
+#elif defined(PULSE_PER_DAY)
   newInterval = (gps.fix().valid.date &&
                 (!fused.valid.date ||
                  (fused.dateTime.Day   != gps.fix().dateTime.Day) ||
@@ -100,17 +96,12 @@ static void sentenceReceived()
                  (fused.dateTime.Year  != gps.fix().dateTime.Year)));
 #else
   //  No date/time configured, so let's assume it's a new interval
-  //  if it has been a while since the last sentence was received.
+  //  if the seconds have changed.
   static uint32_t last_sentence = 0L;
   
   newInterval = (seconds != last_sentence);
   last_sentence = seconds;
 #endif
-//trace << PSTR("ps mvd ") << fused.valid.date << PSTR("/") << gps.fix().valid.date;
-//trace << PSTR(", mvt ") << fused.valid.time << PSTR("/") << gps.fix().valid.time;
-//trace << fused.dateTime << PSTR("/") << gps.fix().dateTime;
-//trace.print( F("ni = ") ); trace << newInterval << '\n';
-//trace << 'v' << gps.fix().valid.as_byte << '\n';
 
   if (newInterval) {
 
@@ -152,21 +143,12 @@ void loop()
 {
   while (Serial1.available())
     if (gps.decode( Serial1.read() ) == NMEAGPS::DECODE_COMPLETED) {
-//      trace << ((uint8_t) gps.nmeaMessage) << ' ';
 
       // All enabled sentence types will be merged into one fix
       sentenceReceived();
 
-#if !defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
-
-// Make sure that the only sentence we care about is enabled
-#ifndef NMEAGPS_PARSE_RMC
-#error NMEAGPS_PARSE_RMC must be defined in NMEAGPS.h!
-#endif
       if (gps.nmeaMessage == NMEAGPS::NMEA_RMC)
-        //  No date/time fields enabled, use received GPRMC sentence as a pulse
+        //  Use received GPRMC sentence as a pulse
         seconds++;
-#endif
-
     }
 }
