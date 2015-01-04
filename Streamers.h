@@ -5,7 +5,15 @@
 
 #include "Time.h"
 
-extern Stream & trace;
+extern Stream & trace; // Forward declaration of debug output device
+
+// Note:
+//
+// If you use the trace object for debug print statements, you will also
+// need a definition somewhere, preferably in your .INO.  For example,
+//
+//   Stream & trace = Serial;  // trace goes to Serial
+//
 
 extern Stream & operator <<( Stream & outs, const bool b );
 extern Stream & operator <<( Stream & outs, const char c );

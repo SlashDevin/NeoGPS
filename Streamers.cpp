@@ -1,7 +1,5 @@
 #include "Streamers.h"
 
-Stream & trace = Serial;
-
 Stream& operator <<( Stream &outs, const bool b )
   { outs.print( b ? 't' : 'f' ); return outs; }
 

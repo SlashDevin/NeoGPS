@@ -7,6 +7,9 @@
 
 #include "Streamers.h"
 
+// Set this to your debug output device.
+Stream & trace = Serial;
+
 #include "ubxNMEA.h"
 
 #if !defined( NMEAGPS_PARSE_GGA) & !defined( NMEAGPS_PARSE_GLL) & \

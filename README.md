@@ -42,7 +42,10 @@ In an attempt to be reusable in a variety of different programming styles, this 
 Data Model
 ==========
 Rather than holding onto individual fields, the concept of a **fix** is used to group data members of the GPS acquisition.
-This also facilitates the merging of separately received packets into a coherent position.  The members of `gps_fix` include 
+This also facilitates the merging of separately received packets into a coherent position.
+
+The members of `gps_fix` include 
+
 * fix status
 * date
 * time

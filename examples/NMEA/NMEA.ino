@@ -8,6 +8,9 @@
 #include "NMEAGPS.h"
 #include "Streamers.h"
 
+// Set this to your debug output device.
+Stream & trace = Serial;
+
 static uint32_t seconds = 0L;
 
 static NMEAGPS gps;

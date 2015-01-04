@@ -8,6 +8,9 @@
 #include "NMEAGPS.h"
 #include "Streamers.h"
 
+// Set this to your debug output device.
+Stream & trace = Serial;
+
 /*
  * Make sure gpsfix.h and NMEAGPS.h are configured properly.
  */

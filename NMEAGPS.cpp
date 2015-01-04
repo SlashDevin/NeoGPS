@@ -18,7 +18,7 @@
 
 #include "NMEAGPS.h"
 
-#include <HardwareSerial.h>
+#include <Stream.h>
 
 #ifndef CR
 #define CR ((char)13)
@@ -274,8 +274,6 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
     if (res == DECODE_CHR_INVALID) {
       msgs = (const msg_table_t *) pgm_read_word( &msgs->previous );
       if (msgs) {
-//Serial.print('^');
-//trace << '^'; // << hex << msgs << '=' << hex << &nmea_msg_table << ' ';
         // Try the current character in the previous table
         continue;
       } // else

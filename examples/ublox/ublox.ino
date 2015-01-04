@@ -7,6 +7,9 @@
 
 #include "Streamers.h"
 
+// Set this to your debug output device.
+Stream & trace = Serial;
+
 #include "ubxGPS.h"
 
 #if defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)

@@ -14,6 +14,9 @@
 
 #include "Streamers.h"
 
+// Set this to your debug output device.
+Stream & trace = Serial;
+
 #include "NMEAGPS.h"
 
 /*
