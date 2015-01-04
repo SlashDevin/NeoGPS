@@ -128,6 +128,19 @@ while (uart1.available())
 The `ubloxGPS` derived class adds 20 bytes to handle the more-complicated protocol, 
 plus 5 static bytes for converting GPS time and Time Of Week to UTC.
 
+Program Space requirements
+=======
+
+The **Minimal** configuration requires 866 bytes.
+
+The **DTL** configuration requires 2072 bytes.
+
+The **Nominal** configuration requires 2800 bytes.  TinyGPS uses about 2400 bytes.
+
+The **Full** configuration requires 3462 bytes.
+
+(All configuration numbers include 166 bytes PROGMEM.)
+
 Performance
 ===========
 
@@ -163,23 +176,10 @@ $GPRMC,083559.00,A,4717.11437,N,00833.91522,E,0.004,77.52,091202,,,A*57
 
 **NeoGPS** takes 1074uS to completely parse a GPGGA sentence, and **TinyGPS** takes 1448uS.
 
-and **NeoGPS** takes 1106uS to completely parse a GPRMC sentence, and **TinyGPS** takes 1435uS.
+**NeoGPS** takes 1106uS to completely parse a GPRMC sentence, and **TinyGPS** takes 1435uS.
  
 The **DTL** configuration of **NeoGPS** takes 912uS to 
 completely parse a GPGGA sentence, and 971uS to completely parse a GPRMC sentence.
-
-Program Space requirements
-=======
-
-The **Minimal** configuration requires 866 bytes.
-
-The **DTL** configuration requires 2072 bytes.
-
-The **Nominal** configuration requires 2800 bytes.  TinyGPS uses about 2400 bytes.
-
-The **Full** configuration requires 3462 bytes.
-
-(All configuration numbers include 166 bytes PROGMEM.)
 
 Tradeoffs
 =========
@@ -191,8 +191,8 @@ There's a price for everything, hehe...
 In general, you should wait to access the fix until after the entire sentence has been parsed.  Most of the examples simply `decode` until a sentence is COMPLETED, then do all their work with `fix`.  See `loop()` in [NMEA.ino](examples/NMEA.ino). 
 Member function `is_coherent()` can also be used to determine when it is safe.
 
-If you need to access the fix at any time, you will have to double-buffer the fix.  (See also NMEAGPS.h comments regarding a
-`safe_fix`.)  Also, data errors can cause invalid field values to be set before the CRC is fully computed.  The CRC will
+If you need to access the fix at any time, you will have to double-buffer the fix: simply copy the `fix` when it is safe to do so.  (See NMEAGPS.h comments regarding a
+`safe_fix`.)  Also, received data errors can cause invalid field values to be set *before* the CRC is fully computed.  The CRC will
 catch most of those, and the fix members will then be marked as invalid.
 
 ####Configurability means that the code is littered with #ifdef sections.
@@ -206,7 +206,7 @@ Before accessing a part, you must check its `valid` flag.  Fortunately, this add
 
 ####Correlating timestamps for coherency means extra date/time comparisons for each sentence before it is fused.
 
-See NMEAfused.ino for code that determines when a new time interval has been entered.
+This is optional: compare NMEA.ino and NMEAfused.ino to see code that determines when a new time interval has been entered.
 
 ####Full C++ OO implementation is more advanced than most Arduino libraries.
 
@@ -215,7 +215,7 @@ You've been warned!  ;)
 ####"fast, good, cheap... pick two."
 
 Although most of the RAM reduction is due to eliminating buffers, some of it is from trading RAM
-for additional code.  And, as I mentioned, the readabilty (i.e., goodness) suffers from its configurability.
+for additional code (see **Nominal** Program Space above).  And, as I mentioned, the readabilty (i.e., goodness) suffers from its configurability.
 
 Examples
 ======
