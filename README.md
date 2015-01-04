@@ -137,40 +137,41 @@ $GPRMC,083559.00,A,4717.11437,N,00833.91522,E,0.004,77.52,091202,,,A*57
 
 and **NeoGPS** takes 1106uS to completely parse a GPRMC sentence, and **TinyGPS** takes 1435uS.
  
-When configured to parse just date, time and location, **CosaGPS** takes 912uS to 
+When configured to parse just date, time and location, **NeoGPS** takes 912uS to 
 completely parse a GPGGA sentence, and 971uS to completely parse a GPRMC sentence.
 
 Tradeoffs
 =========
 
 There's a price for everything, hehe...
-* Parsing without buffers, or *in place*, means that you must be more careful about when you access data items.
 
-In general, you should wait to access the fix until after the entire sentence has been parsed (See loop() in NMEA.ino). 
+####Parsing without buffers, or *in place*, means that you must be more careful about when you access data items.
+
+In general, you should wait to access the fix until after the entire sentence has been parsed.  Most of the examples simply `decode` until a sentence is COMPLETED, then do all their work with `fix`.  See `loop()` in [NMEA.ino](examples/NMEA.ino). 
 Member function `is_coherent()` can also be used to determine when it is safe.
 
-If you need to access the fix at any time, you will have to double-buffer the fix.  (See NMEAGPS.h comments regarding a
+If you need to access the fix at any time, you will have to double-buffer the fix.  (See also NMEAGPS.h comments regarding a
 `safe_fix`.)  Also, data errors can cause invalid field values to be set before the CRC is fully computed.  The CRC will
 catch most of those, and the fix members will then be marked as invalid.
 
-* Configurability means that the code is littered with #ifdef sections.
+####Configurability means that the code is littered with #ifdef sections.
 
 I've tried to increase white space and organization to make it more readable, but let's be honest... 
 conditional compilation is ugly.
 
-* Accumulating parts of a fix into group means knowing which parts are valid.
+####Accumulating parts of a fix into group means knowing which parts are valid.
 
 Before accessing a part, you must check its `valid` flag.  Fortunately, this adds only one bit per member.  See GPSfix.cpp for an example of accessing every data member.
 
-* Correlating timestamps for coherency means extra date/time comparisons for each sentence before it is fused.
+####Correlating timestamps for coherency means extra date/time comparisons for each sentence before it is fused.
 
 See NMEAfused.ino for code that determines when a new time interval has been entered.
 
-* Full C++ OO implementation is more advanced than most Arduino libraries.
+####Full C++ OO implementation is more advanced than most Arduino libraries.
 
 You've been warned!  ;)
 
-* "fast, good, cheap... pick two."
+####"fast, good, cheap... pick two."
 
 Although most of the RAM reduction is due to eliminating buffers, some of it is from trading RAM
 for additional code.  And, as I mentioned, the readabilty (i.e., goodness) suffers from its configurability.
