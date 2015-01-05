@@ -36,6 +36,7 @@ In an attempt to be reusable in a variety of different programming styles, this 
 * configurable message sets, including hooks for implementing proprietary NMEA messages
 * configurable message fields
 * multiple protocols from same device
+* any kind of input stream (Serial, SoftwareSerial, PROGMEM arrays, or any other source of bytes)
 
 (This is the plain Arduino version of the [CosaGPS](https://github.com/SlashDevin/CosaGPS) library for [Cosa](https://github.com/mikaelpatel/Cosa).)
 
@@ -224,12 +225,12 @@ Examples
 ======
 Several programs are provided to demonstrate how to use the classes in these different styles:
 
-* [NMEA](examples/NMEA.ino) - sync, polled, not fused, standard NMEA only
-* [NMEAblink](examples/NMEAmin.ino) - sync, polled, not fused, standard NMEA only, minimal example, only blinks LED
-* [NMEAfused](examplesNMEAfused.ino) - sync, polled, fused, standard NMEA only
-* [PUBX](examples/PUBX.ino) - sync, polled, fused, standard NMEA + ublox proprietary NMEA
-* [ublox](examples/ublox.ino) - sync, polled, fused, ublox protocol
-* [NMEAtest.ino](examples/NMEAtest.ino) - sync, polled, not fused, standard NMEA only (This is a self-test program.  Various strings are passed to `decode` and the expected pass or fail results are displayed.  No GPS device is required.)
+* [NMEA](examples/NMEA/NMEA.ino) - sync, polled, not fused, standard NMEA only
+* [NMEAblink](examples/NMEAblink/NMEAblink.ino) - sync, polled, not fused, standard NMEA only, minimal example, only blinks LED
+* [NMEAfused](examples/NMEAfused/NMEAfused.ino) - sync, polled, fused, standard NMEA only
+* [PUBX](examples/PUBX/PUBX.ino) - sync, polled, fused, standard NMEA + ublox proprietary NMEA
+* [ublox](examples/ublox/ublox.ino) - sync, polled, fused, ublox protocol
+* [NMEAtest.ino](examples/NMEAtest/NMEAtest.ino) - sync, polled, not fused, standard NMEA only (This is a self-test program.  Various strings are passed to `decode` and the expected pass or fail results are displayed.  No GPS device is required; the bytes are streamed from PROGMEM character arrays.)
 
 Preprocessor symbol `USE_FLOAT` can be used in [GPSfix.cpp](GPSfix.cpp) to select integer or floating-point output.
 
