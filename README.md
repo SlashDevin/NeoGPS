@@ -231,9 +231,31 @@ Several programs are provided to demonstrate how to use the classes in these dif
 * [NMEAcoherent](examples/NMEAcoherent/NMEAcoherent.ino) - sync, polled, coherent, standard NMEA only
 * [PUBX](examples/PUBX/PUBX.ino) - sync, polled, coherent, standard NMEA + ublox proprietary NMEA
 * [ublox](examples/ublox/ublox.ino) - sync, polled, coherent, ublox protocol
-* [NMEAtest.ino](examples/NMEAtest/NMEAtest.ino) - sync, polled, not fused, standard NMEA only (This is a self-test program.  Various strings are passed to `decode` and the expected pass or fail results are displayed.  No GPS device is required; the bytes are streamed from PROGMEM character arrays.)
 
 Preprocessor symbol `USE_FLOAT` can be used in [GPSfix.cpp](GPSfix.cpp) to select integer or floating-point output.
+
+A self-test test program is also provided:
+
+* [NMEAtest.ino](examples/NMEAtest/NMEAtest.ino) - sync, polled, not fused, standard NMEA only
+
+No GPS device is required; the bytes are streamed from PROGMEM character arrays.  Various strings are passed to `decode` and the expected pass or fail results are displayed.  If **NeoGPS** is correctly configured, you should see this on your SerialMonitor:
+
+```
+NMEA test: started
+fix object size = 34
+NMEAGPS object size = 43
+Test string length = 75
+PASSED 6 tests.
+------ Samples ------
+Input:
+  $GPGGA,092725.00,4717.11399,N,00833.91590,E,1,8,1.01,499.6,M,48.0,M,,0*5B
+Results:
+  3,1970-00-00 09:27:25.00,472852332,85652650,,,49960,8,1010,
+Input:
+  $GPRMC,092725.00,A,4717.11437,N,00833.91522,E,0.004,77.52,091202,,,A*5E
+Results:
+  3,2002-12-09 09:27:25.00,472852395,85652537,7752,4,,,,
+```
 
 Acknowledgements
 ==========
