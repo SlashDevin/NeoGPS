@@ -44,7 +44,7 @@
 #define GPS_FIX_SPEED
 #define GPS_FIX_HEADING
 #define GPS_FIX_SATELLITES
-//#define GPS_FIX_HDOP
+#define GPS_FIX_HDOP
 //#define GPS_FIX_VDOP
 //#define GPS_FIX_PDOP
 //#define GPS_FIX_LAT_ERR

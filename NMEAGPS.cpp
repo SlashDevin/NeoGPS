@@ -788,8 +788,7 @@ void NMEAGPS::poll( Stream *device, nmea_msg_t msg )
     send_P( device, (str_P) pgm_read_word(&poll_msgs[msg-NMEA_FIRST_MSG]) );
 }
 
-
-
+//---------------------------------
 
 static void send_trailer( Stream *device, uint8_t crc )
 {
