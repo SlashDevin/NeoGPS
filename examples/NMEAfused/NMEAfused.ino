@@ -74,24 +74,6 @@ static void traceIt()
 
 //--------------------------
 
-static void sentenceReceived()
-{
-  // Accumulate all the reports
-  fused |= gps.fix();
-
-  //  Print things out once per second
-  static uint32_t last_sentence = 0L;
-  
-  if (last_sentence != seconds) {
-    last_sentence = seconds;
-
-    traceIt();
-  }
-
-} // sentenceReceived
-
-//--------------------------
-
 void setup()
 {
   // Start the normal trace output
@@ -111,14 +93,34 @@ void setup()
 
 void loop()
 {
-  while (Serial1.available())
+  static uint32_t last_rx = 0L;
+
+  while (Serial1.available()) {
+    last_rx = millis();
+
     if (gps.decode( Serial1.read() ) == NMEAGPS::DECODE_COMPLETED) {
 
       // All enabled sentence types will be merged into one fix
-      sentenceReceived();
+      fused |= gps.fix();
 
       if (gps.nmeaMessage == NMEAGPS::NMEA_RMC)
         //  Use received GPRMC sentence as a pulse
         seconds++;
     }
+  }
+
+  // Print things out once per second, after the serial input has died down.
+  // This prevents input buffer overflow during printing.
+
+  static uint32_t last_sentence = 0L;
+  
+  static uint32_t last_trace = 0L;
+
+  if ((last_trace != seconds) && (millis() - last_rx > 5)) {
+    last_trace = seconds;
+
+    // It's been 5ms since we received anything, log what we have so far...
+    traceIt();
+  }
+
 }
