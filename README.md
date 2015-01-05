@@ -210,7 +210,7 @@ Before accessing a part, you must check its `valid` flag.  Fortunately, this add
 
 ####Correlating timestamps for coherency means extra date/time comparisons for each sentence before it is fused.
 
-This is optional: compare NMEA.ino and NMEAfused.ino to see code that determines when a new time interval has been entered.
+This is optional: compare NMEAcoherent.ino and NMEAfused.ino to see code that determines when a new time interval has been entered.
 
 ####Full C++ OO implementation is more advanced than most Arduino libraries.
 
@@ -228,8 +228,9 @@ Several programs are provided to demonstrate how to use the classes in these dif
 * [NMEA](examples/NMEA/NMEA.ino) - sync, polled, not fused, standard NMEA only
 * [NMEAblink](examples/NMEAblink/NMEAblink.ino) - sync, polled, not fused, standard NMEA only, minimal example, only blinks LED
 * [NMEAfused](examples/NMEAfused/NMEAfused.ino) - sync, polled, fused, standard NMEA only
-* [PUBX](examples/PUBX/PUBX.ino) - sync, polled, fused, standard NMEA + ublox proprietary NMEA
-* [ublox](examples/ublox/ublox.ino) - sync, polled, fused, ublox protocol
+* [NMEAcoherent](examples/NMEAcoherent/NMEAcoherent.ino) - sync, polled, coherent, standard NMEA only
+* [PUBX](examples/PUBX/PUBX.ino) - sync, polled, coherent, standard NMEA + ublox proprietary NMEA
+* [ublox](examples/ublox/ublox.ino) - sync, polled, coherent, ublox protocol
 * [NMEAtest.ino](examples/NMEAtest/NMEAtest.ino) - sync, polled, not fused, standard NMEA only (This is a self-test program.  Various strings are passed to `decode` and the expected pass or fail results are displayed.  No GPS device is required; the bytes are streamed from PROGMEM character arrays.)
 
 Preprocessor symbol `USE_FLOAT` can be used in [GPSfix.cpp](GPSfix.cpp) to select integer or floating-point output.
