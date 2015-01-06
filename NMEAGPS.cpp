@@ -323,11 +323,13 @@ bool NMEAGPS::parseField(char chr)
           switch (fieldIndex) {
               case 2:
                 if (chrCount == 0) {
-                  if ((chr == '2') || (chr == '3'))
+                  if ((chr == '2') || (chr == '3')) {
                     m_fix.status = gps_fix::STATUS_STD;
-                  else
+                    m_fix.valid.status = true;
+                  } else if (chr == '1') {
                     m_fix.status = gps_fix::STATUS_NONE;
-                  m_fix.valid.status = true;
+                    m_fix.valid.status = true;
+                  }
                 }
                 break;
               case 15: return parsePDOP( chr );
@@ -384,8 +386,11 @@ bool NMEAGPS::parseField(char chr)
               case 1: break; // allows "default:" case for SV fields
               case 2: // GSV message number (e.g., 2nd of n)
                 if (chr != ',')
+                  // sat_index is temporarily used to hold the MsgNo...
                   parseInt( sat_index, chr );
                 else
+                  // ...then it's converted to the real sat_index
+                  // based on up to 4 satellites per msg.
                   sat_index = (sat_index - 1) * 4;
                 break;
               default:
@@ -446,9 +451,12 @@ bool NMEAGPS::parseField(char chr)
             case 2: parseInt( m_fix.dateTime.Day , chr ); break;
             case 3: parseInt( m_fix.dateTime.Month, chr ); break;
             case 4:
-              m_fix.valid.date = parseInt( m_fix.dateTime.Year, chr );
-              if (chr == ',')
+              if (chr != ',')
+                parseInt( m_fix.dateTime.Year, chr );
+              else {
                 m_fix.dateTime.Year = y2kYearToTm( m_fix.dateTime.Year );
+                m_fix.valid.date = true;
+              }
               break;
 #endif
           }
@@ -466,8 +474,6 @@ bool NMEAGPS::parseField(char chr)
 
 bool NMEAGPS::parseTime(char chr)
 {
-  bool ok = true;
-
 #ifdef GPS_FIX_TIME
   switch (chrCount) {
       case 0: m_fix.dateTime.Hour    = (chr - '0')*10; break;
@@ -487,15 +493,13 @@ bool NMEAGPS::parseTime(char chr)
   }
 #endif
 
-  return ok;
+  return true;
 }
 
 //---------------------------------
 
 bool NMEAGPS::parseDDMMYY( char chr )
 {
-  bool ok = true;
-
 #ifdef GPS_FIX_DATE
   switch (chrCount) {
     case 0: m_fix.dateTime.Day    = (chr - '0')*10; break;
@@ -513,16 +517,15 @@ bool NMEAGPS::parseDDMMYY( char chr )
   }
 #endif
 
-  return ok;
+  return true;
 }
 
 //---------------------------------
 
 bool NMEAGPS::parseFix( char chr )
 {
-  bool ok = true;
-
   if (chrCount == 0) {
+    bool ok = true;
     if ((chr == '1') || (chr == 'A'))
       m_fix.status = gps_fix::STATUS_STD;
     else if ((chr == '0') || (chr == 'N') || (chr == 'V'))
@@ -532,11 +535,12 @@ bool NMEAGPS::parseFix( char chr )
     else if ((chr == '6') || (chr == 'E'))
       m_fix.status = gps_fix::STATUS_EST;
     else
-      m_fix.status = gps_fix::STATUS_NONE;
-    m_fix.valid.status = true;
+      ok = false;
+    if (ok)
+      m_fix.valid.status = true;
   }
 
-  return ok;
+  return true;
 }
 
 //---------------------------------

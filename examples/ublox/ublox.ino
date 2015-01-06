@@ -200,7 +200,7 @@ public:
                              (merged.dateTime.Second != fix().dateTime.Second) ||
                              (merged.dateTime.Minute != fix().dateTime.Minute) ||
                              (merged.dateTime.Hour   != fix().dateTime.Hour)));
-#elif defined(GPS_FIX_DATE)
+#elif defined(PULSE_PER_DAY)
               newInterval = (fix().valid.date &&
                             (!merged.valid.date ||
                              (merged.dateTime.Day   != fix().dateTime.Day) ||
@@ -321,6 +321,7 @@ void setup()
 void loop()
 {
   gps.run();
+
   if ((gps.last_trace != seconds) &&
       (millis() - gps.last_rx > 5)) {
     // It's been 5ms since we received anything,
