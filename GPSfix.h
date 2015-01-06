@@ -402,14 +402,4 @@ public:
 
 } __attribute__((packed));
 
-/**
- * Print valid fix data to the given stream with the format
- *   "status,dateTime,lat,lon,heading,speed,altitude,satellites,hdop"
- * A comma-separated field will be empty if the data is NOT valid.
- * @param[in] outs output stream.
- * @param[in] fix gps_fix instance.
- * @return iostream.
- */
-extern Stream & operator <<( Stream &outs, const gps_fix &fix );
-
 #endif

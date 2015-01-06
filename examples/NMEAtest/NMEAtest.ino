@@ -90,7 +90,7 @@ static void traceSample( const char *ptr )
 {
     bool decoded = false;
 
-    trace << F("Input:\n  ") << (const __FlashStringHelper *) ptr;
+    trace << F("Input:  ") << (const __FlashStringHelper *) ptr;
     char c;
 
     while ( c = pgm_read_byte( ptr++ ) ) {
@@ -104,34 +104,7 @@ static void traceSample( const char *ptr )
     else
       trace << F("Failed to decode!  ");
 
-    trace << gps.fix();
-
-#if defined(NMEAGPS_PARSE_SATELLITES)
-    if (gps.fix().valid.satellites && gps.satellites_valid()) {
-      trace << ',' << '[';
-
-      uint8_t i_max = gps.fix().satellites;
-      if (i_max > NMEAGPS::MAX_SATELLITES)
-        i_max = NMEAGPS::MAX_SATELLITES;
-
-      for (uint8_t i=0; i < i_max; i++) {
-        trace << gps.satellites[i].id;
-#if defined(NMEAGPS_PARSE_SATELLITE_INFO)
-        trace << ' ' << 
-          gps.satellites[i].elevation << '/' << gps.satellites[i].azimuth;
-        trace << '@';
-        if (gps.satellites[i].tracked)
-          trace << gps.satellites[i].snr;
-        else
-          trace << '-';
-#endif
-        trace << ',';
-      }
-      trace << ']';
-    }
-#endif
-
-    trace << '\n';
+    trace_all( gps, gps.fix() );
 }
 
 //--------------------------

@@ -17,8 +17,6 @@ Stream & trace = Serial;
 //#define PULSE_PER_DAY
 #endif
 
-static uint32_t seconds = 0L;
-
 //--------------------------
 
 class MyGPS : public ubloxGPS
@@ -186,6 +184,7 @@ public:
                   trace << PSTR("enable SVINFO failed!\n");
 #endif
 
+                trace_header();
               }
               break;
 
@@ -238,41 +237,8 @@ public:
 
     void traceIt()
     {
-      if ((state == RUNNING) && (last_trace != 0)) {
-
-#if !defined(GPS_FIX_TIME) & !defined(PULSE_PER_DAY)
-        trace << seconds << ',';
-#endif
-
-        trace << merged;
-
-#if defined(NMEAGPS_PARSE_SATELLITES)
-        if (merged.valid.satellites) {
-          trace << ',' << '[';
-
-          uint8_t i_max = merged.satellites;
-          if (i_max > MAX_SATELLITES)
-            i_max = MAX_SATELLITES;
-
-          for (uint8_t i=0; i < i_max; i++) {
-            trace << satellites[i].id;
-#if defined(NMEAGPS_PARSE_SATELLITE_INFO)
-            trace << ' ' << 
-              satellites[i].elevation << '/' << satellites[i].azimuth;
-            trace << '@';
-            if (satellites[i].tracked)
-              trace << satellites[i].snr;
-            else
-              trace << '-';
-#endif
-            trace << ',';
-          }
-          trace << ']';
-        }
-#endif
-
-        trace << '\n';
-      }
+      if ((state == RUNNING) && (last_trace != 0))
+        trace_all( *this, merged );
 
       last_trace = seconds;
 
@@ -292,7 +258,7 @@ void setup()
   trace << F("fix object size = ") << sizeof(gps.fix()) << '\n';
   trace << F("ubloxGPS object size = ") << sizeof(ubloxGPS) << '\n';
   trace << F("MyGPS object size = ") << sizeof(gps) << '\n';
-  Serial.flush();
+  trace.flush();
 
   // Start the UART for the GPS device
   Serial1.begin(9600);
@@ -324,6 +290,7 @@ void loop()
 
   if ((gps.last_trace != seconds) &&
       (millis() - gps.last_rx > 5)) {
+
     // It's been 5ms since we received anything,
     // log what we have so far...
     gps.traceIt();
