@@ -14,7 +14,7 @@ void ubloxGPS::rxBegin()
 
 bool ubloxGPS::rxEnd()
 {
-  coherent = true;
+  safe = true;
 
   bool visible_msg = false;
 
@@ -114,7 +114,7 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
               rxState = (rxState_t) UBX_RECEIVING_DATA;
               
               m_fix.valid.init();
-              coherent = false;
+              safe = false;
               
               if (rx().msg_class == UBX_ACK) {
                 if (ack_expected)

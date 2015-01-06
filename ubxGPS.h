@@ -63,10 +63,11 @@ public:
       {};
 
     /**
-     * Process one character from a ublox device.  The internal state machine
-     * tracks what part of the NMEA/UBX packet has been received so far.  As the
-     * packet is received, members of the /fix/ structure are updated.  
-     * @return true when new /fix/ data is available and coherent.
+     * Process one character of ublox message.  The internal state 
+     * machine tracks what part of the sentence has been received.  As the
+     * tracks what part of the sentence has been received so far.  As the
+     * sentence is received, members of the /fix/ structure are updated.  
+     * @return DECODE_COMPLETED when a sentence has been completely received.
      */
     decode_t decode( char c );
 

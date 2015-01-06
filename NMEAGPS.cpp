@@ -76,7 +76,7 @@ void NMEAGPS::rxEnd( bool ok )
     chrCount++;
     parseField(',');
 
-    coherent = true;
+    safe = true;
 #ifdef NMEAGPS_STATS
     statistics.parser_ok++;
 #endif
@@ -129,7 +129,7 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
                 decode_t cmd_res = parseCommand( c );
                 if (cmd_res == DECODE_COMPLETED) {
                   m_fix.valid.init();
-                  coherent = false;
+                  safe = false;
                 } else if (cmd_res == DECODE_CHR_INVALID) {
                   rxEnd( false );
                 }

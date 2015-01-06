@@ -17,12 +17,19 @@ It supports the following protocols and messages:
 * GPZDA - UTC Time and Date
 
 ####u-blox NEO-6
+#####NMEA 0183 Protocol Messages
+* UBX,00 - Lat/Long Position Data
+* UBX,04 - Time of Day and Clock Information
+
+#####UBX Protocol Messages
 * NAV_STATUS - Receiver Navigation Status
 * NAV_TIMEGPS - GPS Time Solution
 * NAV_TIMEUTC - UTC Time Solution
 * NAV_POSLLH - Geodetic Position Solution
 * NAV_VELNED - Velocity Solution in NED (North/East/Down)
 * NAV_SVINFO - Space Vehicle Information
+
+(This is the plain Arduino version of the [CosaGPS](https://github.com/SlashDevin/CosaGPS) library for [Cosa](https://github.com/mikaelpatel/Cosa).)
 
 Goals
 ======
@@ -36,14 +43,12 @@ In an attempt to be reusable in a variety of different programming styles, this 
 * configurable message sets, including hooks for implementing proprietary NMEA messages
 * configurable message fields
 * multiple protocols from same device
-* any kind of input stream (Serial, SoftwareSerial, PROGMEM arrays, or any other source of bytes)
-
-(This is the plain Arduino version of the [CosaGPS](https://github.com/SlashDevin/CosaGPS) library for [Cosa](https://github.com/mikaelpatel/Cosa).)
+* any kind of input stream (Serial, SoftwareSerial, PROGMEM arrays, etc.)
 
 Data Model
 ==========
 Rather than holding onto individual fields, the concept of a **fix** is used to group data members of the GPS acquisition.
-This also facilitates the merging of separately received packets into a coherent position.
+This also facilitates the merging of separately received packets into a fused or coherent position.
 
 The members of `gps_fix` include 
 
@@ -80,6 +85,7 @@ Configuration
 =============
 All configuration items are conditional compilations: a `#define` controls an `#if`/`#endif` section.
 
+####gps_fix
 The following configuration items are near the top of GPSfix.h:
 ```
 // Enable/Disable individual parts of a fix, as parsed from fields of a $GPxxx sentence
@@ -97,6 +103,7 @@ The following configuration items are near the top of GPSfix.h:
 #define GPS_FIX_LON_ERR
 #define GPS_FIX_ALT_ERR
 ```
+####NMEAGPS
 The following configuration items are near the top of NMEAGPS.h:
 ```
 // Enable/Disable parsing the fields of a $GPxxx sentence
@@ -118,8 +125,8 @@ The following configuration items are near the top of NMEAGPS.h:
 #define NMEAGPS_PARSE_SATELLITES
 #define NMEAGPS_PARSE_SATELLITE_INFO
 ```
-
-In ubxNMEA.h, the derived class `ubloxNMEA` has configuration items for the proprietary NMEA messages:
+####ubloxNMEA
+This derived class has the following configuration items near the top of ubxNMEA.h:
 ```
 #define NMEAGPS_PARSE_PUBX_00
 #define NMEAGPS_PARSE_PUBX_04
@@ -160,7 +167,7 @@ A few common configurations are defined as follows
 **Nominal**: date, time, lat/lon, altitude, speed, heading, number of 
 satellites, HDOP, GPRMC and GPGGA messages.
 
-**Full**: Nominal plus VDOP, PDOP, lat/lon/alt errors, satellite array with satellite info, and all 8 messages.
+**Full**: Nominal plus VDOP, PDOP, lat/lon/alt errors, satellite array with satellite info, and all messages.
 
 (**TinyGPS** uses the **Nominal** configuration.)
 
@@ -202,6 +209,8 @@ while (uart1.available())
   }
 ```
 
+The `ubloxNMEA` derived class doesn't use any extra bytes of RAM.
+
 The `ubloxGPS` derived class adds 20 bytes to handle the more-complicated protocol, 
 plus 5 static bytes for converting GPS time and Time Of Week to UTC.
 
@@ -221,7 +230,7 @@ The **Full** configuration requires 3462 bytes.
 Performance
 ===========
 
-####**NeoGPS** is **50% faster _or more_**.
+####**NeoGPS** is **33% faster _or more_**.
 
 Most libraries use extra buffers to accumulate parts of the sentence so they 
 can be parsed all at once.  For example, an extra field buffer may hold on 
@@ -257,6 +266,55 @@ $GPRMC,083559.00,A,4717.11437,N,00833.91522,E,0.004,77.52,091202,,,A*57
  
 The **DTL** configuration of **NeoGPS** takes 912uS to 
 completely parse a GPGGA sentence, and 971uS to completely parse a GPRMC sentence.
+
+Extending NeoGPS
+=========
+Using features that are unique to your device fall into three categories:
+####1. Configuring the device with special commands
+Many devices allow you to configure which standard messages are emitted, or the rate at which they are emitted.  It may be as simple as sending a proprietary command to the device.  Simply use the NMEAGPS `send` or `send_P` method.
+
+For example, to set the baudrate of the ublox NEO-6M gps device, send it a 
+`UBX,41` message:
+```
+  gps.send_P( F("PUBX,41,1,0007,0003,19200,0") );
+```
+####2. Parsing additional message types
+Some devices provide additional messages with extra information, or more efficient groupings.  This will require deriving a class from `NMEAGPS`.  The derived class needs to
+* declare a PROGMEM table of the new message types,
+* point that table back to the NMEAGPS table
+* override the `parseField` method to extract information from each new message type
+Please see ubxNMEA.h and .cpp for an example of adding two ublox-proprietary messages
+
+####3. Handling new protocols
+Some devices provide additional protocols.  They are frequently binary, which requires 
+fewer bytes than NMEA 0183.  Because they can both be transmitted on the same port, it is 
+very likely that they can be distinguished at the message framing level.
+
+For example, NMEA messages always start with a '$' and end with CR/LF.  ublox messages start 
+with 0xB5 and 0x62 bytes, a message class and id, and a 2-byte message length.  There is no 
+terminating character; the message completed when `length` bytes have been received.
+
+This will require deriving a class from `NMEAGPS`.  The derived class needs 
+to 
+* define new `rxState` values for the protocol state machine.  These should 
+be unique from the NMEA state values, but they should share the IDLE state 
+value.
+* override the `decode` method to watch for its messages.  As bytes are 
+received, it may transition out of the IDLE state and into its own set of 
+state values.  If the character is not valid for this protocol, it should 
+delegate it to the NMEAGPS base clase, which may begin processing an NMEAGPS 
+message.  If the rxState is not one of the derived states (i.e., it is in 
+one of the NMEAGPS states), the character should be delegated to 
+NMEAGPS::decode.
+* implement something like the `parseField` method if parse-in-place 
+behavior is desirable.  This is not necessarily `virtual`, as it will only 
+be called from the derived `decode`.
+* You are free to add methods and data members as required for handling the 
+protocol.  Only `decode` must be overridden.
+
+Please see ubxGPS.h and .cpp for an example of implementing the 
+ublox-proprietary protocol, UBX.  The derived `ubloxGPS` class provides both 
+parse-in-place *and* buffered messages.  See the `send` and `poll` methods.
 
 Tradeoffs
 =========

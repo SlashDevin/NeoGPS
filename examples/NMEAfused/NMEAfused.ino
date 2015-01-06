@@ -112,8 +112,6 @@ void loop()
   // Print things out once per second, after the serial input has died down.
   // This prevents input buffer overflow during printing.
 
-  static uint32_t last_sentence = 0L;
-  
   static uint32_t last_trace = 0L;
 
   if ((last_trace != seconds) && (millis() - last_rx > 5)) {

@@ -89,9 +89,11 @@ class Stream;
  * @section Limitations
  * 1) Only NMEA messages of types are parsed:
  *      GGA, GLL, GSA, GST, GSV, RMC, VTG, and ZDA.
- * 2) The current `fix` is only coherent _after_ the complete message is 
- * parsed and _before_ the next message begins to affect the members. 
- * /is_coherent()/ should be checked before accessing any members of /fix/.
+ * 2) The current `fix` is only safe to access _after_ the complete message 
+ * is parsed and _before_ the next message begins to affect the members. 
+ * If you access `fix` at any other time, /is_safe()/ must be checked. 
+ * Otherwise, you should make a copy of `fix` after a sentence has been
+ * completely DECODED.
  *
  **/
 
@@ -128,7 +130,7 @@ protected:
     uint8_t         decimal;    // digits received after the decimal point
     struct {
       bool            negative:1; // field had a leading '-'
-      bool            coherent:1; // fix is coherent
+      bool            safe    :1; // fix is safe to access
     } __attribute__((packed));
 
     /*
@@ -152,17 +154,23 @@ public:
     NMEAGPS()
     {
       rxState = NMEA_IDLE;
-      coherent = true;
+      safe = true;
     };
 
     /**
-     * Process one character of an NMEA GPS sentence.  The  internal state machine
-     * tracks what part of the sentence has been received so far.  As the
-     * sentence is received, members of the /fix/ structure are updated.  
-     * @return true when new /fix/ data is available and coherent.
+     * Return type for /decode/.  As bytes are processed, they can be
+     * categorized as INVALID (not part of this protocol), OK (accepted),
+     * or COMPLETED (end-of-message).
      */
     enum decode_t { DECODE_CHR_INVALID, DECODE_CHR_OK, DECODE_COMPLETED };
 
+    /**
+     * Process one character of an NMEA GPS sentence.  The internal state 
+     * machine tracks what part of the sentence has been received.  As the
+     * tracks what part of the sentence has been received so far.  As the
+     * sentence is received, members of the /fix/ structure are updated.  
+     * @return DECODE_COMPLETED when a sentence has been completely received.
+     */
     NMEAGPS_VIRTUAL decode_t decode( char c );
 
     /**
@@ -174,22 +182,22 @@ public:
     //  /fix/ will be constantly changing as characters are received.
     //  For example, fix().longitude() may return nonsense data if
     //  characters for that field are currently being processed in /decode/.
-    //  /is_coherent/ *must* be checked before accessing members of /fix/.
+    //  /is_safe/ *must* be checked before accessing members of /fix/.
     //  If you need access to the current /fix/ at any time, you must
-    //  take a snapshot while it is_coherent, and then use the snapshot
+    //  take a snapshot while it is_safe, and then use the snapshot
     //  later.
 
     const struct gps_fix & fix() const { return m_fix; };
 
-    //  Determine whether the members of /fix/ are "currently" coherent.
+    //  Determine whether the members of /fix/ are "currently" safe.
     //  It will return true when a complete sentence and the CRC characters 
     //  have been received (or after a CR if no CRC is present).
     //  It will return false after a sentence's command and comma
     //  have been received (e.g., "$GPGGA,").
-    //  If NMEAGPS processes characters in UART interrupts, /is_coherent/
+    //  If NMEAGPS processes characters in UART interrupts, /is_safe/
     //  could change at any time (i.e., it would be /volatile/).
 
-    bool is_coherent() const { return coherent; }
+    bool is_safe() const { return safe; }
 
     //  Notes regarding a volatile /fix/:
     //
