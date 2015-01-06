@@ -119,6 +119,12 @@ The following configuration items are near the top of NMEAGPS.h:
 #define NMEAGPS_PARSE_SATELLITE_INFO
 ```
 
+In ubxNMEA.h, the derived class `ubloxNMEA` has configuration items for the proprietary NMEA messages:
+```
+#define NMEAGPS_PARSE_PUBX_00
+#define NMEAGPS_PARSE_PUBX_04
+```
+
 GPSfix.cpp has a choice for using floating-point output.
 ```
 #define USE_FLOAT
@@ -130,10 +136,19 @@ Most example programs have a choice for displaying fix information once per day.
 #define PULSE_PER_DAY
 ```
 
-Delete or comment out any items to be excluded from your build.  Where possible, checks are performed to verify that you have chosen a "valid" configuration: you may see `#error` messages in the build log.
+Delete or comment out any items to be excluded from your build.  Where 
+possible, checks are performed to verify that you have chosen a "valid" 
+configuration: you may see `#error` messages in the build log.
 
 ####Troubleshooting
-The compiler will catch any attempt to use parts of a `fix` that have been configured out: you will see something like `gps_fix does not have member xxx`.  The compiler **cannot** catch message set dependencies: the `enum nmea_msg_t` is always available.  So even though a `fix` member is enabled, you may have disabled all messages that would have set its value.
+The compiler will catch any attempt to use parts of a `fix` that have been 
+configured out: you will see something like `gps_fix does not have member 
+xxx`.
+
+The compiler **cannot** catch message set dependencies: the `enum 
+nmea_msg_t` is always available.  So even though a `fix` member is enabled, 
+you may have disabled all messages that would have set its value.  
+NMEAtest.ino can be used to check some configurations.
 
 ####Typical configurations
 A few common configurations are defined as follows

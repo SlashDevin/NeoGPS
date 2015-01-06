@@ -87,7 +87,8 @@ class Stream;
  * of the current /fix/.
  *
  * @section Limitations
- * 1) Only NMEA messages of types GGA, GLL, RMC, VTG, ZDA are parsed.
+ * 1) Only NMEA messages of types are parsed:
+ *      GGA, GLL, GSA, GST, GSV, RMC, VTG, and ZDA.
  * 2) The current `fix` is only coherent _after_ the complete message is 
  * parsed and _before_ the next message begins to affect the members. 
  * /is_coherent()/ should be checked before accessing any members of /fix/.
@@ -317,10 +318,9 @@ public:
     static const uint8_t MAX_SATELLITES = 20;
     satellite_view_t satellites[ MAX_SATELLITES ];
 
-    bool satellites_valid() const
-      { return m_fix.valid.satellites && (sat_index == m_fix.satellites); }
+    bool satellites_valid() const { return (sat_index == m_fix.satellites); }
 protected:
-    uint8_t sat_index; // Used during parsing and to mark array as valid
+    uint8_t sat_index; // only used during parsing
 
 #endif
 
