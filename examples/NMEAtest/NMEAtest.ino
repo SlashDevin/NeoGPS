@@ -107,7 +107,7 @@ static void traceSample( const char *ptr )
     trace << gps.fix();
 
 #if defined(NMEAGPS_PARSE_SATELLITES)
-    if (gps.satellites_valid()) {
+    if (gps.fix().valid.satellites) {
       trace << ',' << '[';
 
       uint8_t i_max = gps.fix().satellites;

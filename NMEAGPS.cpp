@@ -346,13 +346,16 @@ bool NMEAGPS::parseField(char chr)
               case 1: break; // allows "default:" case for SV fields
               case 3:
                 if (chrCount == 0) {
-                  m_fix.satellites = 0;
                   m_fix.valid.satellites = true;
+                  m_fix.satellites = 0;
+                  sat_index = 0;
                 }
               default:
                 if (chr == ',') {
-                  if (chrCount > 0)
+                  if (chrCount > 0) {
                     m_fix.satellites++;
+                    sat_index = m_fix.satellites;
+                  }
                 } else
                   return parseInt( satellites[m_fix.satellites].id, chr );
                 break;
