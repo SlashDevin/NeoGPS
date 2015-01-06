@@ -283,7 +283,8 @@ Some devices provide additional messages with extra information, or more efficie
 * declare a PROGMEM table of the new message types,
 * point that table back to the NMEAGPS table
 * override the `parseField` method to extract information from each new message type
-Please see ubxNMEA.h and .cpp for an example of adding two ublox-proprietary messages
+
+Please see ubxNMEA.h and .cpp for an example of adding two ublox-proprietary messages.
 
 ####3. Handling new protocols
 Some devices provide additional protocols.  They are frequently binary, which requires 
@@ -324,7 +325,7 @@ There's a price for everything, hehe...
 ####Parsing without buffers, or *in place*, means that you must be more careful about when you access data items.
 
 In general, you should wait to access the fix until after the entire sentence has been parsed.  Most of the examples simply `decode` until a sentence is COMPLETED, then do all their work with `fix`.  See `loop()` in [NMEA.ino](examples/NMEA.ino). 
-Member function `is_coherent()` can also be used to determine when it is safe.
+Member function `is_safe()` can also be used to determine when it is safe.
 
 If you need to access the fix at any time, you will have to double-buffer the fix: simply copy the `fix` when it is safe to do so.  (See NMEAGPS.h comments regarding a
 `safe_fix`.)  Also, received data errors can cause invalid field values to be set *before* the CRC is fully computed.  The CRC will
