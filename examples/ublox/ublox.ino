@@ -196,15 +196,15 @@ public:
 #if defined(GPS_FIX_TIME)
               newInterval = (fix().valid.time &&
                             (!merged.valid.time ||
-                             (merged.dateTime.Second != fix().dateTime.Second) ||
-                             (merged.dateTime.Minute != fix().dateTime.Minute) ||
-                             (merged.dateTime.Hour   != fix().dateTime.Hour)));
+                             (merged.dateTime.seconds != fix().dateTime.seconds) ||
+                             (merged.dateTime.minutes != fix().dateTime.minutes) ||
+                             (merged.dateTime.hours   != fix().dateTime.hours)));
 #elif defined(PULSE_PER_DAY)
               newInterval = (fix().valid.date &&
                             (!merged.valid.date ||
-                             (merged.dateTime.Day   != fix().dateTime.Day) ||
-                             (merged.dateTime.Month != fix().dateTime.Month) ||
-                             (merged.dateTime.Year  != fix().dateTime.Year)));
+                             (merged.dateTime.date  != fix().dateTime.date) ||
+                             (merged.dateTime.month != fix().dateTime.month) ||
+                             (merged.dateTime.year  != fix().dateTime.year)));
 #else
               //  No date/time configured, so let's assume it's a new
               //  if the seconds have changed.

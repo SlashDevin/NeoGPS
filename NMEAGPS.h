@@ -21,10 +21,6 @@
 
 #include <avr/pgmspace.h>
 
-typedef PGM_P str_P;
-#define __PROGMEM PROGMEM
-class Stream;
-
 #include "GPSfix.h"
 
 /**
@@ -36,7 +32,7 @@ class Stream;
  *
  * Only RMC and ZDA contain date information.  Other
  * sentences contain time information.  Both date and time are 
- * required if you will be doing tmElements_t-to-time_t operations.
+ * required if you will be doing time_t-to-clock_t operations.
  */
 
 #define NMEAGPS_PARSE_GGA
@@ -124,13 +120,14 @@ protected:
     /**
      * Current parser state
      */
-    uint8_t         crc;        // accumulated CRC in the sentence
-    uint8_t         fieldIndex; // index of current field in the sentence
-    uint8_t         chrCount;   // index of current character in current field
-    uint8_t         decimal;    // digits received after the decimal point
+    uint8_t      crc;            // accumulated CRC in the sentence
+    uint8_t      fieldIndex;     // index of current field in the sentence
+    uint8_t      chrCount;       // index of current character in current field
+    uint8_t      decimal;        // digits received after the decimal point
     struct {
-      bool            negative:1; // field had a leading '-'
-      bool            safe    :1; // fix is safe to access
+      bool       negative    :1; // field had a leading '-'
+      bool       safe        :1; // fix is safe to access
+      bool       comma_needed:1; // field needs a comma to finish parsing
     } __attribute__((packed));
 
     /*
@@ -154,7 +151,7 @@ public:
     NMEAGPS()
     {
       rxState = NMEA_IDLE;
-      safe = true;
+      safe    = true;
     };
 
     /**
@@ -264,7 +261,6 @@ protected:
     };
 
     static const char * const std_nmea[] __PROGMEM;
-    static const uint8_t      std_nmea_size;
     static const msg_table_t  nmea_msg_table __PROGMEM;
 
     NMEAGPS_VIRTUAL const msg_table_t *msg_table() const
@@ -347,7 +343,7 @@ protected:
       bool is_comma = (chr == ',');
       if (chrCount == 0) {
         if (is_comma)
-          return false;
+          return false; // empty field!
         val = (chr - '0');
       } else if (!is_comma)
         val = (val*10) + (chr - '0');
@@ -360,12 +356,13 @@ protected:
       bool is_comma = (chr == ',');
       if (chrCount == 0) {
         if (is_comma)
-          return false;
+          return false; // empty field!
         val = (chr - '0');
       } else if (!is_comma)
         val = (val*10) + (chr - '0');
       return true;
     }
+
 } __attribute__((packed));
 
 #endif

@@ -524,18 +524,17 @@ bool ubloxGPS::parseField( char c )
             switch (chrCount) {
 
 #if defined(GPS_FIX_DATE)
-              case 12: m_fix.dateTime.Year   = chr; break;
-              case 13: m_fix.dateTime.Year   =
-                        ((((uint16_t)chr) << 8) + m_fix.dateTime.Year) % 100;
-                       m_fix.dateTime.Year = y2kYearToTm( m_fix.dateTime.Year );
+              case 12: m_fix.dateTime.year   = chr; break;
+              case 13: m_fix.dateTime.year   =
+                        ((((uint16_t)chr) << 8) + m_fix.dateTime.year) % 100;
                 break;
-              case 14: m_fix.dateTime.Month  = chr; break;
-              case 15: m_fix.dateTime.Day    = chr; break;
+              case 14: m_fix.dateTime.month  = chr; break;
+              case 15: m_fix.dateTime.date   = chr; break;
 #endif
 #if defined(GPS_FIX_TIME)
-              case 16: m_fix.dateTime.Hour   = chr; break;
-              case 17: m_fix.dateTime.Minute = chr; break;
-              case 18: m_fix.dateTime.Second = chr; break;
+              case 16: m_fix.dateTime.hours   = chr; break;
+              case 17: m_fix.dateTime.minutes = chr; break;
+              case 18: m_fix.dateTime.seconds = chr; break;
 #endif
               case 19:
                 {

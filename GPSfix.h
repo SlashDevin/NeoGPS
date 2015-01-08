@@ -19,7 +19,6 @@
  * Lesser General Public License for more details.
  */
 
-// Include core libraries
 #include "Time.h"
 
 /**
@@ -164,8 +163,8 @@ public:
 #endif
 
 #if defined(GPS_FIX_DATE) | defined(GPS_FIX_TIME)
-  tmElements_t dateTime;
-  uint8_t      dateTime_cs; // hundredths of a second
+  time_t  dateTime;
+  uint8_t dateTime_cs; // hundredths of a second
 #endif
 
   /**
@@ -323,17 +322,17 @@ public:
 
 #ifdef GPS_FIX_DATE
       if (r.valid.date) {
-        dateTime.Day   = r.dateTime.Day;
-        dateTime.Month = r.dateTime.Month;
-        dateTime.Year  = r.dateTime.Year;
+        dateTime.date  = r.dateTime.date;
+        dateTime.month = r.dateTime.month;
+        dateTime.year  = r.dateTime.year;
       }
 #endif
 
 #ifdef GPS_FIX_TIME
       if (r.valid.time) {
-        dateTime.Hour    = r.dateTime.Hour;
-        dateTime.Minute  = r.dateTime.Minute;
-        dateTime.Second  = r.dateTime.Second;
+        dateTime.hours   = r.dateTime.hours;
+        dateTime.minutes = r.dateTime.minutes;
+        dateTime.seconds = r.dateTime.seconds;
         dateTime_cs      = r.dateTime_cs;
       }
 #endif

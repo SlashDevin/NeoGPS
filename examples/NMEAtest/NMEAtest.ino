@@ -241,13 +241,8 @@ void setup()
         break;
       }
       if (NMEAGPS::DECODE_COMPLETED == gps.decode( c )) {
-        gps_fix expected; // "2002-12-09 09:27:25"
-        expected.dateTime.Year = 32;
-        expected.dateTime.Month = 12;
-        expected.dateTime.Day = 9;
-        expected.dateTime.Hour = 9;
-        expected.dateTime.Minute = 27;
-        expected.dateTime.Second = 25;
+        gps_fix expected;
+        expected.dateTime.parse( PSTR("2002-12-09 09:27:25") );
         expected.dateTime_cs = 0;
 
         if (gps.nmeaMessage != NMEAGPS::NMEA_GGA) {
@@ -256,15 +251,11 @@ void setup()
           failed++;
           break;
         }
-        if ((gps.fix().dateTime.Hour   != expected.dateTime.Hour) ||
-            (gps.fix().dateTime.Minute != expected.dateTime.Minute) ||
-            (gps.fix().dateTime.Second != expected.dateTime.Second) ||
-            (gps.fix().dateTime_cs     != expected.dateTime_cs)) {
-          trace.print( F("FAILED wrong time ") );
-          trace << gps.fix().dateTime << '.' << gps.fix().dateTime_cs;
-          trace.print( F(" != ") );
-          trace << expected.dateTime << '.';
-          trace  << expected.dateTime_cs << '\n';
+        if ((gps.fix().dateTime.hours   != expected.dateTime.hours  ) ||
+            (gps.fix().dateTime.minutes != expected.dateTime.minutes) ||
+            (gps.fix().dateTime.seconds != expected.dateTime.seconds) ||
+            (gps.fix().dateTime_cs      != expected.dateTime_cs)) {
+          trace << F("FAILED wrong time ") << gps.fix().dateTime << '.' << gps.fix().dateTime_cs << F(" != ") << expected.dateTime << '.' << expected.dateTime_cs << '\n';
           failed++;
           break;
         }

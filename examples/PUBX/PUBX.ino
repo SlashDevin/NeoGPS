@@ -55,15 +55,15 @@ static void sentenceReceived()
 #if defined(GPS_FIX_TIME)
   newInterval = (gps.fix().valid.time &&
                 (!fused.valid.time ||
-                 (fused.dateTime.Second != gps.fix().dateTime.Second) ||
-                 (fused.dateTime.Minute != gps.fix().dateTime.Minute) ||
-                 (fused.dateTime.Hour   != gps.fix().dateTime.Hour)));
+                 (fused.dateTime.seconds != gps.fix().dateTime.seconds) ||
+                 (fused.dateTime.minutes != gps.fix().dateTime.minutes) ||
+                 (fused.dateTime.hours   != gps.fix().dateTime.hours)));
 #elif defined(PULSE_PER_DAY)
   newInterval = (gps.fix().valid.date &&
                 (!fused.valid.date ||
-                 (fused.dateTime.Day   != gps.fix().dateTime.Day) ||
-                 (fused.dateTime.Month != gps.fix().dateTime.Month) ||
-                 (fused.dateTime.Year  != gps.fix().dateTime.Year)));
+                 (fused.dateTime.date  != gps.fix().dateTime.date) ||
+                 (fused.dateTime.month != gps.fix().dateTime.month) ||
+                 (fused.dateTime.year  != gps.fix().dateTime.year)));
 #else
   //  No date/time configured, so let's assume it's a new interval
   //  if the seconds have changed.
@@ -98,6 +98,9 @@ void setup()
   trace.println( sizeof(gps.fix()) );
   trace.print( F("NMEAGPS object size = ") );
   trace.println( sizeof(NMEAGPS) );
+
+  trace_header();
+
   trace.flush();
   
   // Start the UART for the GPS device

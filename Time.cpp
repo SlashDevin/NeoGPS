@@ -1,318 +1,187 @@
-/*
-  time.c - low level time and date functions
-  Copyright (c) Michael Margolis 2009
-
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
-
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  
-  6  Jan 2010 - initial release 
-  12 Feb 2010 - fixed leap year calculation error
-  1  Nov 2010 - fixed setTime bug (thanks to Korman for this)
-  24 Mar 2012 - many edits by Paul Stoffregen: fixed timeStatus() to update
-                status, updated examples for Arduino 1.0, fixed ARM
-                compatibility issues, added TimeArduinoDue and TimeTeensy3
-                examples, add error checking and messages to RTC examples,
-                add examples to DS1307RTC library.
-*/
-
-#if ARDUINO >= 100
-#include <Arduino.h> 
-#else
-#include <WProgram.h> 
-#endif
+/**
+ * @file Time.cpp
+ * @version 1.0
+ *
+ * @section License
+ * Copyright (C) 2013-2014, SlashDevin
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * 
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * 
+ * This file is part of the NeoGPS project.  Based on the execellent
+ * framework, Cosa, by Mikael Patel.
+ */
 
 #include "Time.h"
+#include "Streamers.h"
 
-static tmElements_t tm;          // a cache of time elements
-static time_t cacheTime;   // the time the cache was updated
-static uint32_t syncInterval = 300;  // time sync will be attempted after this many seconds
+Stream& operator<<(Stream& outs, const time_t& t)
+{
+  outs << time_t::full_year( t.year ) << '-';
+  if (t.month < 10) outs << '0';
+  outs << t.month << '-';
+  if (t.date < 10) outs << '0';
+  outs << t.date << ' ';
+  if (t.hours < 10) outs << '0';
+  outs << t.hours << ':';
+  if (t.minutes < 10) outs << '0';
+  outs << t.minutes << ':';
+  if (t.seconds < 10) outs << '0';
+  outs << t.seconds;
+  return (outs);
+}
 
-void refreshCache(time_t t) {
-  if (t != cacheTime) {
-    breakTime(t, tm); 
-    cacheTime = t; 
+bool 
+time_t::parse(str_P s)
+{
+  static size_t BUF_MAX = 32;
+  char buf[BUF_MAX];
+  strcpy_P(buf, s);
+  char* sp = &buf[0];
+  uint16_t value = strtoul(sp, &sp, 10);
+
+  if (*sp != '-') return false;
+  year = value % 100;
+  if (full_year() != value) return false;
+
+  value = strtoul(sp + 1, &sp, 10);
+  if (*sp != '-') return false;
+  month = value;
+
+  value = strtoul(sp + 1, &sp, 10);
+  if (*sp != ' ') return false;
+  date = value;
+
+  value = strtoul(sp + 1, &sp, 10);
+  if (*sp != ':') return false;
+  hours = value;
+
+  value = strtoul(sp + 1, &sp, 10);
+  if (*sp != ':') return false;
+  minutes = value;
+
+  value = strtoul(sp + 1, &sp, 10);
+  if (*sp != 0) return false;
+  seconds = value;
+
+  set_day();
+  return (is_valid());
+}
+
+uint16_t time_t::s_epoch_year = Y2K_EPOCH_YEAR;
+uint8_t time_t::epoch_offset = 0;
+uint8_t time_t::epoch_weekday = Y2K_EPOCH_WEEKDAY;
+uint8_t time_t::pivot_year = 0;
+
+const uint8_t time_t::days_in[] __PROGMEM = {
+  0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+};
+
+time_t::time_t(clock_t c, int8_t zone)
+{
+  c += zone * (int32_t) SECONDS_PER_HOUR;
+  uint16_t dayno = c / SECONDS_PER_DAY;
+  c -= dayno * (uint32_t) SECONDS_PER_DAY;
+  day = weekday_for(dayno);
+
+  uint16_t y = epoch_year();
+  for (;;) {
+    uint16_t days = days_per( y );
+    if (dayno < days) break;
+    dayno -= days;
+    y++;
   }
-}
+  bool leap_year = is_leap(y);
+  y -= epoch_year();
+  y += epoch_offset;
+  while (y > 100)
+    y -= 100;
+  year = y;
 
-int hour() { // the hour now 
-  return hour(now()); 
-}
+  month = 1;
+  for (;;) {
+    uint8_t days = pgm_read_byte(&days_in[month]);
+    if (leap_year && (month == 2)) days++;
+    if (dayno < days) break;
+    dayno -= days;
+    month++;
+  }
+  date = dayno + 1;
 
-int hour(time_t t) { // the hour for the given time
-  refreshCache(t);
-  return tm.Hour;  
-}
+  hours = c / SECONDS_PER_HOUR;
 
-int hourFormat12() { // the hour now in 12 hour format
-  return hourFormat12(now()); 
-}
-
-int hourFormat12(time_t t) { // the hour for the given time in 12 hour format
-  refreshCache(t);
-  if( tm.Hour == 0 )
-    return 12; // 12 midnight
-  else if( tm.Hour  > 12)
-    return tm.Hour - 12 ;
+  uint16_t c_ms;
+  if (hours < 18) // save 16uS
+    c_ms = (uint16_t) c - (hours * (uint16_t) SECONDS_PER_HOUR);
   else
-    return tm.Hour ;
+    c_ms = c - (hours * (uint32_t) SECONDS_PER_HOUR);
+  minutes = c_ms / SECONDS_PER_MINUTE;
+  seconds = c_ms - (minutes * SECONDS_PER_MINUTE);
 }
 
-uint8_t isAM() { // returns true if time now is AM
-  return !isPM(now()); 
-}
-
-uint8_t isAM(time_t t) { // returns true if given time is AM
-  return !isPM(t);  
-}
-
-uint8_t isPM() { // returns true if PM
-  return isPM(now()); 
-}
-
-uint8_t isPM(time_t t) { // returns true if PM
-  return (hour(t) >= 12); 
-}
-
-int minute() {
-  return minute(now()); 
-}
-
-int minute(time_t t) { // the minute for the given time
-  refreshCache(t);
-  return tm.Minute;  
-}
-
-int second() {
-  return second(now()); 
-}
-
-int second(time_t t) {  // the second for the given time
-  refreshCache(t);
-  return tm.Second;
-}
-
-int day(){
-  return(day(now())); 
-}
-
-int day(time_t t) { // the day for the given time (0-6)
-  refreshCache(t);
-  return tm.Day;
-}
-
-int weekday() {   // Sunday is day 1
-  return  weekday(now()); 
-}
-
-int weekday(time_t t) {
-  refreshCache(t);
-  return tm.Wday;
-}
-   
-int month(){
-  return month(now()); 
-}
-
-int month(time_t t) {  // the month for the given time
-  refreshCache(t);
-  return tm.Month;
-}
-
-int year() {  // as in Processing, the full four digit year: (2009, 2010 etc) 
-  return year(now()); 
-}
-
-int year(time_t t) { // the year for the given time
-  refreshCache(t);
-  return tmYearToCalendar(tm.Year);
-}
-
-/*============================================================================*/	
-/* functions to convert to and from system time */
-/* These are for interfacing with time serivces and are not normally needed in a sketch */
-
-// leap year calulator expects year argument as years offset from 1970
-#define LEAP_YEAR(Y)     ( ((1970+Y)>0) && !((1970+Y)%4) && ( ((1970+Y)%100) || !((1970+Y)%400) ) )
-
-static  const uint8_t monthDays[]={31,28,31,30,31,30,31,31,30,31,30,31}; // API starts months from 1, this array starts from 0
- 
-void breakTime(time_t timeInput, tmElements_t &tm){
-// break the given time_t into time components
-// this is a more compact version of the C library localtime function
-// note that year is offset from 1970 !!!
-
-  uint8_t year;
-  uint8_t month, monthLength;
-  uint32_t time;
-  unsigned long days;
-
-  time = (uint32_t)timeInput;
-  tm.Second = time % 60;
-  time /= 60; // now it is minutes
-  tm.Minute = time % 60;
-  time /= 60; // now it is hours
-  tm.Hour = time % 24;
-  time /= 24; // now it is days
-  tm.Wday = ((time + 4) % 7) + 1;  // Sunday is day 1 
-  
-  year = 0;  
-  days = 0;
-  while((unsigned)(days += (LEAP_YEAR(year) ? 366 : 365)) <= time) {
-    year++;
-  }
-  tm.Year = year; // year is offset from 1970 
-  
-  days -= LEAP_YEAR(year) ? 366 : 365;
-  time  -= days; // now it is days in this year, starting at 0
-  
-  days=0;
-  month=0;
-  monthLength=0;
-  for (month=0; month<12; month++) {
-    if (month==1) { // february
-      if (LEAP_YEAR(year)) {
-        monthLength=29;
-      } else {
-        monthLength=28;
-      }
-    } else {
-      monthLength = monthDays[month];
-    }
-    
-    if (time >= monthLength) {
-      time -= monthLength;
-    } else {
-        break;
-    }
-  }
-  tm.Month = month + 1;  // jan is month 1  
-  tm.Day = time + 1;     // day of month
-}
-
-time_t makeTime(tmElements_t &tm){   
-// assemble time elements into time_t 
-// note year argument is offset from 1970 (see macros in time.h to convert to other formats)
-// previous version used full four digit year (or digits since 2000),i.e. 2009 was 2009 or 9
-  
-  int i;
-  uint32_t seconds;
-
-  // seconds from 1970 till 1 jan 00:00:00 of the given year
-  seconds= tm.Year*(SECS_PER_DAY * 365);
-  for (i = 0; i < tm.Year; i++) {
-    if (LEAP_YEAR(i)) {
-      seconds +=  SECS_PER_DAY;   // add extra days for leap years
-    }
-  }
-  
-  // add days for this year, months start from 1
-  for (i = 1; i < tm.Month; i++) {
-    if ( (i == 2) && LEAP_YEAR(tm.Year)) { 
-      seconds += SECS_PER_DAY * 29;
-    } else {
-      seconds += SECS_PER_DAY * monthDays[i-1];  //monthDay array starts from 0
-    }
-  }
-  seconds+= (tm.Day-1) * SECS_PER_DAY;
-  seconds+= tm.Hour * SECS_PER_HOUR;
-  seconds+= tm.Minute * SECS_PER_MIN;
-  seconds+= tm.Second;
-  return (time_t)seconds; 
-}
-/*=====================================================*/	
-/* Low level system time functions  */
-
-static uint32_t sysTime = 0;
-static uint32_t prevMillis = 0;
-static uint32_t nextSyncTime = 0;
-static timeStatus_t Status = timeNotSet;
-
-getExternalTime getTimePtr;  // pointer to external sync function
-//setExternalTime setTimePtr; // not used in this version
-
-#ifdef TIME_DRIFT_INFO   // define this to get drift data
-time_t sysUnsyncedTime = 0; // the time sysTime unadjusted by sync  
-#endif
-
-
-time_t now() {
-  while (millis() - prevMillis >= 1000){      
-    sysTime++;
-    prevMillis += 1000;	
-#ifdef TIME_DRIFT_INFO
-    sysUnsyncedTime++; // this can be compared to the synced time to measure long term drift     
-#endif
-  }
-  if (nextSyncTime <= sysTime) {
-    if (getTimePtr != 0) {
-      time_t t = getTimePtr();
-      if (t != 0) {
-        setTime(t);
-      } else {
-        nextSyncTime = sysTime + syncInterval;
-        Status = (Status == timeNotSet) ?  timeNotSet : timeNeedsSync;
-      }
-    }
-  }  
-  return (time_t)sysTime;
-}
-
-void setTime(time_t t) { 
-#ifdef TIME_DRIFT_INFO
- if(sysUnsyncedTime == 0) 
-   sysUnsyncedTime = t;   // store the time of the first call to set a valid Time   
-#endif
-
-  sysTime = (uint32_t)t;  
-  nextSyncTime = (uint32_t)t + syncInterval;
-  Status = timeSet;
-  prevMillis = millis();  // restart counting from now (thanks to Korman for this fix)
-} 
-
-void setTime(int hr,int min,int sec,int dy, int mnth, int yr){
- // year can be given as full four digit year or two digts (2010 or 10 for 2010);  
- //it is converted to years since 1970
-  if( yr > 99)
-      yr = yr - 1970;
+time_t::operator clock_t() const
+{
+  clock_t c = days() * SECONDS_PER_DAY;
+  if (hours < 18)
+    c += hours * (uint16_t) SECONDS_PER_HOUR;
   else
-      yr += 30;  
-  tm.Year = yr;
-  tm.Month = mnth;
-  tm.Day = dy;
-  tm.Hour = hr;
-  tm.Minute = min;
-  tm.Second = sec;
-  setTime(makeTime(tm));
+    c += hours * (uint32_t) SECONDS_PER_HOUR;
+  c += minutes * (uint16_t) SECONDS_PER_MINUTE;
+  c += seconds;
+
+  return (c);
 }
 
-void adjustTime(long adjustment) {
-  sysTime += adjustment;
+uint16_t time_t::days() const
+{
+  uint16_t day_count = day_of_year();
+
+  uint16_t y = full_year();
+  while (y-- > epoch_year())
+    day_count += days_per(y);
+
+  return (day_count);
 }
 
-// indicates if time has been set and recently synchronized
-timeStatus_t timeStatus() {
-  now(); // required to actually update the status
-  return Status;
+uint16_t time_t::day_of_year() const
+{
+  uint16_t dayno = date - 1;
+  bool leap_year = is_leap();
+
+  for (uint8_t m = 1; m < month; m++) {
+    dayno += pgm_read_byte(&days_in[m]);
+    if (leap_year && (m == 2)) dayno++;
+  }
+
+  return (dayno);
 }
 
-void setSyncProvider( getExternalTime getTimeFunction){
-  getTimePtr = getTimeFunction;  
-  nextSyncTime = sysTime;
-  now(); // this will sync the clock
-}
+void time_t::use_fastest_epoch()
+{
+  // Figure out when we were compiled and use the year for a really
+  // fast epoch_year. Format "MMM DD YYYY"
+  const char* compile_date = (const char *) PSTR(__DATE__);
+  uint16_t compile_year = 0;
+  for (uint8_t i = 7; i < 11; i++)
+    compile_year = compile_year*10 + (pgm_read_byte(&compile_date[i]) - '0');
 
-void setSyncInterval(time_t interval){ // set the number of seconds between re-sync
-  syncInterval = (uint32_t)interval;
-  nextSyncTime = sysTime + syncInterval;
+  // Temporarily set a Y2K epoch so we can figure out the day for
+  // January 1 of this year
+  epoch_year( Y2K_EPOCH_YEAR );
+  epoch_weekday = Y2K_EPOCH_WEEKDAY;
+  time_t this_year(0);
+  this_year.year = compile_year % 100;
+  this_year.set_day();
+  uint8_t compile_weekday = this_year.day;
+
+  time_t::epoch_year( compile_year );
+  time_t::epoch_weekday = compile_weekday;
+  time_t::pivot_year = this_year.year;
 }

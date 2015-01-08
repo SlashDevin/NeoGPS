@@ -23,8 +23,6 @@ extern Stream & operator <<( Stream & outs, const int32_t v );
 extern Stream & operator <<( Stream & outs, const uint8_t v );
 extern Stream & operator <<( Stream & outs, const __FlashStringHelper *s );
 
-extern Stream & operator <<( Stream & outs, const tmElements_t & t );
-
 class gps_fix;
 
 /**

@@ -1,144 +1,263 @@
-/*
-  time.h - low level time and date functions
-*/
+/**
+ * @file Time.h
+ * @version 1.0
+ *
+ * @section License
+ * Copyright (C) 2014, SlashDevin
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * 
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * 
+ * This file is part of the NeoGPS project.  Based on the execellent
+ * framework, Cosa, by Mikael Patel.
+ */
 
-/*
-  July 3 2011 - fixed elapsedSecsThisWeek macro (thanks Vincent Valdy for this)
-              - fixed  daysToTime_t macro (thanks maniacbug)
-*/     
+#ifndef TIME_H
+#define TIME_H
 
-#ifndef _Time_h
-#ifdef __cplusplus
-#define _Time_h
+#include <stdint.h>
 
-#include <inttypes.h>
-#ifndef __AVR__
-#include <sys/types.h> // for __time_t_defined, but avr libc lacks sys/types.h
+#include "CosaCompat.h"
+
+/**
+ * Number of seconds elapsed since January 1 of the Epoch Year,
+ * 00:00:00 +0000 (UTC). 
+ */
+typedef uint32_t clock_t;
+
+const uint32_t SECONDS_PER_DAY = 86400L;
+const uint16_t SECONDS_PER_HOUR = 3600;
+const uint8_t SECONDS_PER_MINUTE = 60;
+const uint8_t DAYS_PER_WEEK = 7;
+
+/**
+ * Common date/time structure
+ */
+struct time_t {
+
+  enum weekday_t {
+    SUNDAY = 1,
+    MONDAY = 2,
+    TUESDAY = 3,
+    WEDNESDAY = 4,
+    THURSDAY = 5,
+    FRIDAY = 6,
+    SATURDAY = 7
+  };
+
+  // NTP epoch year and weekday (Monday)
+  static const uint16_t NTP_EPOCH_YEAR = 1900;
+  static const uint8_t  NTP_EPOCH_WEEKDAY = MONDAY;
+
+  // POSIX epoch year and weekday (Thursday)
+  static const uint16_t POSIX_EPOCH_YEAR = 1970;
+  static const uint8_t  POSIX_EPOCH_WEEKDAY = THURSDAY;
+
+  // Y2K epoch year and weekday (Saturday)
+  static const uint16_t Y2K_EPOCH_YEAR = 2000;
+  static const uint8_t  Y2K_EPOCH_WEEKDAY = SATURDAY;
+
+  uint8_t seconds;		//!< 00-59 Seconds.
+  uint8_t minutes;		//!< 00-59 Minutes.
+  uint8_t hours;		//!< 00-23 Hours.
+  uint8_t day;			//!< 01-07 Day.
+  uint8_t date;			//!< 01-31 Date.
+  uint8_t month;		//!< 01-12 Month.
+  uint8_t year;			//!< 00-99 Year.
+
+  /**
+   * Constructor.
+   */
+  time_t() {}
+
+  /**
+   * Construct from seconds from the Epoch.
+   * @param[in] c clock.
+   * @param[in] zone time (hours adjustment from UTC).
+   */
+  time_t(clock_t c, int8_t zone = 0);
+
+  /**
+   * Convert to seconds.
+   * @return seconds from epoch.
+   */
+  operator clock_t() const;
+
+  /**
+   * Set day member from current value.  This is a relatively expensive
+   * operation, so the weekday is only calculated when requested.
+   */
+  void set_day()
+  {
+    day = weekday_for(days());
+  }
+
+  /**
+   * Convert to days.
+   * @return days from January 1 of the epoch year.
+   */
+  uint16_t days() const;
+
+  /**
+   * Calculate day of the current year.
+   * @return days from January 1, which is day zero.
+   */
+  uint16_t day_of_year() const;
+
+  /**
+   * Calculate 4-digit year from internal 2-digit year member.
+   * @return 4-digit year.
+   */
+  uint16_t full_year() const
+  {
+    return full_year(year);
+  }
+
+  /**
+   * Calculate 4-digit year from a 2-digit year
+   * @param[in] year (4-digit).
+   * @return true if /year/ is a leap year.
+   */
+  static uint16_t full_year( uint8_t year )
+  {
+    uint16_t y = year;
+
+    if (y < pivot_year)
+      y += 100 * (epoch_year()/100 + 1);
+    else
+      y += 100 * (epoch_year()/100);
+
+    return y;
+  }
+
+  /**
+   * Determine whether the current year is a leap year.
+   * @returns true if the two-digit /year/ member is a leap year.
+   */
+  bool is_leap() const
+  {
+    return is_leap(full_year());
+  }
+
+  /**
+   * Determine whether the 4-digit /year/ is a leap year.
+   * @param[in] year (4-digit).
+   * @return true if /year/ is a leap year.
+   */
+  static bool is_leap(uint16_t year)
+  {
+    if (year % 4) return false;
+    uint16_t y = year % 400;
+    return (y == 0) || ((y != 100) && (y != 200) && (y != 300));
+  }
+
+  /**
+   * Calculate how many days are in the specified year.
+   * @param[in] year (4-digit).
+   * @return number of days.
+   */
+  static uint16_t days_per(uint16_t year)
+  {
+    return (365 + is_leap(year));
+  }
+
+  /**
+   * Determine the day of the week for the specified day number
+   * @param[in] day number as counted from January 1 of the epoch year.
+   * @return weekday number 1..7, as for the /day/ member.
+   */
+  static uint8_t weekday_for(uint16_t dayno)
+  {
+    return ((dayno+epoch_weekday-1) % DAYS_PER_WEEK) + 1;
+  }
+
+  /**
+   * Check that all members are set to a coherent date/time.
+   * @return true if valid date/time.
+   */
+  bool is_valid() const
+  {
+    return 
+      ((year <= 99) &&
+       (1 <= month) && (month <= 12) &&
+       ((1 <= date) &&
+	((date <= pgm_read_byte(&days_in[month])) ||
+         ((month == 2) && is_leap() && (date == 29)))) &&
+       (1 <= day) && (day <= 7) &&
+       (hours <= 23) &&
+       (minutes <= 59) &&
+       (seconds <= 59));
+  }
+
+  /**
+   * Set the epoch year for all time_t operations. Note that the pivot
+   * year defaults to the epoch_year % 100. Valid years will be in the
+   * range epoch_year..epoch_year+99. Selecting a different pivot year
+   * will slide this range to the right.
+   * @param[in] y epoch year to set.
+   * See also /full_year/.
+   */
+  static void epoch_year(uint16_t y)
+  {
+    s_epoch_year = y;
+    epoch_offset = s_epoch_year % 100;
+    pivot_year = epoch_offset;
+  }
+
+  /**
+   * Get the epoch year.
+   * @return year.
+   */
+  static uint16_t epoch_year() 
+  { 
+    return (s_epoch_year); 
+  }
+
+  static uint8_t epoch_weekday;
+
+  /**
+   * The pivot year determine the range of years WRT the epoch_year
+   * For example, an epoch year of 2000 and a pivot year of 80 will
+   * allow years in the range 1980 to 2079. Default 0 for Y2K_EPOCH.
+   */
+  static uint8_t pivot_year;
+
+  /**
+   * Use the current year for the epoch year. This will result in the
+   * best performance of conversions, but dates/times before January 1
+   * of the epoch year cannot be represented. 
+   */
+  static void use_fastest_epoch();
+
+  /**
+   * Parse a character string and fill out members.
+   * @param[in] s PROGMEM character string with format "YYYY-MM-DD HH:MM:SS".
+   * @return success.
+   */
+  bool parse(str_P s);
+
+  static const uint8_t days_in[] PROGMEM; // month index is 1..12, PROGMEM
+
+protected:
+  static uint16_t s_epoch_year;
+  static uint8_t epoch_offset;
+} __attribute__((packed));
+
+class Stream;
+
+/**
+ * Print the date/time to the given stream with the format "YYYY-MM-DD HH:MM:SS".
+ * @param[in] outs output stream.
+ * @param[in] t time structure.
+ * @return iostream.
+ */
+Stream & operator <<( Stream & outs, const time_t &t );
+
 #endif
-
-
-#if !defined(__time_t_defined) // avoid conflict with newlib or other posix libc
-typedef unsigned long time_t;
-#endif
-
-
-// This ugly hack allows us to define C++ overloaded functions, when included
-// from within an extern "C", as newlib's sys/stat.h does.  Actually it is
-// intended to include "time.h" from the C library (on ARM, but AVR does not
-// have that file at all).  On Mac and Windows, the compiler will find this
-// "Time.h" instead of the C library "time.h", so we may cause other weird
-// and unpredictable effects by conflicting with the C library header "time.h",
-// but at least this hack lets us define C++ functions as intended.  Hopefully
-// nothing too terrible will result from overriding the C library header?!
-extern "C++" {
-typedef enum {timeNotSet, timeNeedsSync, timeSet
-}  timeStatus_t ;
-
-typedef enum {
-    dowInvalid, dowSunday, dowMonday, dowTuesday, dowWednesday, dowThursday, dowFriday, dowSaturday
-} timeDayOfWeek_t;
-
-typedef enum {
-    tmSecond, tmMinute, tmHour, tmWday, tmDay,tmMonth, tmYear, tmNbrFields
-} tmByteFields;	   
-
-typedef struct  { 
-  uint8_t Second; 
-  uint8_t Minute; 
-  uint8_t Hour; 
-  uint8_t Wday;   // day of week, sunday is day 1
-  uint8_t Day;
-  uint8_t Month; 
-  uint8_t Year;   // offset from 1970; 
-} 	tmElements_t, TimeElements, *tmElementsPtr_t;
-
-//convenience macros to convert to and from tm years 
-#define  tmYearToCalendar(Y) ((Y) + 1970)  // full four digit year 
-#define  CalendarYrToTm(Y)   ((Y) - 1970)
-#define  tmYearToY2k(Y)      ((Y) - 30)    // offset is from 2000
-#define  y2kYearToTm(Y)      ((Y) + 30)   
-
-typedef time_t(*getExternalTime)();
-//typedef void  (*setExternalTime)(const time_t); // not used in this version
-
-
-/*==============================================================================*/
-/* Useful Constants */
-#define SECS_PER_MIN  (60UL)
-#define SECS_PER_HOUR (3600UL)
-#define SECS_PER_DAY  (SECS_PER_HOUR * 24UL)
-#define DAYS_PER_WEEK (7UL)
-#define SECS_PER_WEEK (SECS_PER_DAY * DAYS_PER_WEEK)
-#define SECS_PER_YEAR (SECS_PER_WEEK * 52UL)
-#define SECS_YR_2000  (946684800UL) // the time at the start of y2k
- 
-/* Useful Macros for getting elapsed time */
-#define numberOfSeconds(_time_) (_time_ % SECS_PER_MIN)  
-#define numberOfMinutes(_time_) ((_time_ / SECS_PER_MIN) % SECS_PER_MIN) 
-#define numberOfHours(_time_) (( _time_% SECS_PER_DAY) / SECS_PER_HOUR)
-#define dayOfWeek(_time_)  ((( _time_ / SECS_PER_DAY + 4)  % DAYS_PER_WEEK)+1) // 1 = Sunday
-#define elapsedDays(_time_) ( _time_ / SECS_PER_DAY)  // this is number of days since Jan 1 1970
-#define elapsedSecsToday(_time_)  (_time_ % SECS_PER_DAY)   // the number of seconds since last midnight 
-// The following macros are used in calculating alarms and assume the clock is set to a date later than Jan 1 1971
-// Always set the correct time before settting alarms
-#define previousMidnight(_time_) (( _time_ / SECS_PER_DAY) * SECS_PER_DAY)  // time at the start of the given day
-#define nextMidnight(_time_) ( previousMidnight(_time_)  + SECS_PER_DAY )   // time at the end of the given day 
-#define elapsedSecsThisWeek(_time_)  (elapsedSecsToday(_time_) +  ((dayOfWeek(_time_)-1) * SECS_PER_DAY) )   // note that week starts on day 1
-#define previousSunday(_time_)  (_time_ - elapsedSecsThisWeek(_time_))      // time at the start of the week for the given time
-#define nextSunday(_time_) ( previousSunday(_time_)+SECS_PER_WEEK)          // time at the end of the week for the given time
-
-
-/* Useful Macros for converting elapsed time to a time_t */
-#define minutesToTime_t ((M)) ( (M) * SECS_PER_MIN)  
-#define hoursToTime_t   ((H)) ( (H) * SECS_PER_HOUR)  
-#define daysToTime_t    ((D)) ( (D) * SECS_PER_DAY) // fixed on Jul 22 2011
-#define weeksToTime_t   ((W)) ( (W) * SECS_PER_WEEK)   
-
-/*============================================================================*/
-/*  time and date functions   */
-int     hour();            // the hour now 
-int     hour(time_t t);    // the hour for the given time
-int     hourFormat12();    // the hour now in 12 hour format
-int     hourFormat12(time_t t); // the hour for the given time in 12 hour format
-uint8_t isAM();            // returns true if time now is AM
-uint8_t isAM(time_t t);    // returns true the given time is AM
-uint8_t isPM();            // returns true if time now is PM
-uint8_t isPM(time_t t);    // returns true the given time is PM
-int     minute();          // the minute now 
-int     minute(time_t t);  // the minute for the given time
-int     second();          // the second now 
-int     second(time_t t);  // the second for the given time
-int     day();             // the day now 
-int     day(time_t t);     // the day for the given time
-int     weekday();         // the weekday now (Sunday is day 1) 
-int     weekday(time_t t); // the weekday for the given time 
-int     month();           // the month now  (Jan is month 1)
-int     month(time_t t);   // the month for the given time
-int     year();            // the full four digit year: (2009, 2010 etc) 
-int     year(time_t t);    // the year for the given time
-
-time_t now();              // return the current time as seconds since Jan 1 1970 
-void    setTime(time_t t);
-void    setTime(int hr,int min,int sec,int day, int month, int yr);
-void    adjustTime(long adjustment);
-
-/* date strings */ 
-#define dt_MAX_STRING_LEN 9 // length of longest date string (excluding terminating null)
-char* monthStr(uint8_t month);
-char* dayStr(uint8_t day);
-char* monthShortStr(uint8_t month);
-char* dayShortStr(uint8_t day);
-	
-/* time sync functions	*/
-timeStatus_t timeStatus(); // indicates if time has been set and recently synchronized
-void    setSyncProvider( getExternalTime getTimeFunction); // identify the external time provider
-void    setSyncInterval(time_t interval); // set the number of seconds between re-sync
-
-/* low level functions to convert to and from system time                     */
-void breakTime(time_t time, tmElements_t &tm);  // break time_t into elements
-time_t makeTime(tmElements_t &tm);  // convert time elements into time_t
-
-} // extern "C++"
-#endif // __cplusplus
-#endif /* _Time_h */
-

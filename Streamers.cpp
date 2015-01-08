@@ -20,23 +20,6 @@ Stream& operator <<( Stream &outs, const uint8_t v ) { outs.print(v); return out
 Stream& operator <<( Stream &outs, const __FlashStringHelper *s )
 { outs.print(s); return outs; }
 
-Stream& operator <<( Stream &outs, const tmElements_t & t)
-{
-  uint16_t full_year = tmYearToCalendar( t.Year );
-  outs << full_year << '-';
-  if (t.Month < 10) outs << '0';
-  outs << t.Month << '-';
-  if (t.Day < 10) outs << '0';
-  outs << t.Day << ' ';
-  if (t.Hour < 10) outs << '0';
-  outs << t.Hour << ':';
-  if (t.Minute < 10) outs << '0';
-  outs << t.Minute << ':';
-  if (t.Second < 10) outs << '0';
-  outs << t.Second;
-  return (outs);
-}
-
 //------------------------------------------
 
 const char gps_fix_header[] __PROGMEM =
@@ -56,7 +39,7 @@ const char gps_fix_header[] __PROGMEM =
 #endif
 
 #ifdef GPS_FIX_LOCATION
-  "Lat/Lon,"
+  "Lat,Lon,"
 #endif
 
 #if defined(GPS_FIX_ALTITUDE)
@@ -267,7 +250,7 @@ static const char NMEAGPS_header[] __PROGMEM =
 #endif
   "],"
 #endif
-  ;
+  "";
 
 void trace_header()
 {

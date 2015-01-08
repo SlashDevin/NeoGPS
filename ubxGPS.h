@@ -293,7 +293,7 @@ private:
           m_fix.valid.time = true;
           m_fix.valid.date = true;
         } else
-          breakTime( 0L, m_fix.dateTime );
+          m_fix.dateTime = (clock_t) 0L;
 //trace << PSTR(".") << m_fix.dateTime_cs;
       }
       return true;
