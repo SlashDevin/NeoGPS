@@ -371,12 +371,12 @@ public:
 
 #ifdef GPS_FIX_VDOP
       if (r.valid.vdop)
-        hdop = r.vdop;
+        vdop = r.vdop;
 #endif
 
 #ifdef GPS_FIX_PDOP
       if (r.valid.pdop)
-        hdop = r.pdop;
+        pdop = r.pdop;
 #endif
 
 #ifdef GPS_FIX_LAT_ERR

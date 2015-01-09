@@ -37,7 +37,11 @@ void setup()
 
 void loop()
 {
+  static uint32_t last_rx = 0L;
+
   while (Serial1.available()) {
+    last_rx = millis();
+
     if (gps.decode( Serial1.read() ) == NMEAGPS::DECODE_COMPLETED) {
 //      trace << (uint8_t) gps.nmeaMessage << ' ';
 
@@ -46,12 +50,21 @@ void loop()
 #error NMEAGPS_PARSE_RMC must be defined in NMEAGPS.h!
 #endif
 
-      if (gps.nmeaMessage == NMEAGPS::NMEA_RMC) {
-        trace_all( gps, gps.fix() );
-
+      if (gps.nmeaMessage == NMEAGPS::NMEA_RMC)
         //  Use received GPRMC sentence as a pulse
         seconds++;
-      }
     }
+  }
+
+  // Print things out once per second, after the serial input has died down.
+  // This prevents input buffer overflow during printing.
+
+  static uint32_t last_trace = 0L;
+
+  if ((last_trace != seconds) && (millis() - last_rx > 5)) {
+    last_trace = seconds;
+
+    // It's been 5ms since we received anything, log what we have so far...
+    trace_all( gps, gps.fix() );
   }
 }

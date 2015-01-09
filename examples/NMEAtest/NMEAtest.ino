@@ -93,6 +93,7 @@ static void traceSample( const char *ptr )
     trace << F("Input:  ") << (const __FlashStringHelper *) ptr;
     char c;
 
+    gps.fix().init();
     while ( c = pgm_read_byte( ptr++ ) ) {
       if (NMEAGPS::DECODE_COMPLETED == gps.decode( c )) {
         decoded = true;
@@ -105,6 +106,7 @@ static void traceSample( const char *ptr )
       trace << F("Failed to decode!  ");
 
     trace_all( gps, gps.fix() );
+    trace << '\n';
 }
 
 //--------------------------
@@ -315,7 +317,13 @@ void loop()
     trace << failed;
     trace.println( F(" tests.") );
   } else {
-    trace << F("------ Samples ------\n");
+    trace << F("------ Samples ------\nResults format:\n  ");
+    trace_header();
+    trace << '\n';
+
+    gps.statistics.ok         = 0L;
+    gps.statistics.crc_errors = 0L;
+
     traceSample( validGGA );
     traceSample( validRMC );
     traceSample( mtk1 );

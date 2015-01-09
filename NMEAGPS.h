@@ -45,19 +45,6 @@
 //#define NMEAGPS_PARSE_ZDA
 
 /**
- * Configuration item for allowing derived types of NMEAGPS.
- * If defined, virtuals are used, with a slight size (2 bytes) and time penalty.
- * If you derive classes from NMEAGPS, you *must* define NMEAGPS_DERIVED_TYPES.
- */
-
-#define NMEAGPS_DERIVED_TYPES
-#ifdef NMEAGPS_DERIVED_TYPES
-#define NMEAGPS_VIRTUAL virtual
-#else
-#define NMEAGPS_VIRTUAL
-#endif
-
-/**
  * Enable/disable tracking the current satellite array and,
  * optionally, all the info for each satellite.
  */
@@ -74,6 +61,47 @@
 #if defined(NMEAGPS_PARSE_SATELLITE_INFO) & \
     !defined(NMEAGPS_PARSE_SATELLITES)
 #error NMEAGPS_PARSE_SATELLITES must be defined!
+#endif
+
+/**
+ * Enable/disable accumulating fix data across sentences.
+ *
+ * If not defined, the fix will contain data from only the last decoded sentence.
+ *
+ * If defined, the fix will contain data from all received sentences.  Each
+ * fix member will contain the last value received from any sentence that
+ * contains that information.  This means that fix members may contain
+ * information from different time intervals (i.e., they are not coherent).
+ *
+ * ALSO NOTE:  If a received sentence is rejected for any reason (e.g., CRC
+ *   error), all the values are suspect.  The fix will be cleared; no members
+ *   will be valid until new sentences are received and accepted.
+ *
+ *   This is an application tradeoff between keeping a merged copy of received
+ *   fix data (more RAM) vs. accommodating "gaps" in fix data (more code).
+ *
+ * SEE ALSO: NMEAfused.ino and NMEAcoherent.ino
+ */
+//#define NMEAGPS_ACCUMULATE_FIX
+
+/**
+ * Enable/disable gathering interface statistics:
+ * CRC errors and number of sentences received
+ */
+#define NMEAGPS_STATS
+
+/**
+ * Configuration item for allowing derived types of NMEAGPS.
+ * If you derive classes from NMEAGPS, you *must* define NMEAGPS_DERIVED_TYPES.
+ * If not defined, virtuals are not used, with a slight size (2 bytes) and 
+ * execution time savings.
+ */
+
+#define NMEAGPS_DERIVED_TYPES
+#ifdef NMEAGPS_DERIVED_TYPES
+#define NMEAGPS_VIRTUAL virtual
+#else
+#define NMEAGPS_VIRTUAL
 #endif
 
 /**
@@ -128,6 +156,7 @@ protected:
       bool       negative    :1; // field had a leading '-'
       bool       safe        :1; // fix is safe to access
       bool       comma_needed:1; // field needs a comma to finish parsing
+      bool       group_valid :1; // multi-field group valid
     } __attribute__((packed));
 
     /*
@@ -150,8 +179,12 @@ public:
      */
     NMEAGPS()
     {
-      rxState = NMEA_IDLE;
-      safe    = true;
+#ifdef NMEAGPS_STATS
+      statistics.ok         = 0;
+      statistics.crc_errors = 0;
+#endif
+      rxState               = NMEA_IDLE;
+      safe                  = true;
     };
 
     /**
@@ -184,7 +217,7 @@ public:
     //  take a snapshot while it is_safe, and then use the snapshot
     //  later.
 
-    const struct gps_fix & fix() const { return m_fix; };
+    struct gps_fix & fix() { return m_fix; };
 
     //  Determine whether the members of /fix/ are "currently" safe.
     //  It will return true when a complete sentence and the CRC characters 
@@ -219,8 +252,8 @@ public:
      * Internal GPS parser statistics.
      */
     struct {
-        uint8_t  parser_ok;     // count of successfully parsed packets
-        uint8_t  parser_crcerr; // count of CRC errors
+        uint32_t ok;         // count of successfully parsed sentences
+        uint32_t crc_errors; // count of CRC errors
     } statistics;
 #endif
 
@@ -239,8 +272,10 @@ public:
     static void send_P( Stream *device, str_P msg );
 
 private:
-    void rxBegin();
-    void rxEnd( bool ok );
+    void sentenceBegin       ();
+    void sentenceOk          ();
+    void sentenceInvalid     ();
+    void sentenceUnrecognized();
 
 protected:
     /*
@@ -328,13 +363,22 @@ protected:
 
 #endif
 
-    // Parse floating-point numbers into a /whole_frac/
+    /**
+     * Parse floating-point numbers into a /whole_frac/
+     * @return true when the value is fully populated.
+     */
     bool parseFloat( gps_fix::whole_frac & val, char chr, uint8_t max_decimal );
 
-    // Parse floating-point numbers into a uint16_t
+    /**
+     * Parse floating-point numbers into a uint16_t
+     * @return true when the value is fully populated.
+     */
     bool parseFloat( uint16_t & val, char chr, uint8_t max_decimal );
 
-    // Parse NMEA lat/lon dddmm.mmmm degrees
+    /**
+     * Parse NMEA lat/lon dddmm.mmmm degrees
+     * @return true.
+     */
     bool parseDDDMM( int32_t & val, char chr );
 
     // Parse integer into 8-bit int

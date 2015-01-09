@@ -65,7 +65,7 @@ bool ubloxNMEA::parseFix( char chr )
 
   switch (chrCount) {
     case 0:
-      comma_needed = false;
+      comma_needed = true;
       if (chr == 'N')
         m_fix.status = gps_fix::STATUS_NONE;
       else if (chr == 'T')
