@@ -61,8 +61,6 @@ public:
     static const nmea_msg_t PUBX_LAST_MSG  = (nmea_msg_t) PUBX_04;
 
 protected:
-    static const char * const ublox_nmea[] __PROGMEM;
-    static const uint8_t ublox_nmea_size;
     static const msg_table_t ublox_msg_table __PROGMEM;
 
     const msg_table_t *msg_table() const { return &ublox_msg_table; };

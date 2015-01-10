@@ -82,7 +82,26 @@
  *
  * SEE ALSO: NMEAfused.ino and NMEAcoherent.ino
  */
-//#define NMEAGPS_ACCUMULATE_FIX
+#define NMEAGPS_ACCUMULATE_FIX
+#ifdef NMEAGPS_ACCUMULATE_FIX
+
+// Nothing is done to the fix at the beginning of every sentence
+#define NMEAGPS_INIT_FIX(m)
+
+// Invalidate one part when it starts to get parsed.  It *may* get
+// validated when the parsing id finished
+#define NMEAGPS_INVALIDATE(m) m_fix.valid.m = false
+
+#else
+
+// Invalidate the entire fix at the beginning of every sentence
+#define NMEAGPS_INIT_FIX(m) m.valid.init()
+
+// Individual parts do not need to be invalidated as they are parsed
+#define NMEAGPS_INVALIDATE(m)
+
+#endif
+
 
 /**
  * Enable/disable gathering interface statistics:
@@ -295,7 +314,6 @@ protected:
       const char * const *table;   // array of NMEA sentence strings
     };
 
-    static const char * const std_nmea[] __PROGMEM;
     static const msg_table_t  nmea_msg_table __PROGMEM;
 
     NMEAGPS_VIRTUAL const msg_table_t *msg_table() const
@@ -349,18 +367,17 @@ public:
 #ifdef NMEAGPS_PARSE_SATELLITE_INFO
       uint8_t  elevation; // 0..99 deg
       uint16_t azimuth;   // 0..359 deg
-      uint8_t  snr;       // 0..99 dBHz
-      bool     tracked;
+      uint8_t  snr    :7; // 0..99 dBHz
+      bool     tracked:1;
 #endif
     } __attribute__((packed));
 
     static const uint8_t MAX_SATELLITES = 20;
     satellite_view_t satellites[ MAX_SATELLITES ];
+    uint8_t sat_count;
 
-    bool satellites_valid() const { return (sat_index == m_fix.satellites); }
+    bool satellites_valid() const { return (sat_count >= m_fix.satellites); }
 protected:
-    uint8_t sat_index; // only used during parsing
-
 #endif
 
     /**
@@ -381,7 +398,10 @@ protected:
      */
     bool parseDDDMM( int32_t & val, char chr );
 
-    // Parse integer into 8-bit int
+    /*
+     * Parse integer into 8-bit int
+     * @return true when non-empty value
+     */
     bool parseInt( uint8_t &val, uint8_t chr )
     {
       bool is_comma = (chr == ',');
@@ -394,7 +414,10 @@ protected:
       return true;
     }
 
-    // Parse integer into 16-bit int
+    /*
+     * Parse integer into 16-bit int
+     * @return true when non-empty value
+     */
     bool parseInt( uint16_t &val, uint8_t chr )
     {
       bool is_comma = (chr == ',');

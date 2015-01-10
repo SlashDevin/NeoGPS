@@ -93,11 +93,11 @@ void setup()
 {
   // Start the normal trace output
   Serial.begin(9600);
-  trace.print( F("NMEAUBX: started\n") );
+  trace.print( F("PUBX: started\n") );
   trace.print( F("fix object size = ") );
   trace.println( sizeof(gps.fix()) );
-  trace.print( F("NMEAGPS object size = ") );
-  trace.println( sizeof(NMEAGPS) );
+  trace.print( F("gps object size = ") );
+  trace.println( sizeof(gps) );
 
   trace_header();
 
