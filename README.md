@@ -124,6 +124,9 @@ The following configuration items are near the top of NMEAGPS.h:
 // optionally, all the info for each satellite.
 #define NMEAGPS_PARSE_SATELLITES
 #define NMEAGPS_PARSE_SATELLITE_INFO
+
+// Enable/disable accumulating fix data across sentences.
+#define NMEAGPS_ACCUMULATE_FIX
 ```
 ####ubloxNMEA
 This derived class has the following configuration items near the top of ubxNMEA.h:
@@ -152,8 +155,8 @@ The compiler will catch any attempt to use parts of a `fix` that have been
 configured out: you will see something like `gps_fix does not have member 
 xxx`.
 
-The compiler **cannot** catch message set dependencies: the `enum 
-nmea_msg_t` is always available.  So even though a `fix` member is enabled, 
+The compiler **cannot** catch message set dependencies: the enum 
+`nmea_msg_t` is always available.  So even though a `fix` member is enabled, 
 you may have disabled all messages that would have set its value.  
 NMEAtest.ino can be used to check some configurations.
 
@@ -169,7 +172,7 @@ satellites, HDOP, GPRMC and GPGGA messages.
 
 **Full**: Nominal plus VDOP, PDOP, lat/lon/alt errors, satellite array with satellite info, and all messages.
 
-(**TinyGPS** uses the **Nominal** configuration.)
+(**TinyGPS** uses the **Nominal** configuration + a second `fix`.)
 
 RAM requirements
 =======
@@ -322,6 +325,15 @@ Tradeoffs
 
 There's a price for everything, hehe...
 
+####Configurability means that the code is littered with #ifdef sections.
+
+I've tried to increase white space and organization to make it more readable, but let's be honest... 
+conditional compilation is ugly.
+
+####Accumulating parts means knowing which parts are valid.
+
+Before accessing a part, you must check its `valid` flag.  Fortunately, this adds only one bit per member.  See GPSfix.cpp for an example of accessing every data member.
+
 ####Parsing without buffers, or *in place*, means that you must be more careful about when you access data items.
 
 In general, you should wait to access the fix until after the entire sentence has been parsed.  Most of the examples simply `decode` until a sentence is COMPLETED, then do all their work with `fix`.  See `loop()` in [NMEA.ino](examples/NMEA.ino). 
@@ -331,14 +343,19 @@ If you need to access the fix at any time, you will have to double-buffer the fi
 `safe_fix`.)  Also, received data errors can cause invalid field values to be set *before* the CRC is fully computed.  The CRC will
 catch most of those, and the fix members will then be marked as invalid.
 
-####Configurability means that the code is littered with #ifdef sections.
+####Accumulating parts into *one* fix means less RAM but more complicated code
 
-I've tried to increase white space and organization to make it more readable, but let's be honest... 
-conditional compilation is ugly.
+By enabling `NMEAGPS_ACCUMULATE_FIX`, the fix will accumulate data from all received sentences.  Each
+fix member will contain the last value received from any sentence that
+contains that information.  While it avoids the need for a second copy of the merged fix, it has several restrictions:
+* Fix members can only be accessed while it `is_safe()`.  There is no double-buffered fix.
+* Fix members may contain information from different time intervals (i.e., they are not 
+coherent).  It is possible to acheive coherency if the `fix` is re-initialzed at the correct time.
+* All fix members may be invalidated if a received sentence is rejected for any reason (e.g., CRC
+error).  No members will be valid until new sentences are received, parsed, accepted and *safe*.  Your application
+must accommodate possible gaps in fix availability.
 
-####Accumulating parts of a fix into group means knowing which parts are valid.
-
-Before accessing a part, you must check its `valid` flag.  Fortunately, this adds only one bit per member.  See GPSfix.cpp for an example of accessing every data member.
+You are not restricted from having other instances of fix; you can copy or merge the accumulating fix into another copy if you want.  This is just a way to minimize RAM requirements and still have a fused fix.
 
 ####Correlating timestamps for coherency means extra date/time comparisons for each sentence before it is fused.
 
@@ -364,7 +381,7 @@ Several programs are provided to demonstrate how to use the classes in these dif
 * [PUBX](examples/PUBX/PUBX.ino) - sync, polled, coherent, standard NMEA + ublox proprietary NMEA
 * [ublox](examples/ublox/ublox.ino) - sync, polled, coherent, ublox protocol
 
-Preprocessor symbol `USE_FLOAT` can be used in [GPSfix.cpp](GPSfix.cpp) to select integer or floating-point output.
+Preprocessor symbol `USE_FLOAT` can be used in [Streamers.cpp](Streamers.cpp) to select integer or floating-point output.
 
 A self-test test program is also provided:
 
@@ -375,28 +392,39 @@ No GPS device is required; the bytes are streamed from PROGMEM character arrays.
 ```
 NMEA test: started
 fix object size = 44
-NMEAGPS object size = 74
+NMEAGPS object size = 82
 Test string length = 75
 PASSED 6 tests.
 ------ Samples ------
+Results format:
+  Status,Date/Time,Lat,Lon,Hdg,Spd,Alt,HDOP,VDOP,PDOP,Lat err,Lon err,Alt err,Sats,[sat],Rx ok,Rx err,
+
 Input:  $GPGGA,092725.00,4717.11399,N,00833.91590,E,1,8,1.01,499.6,M,48.0,M,,0*5B
-Results:  3,1970-00-00 09:27:25.00,472852332,85652650,,,49960,8,1010,,,,,,
+Results:  3,2000-00-00 09:27:25.00,472852332,85652650,,,49960,1010,,,,,,8,[],1,0,
+
 Input:  $GPRMC,092725.00,A,4717.11437,N,00833.91522,E,0.004,77.52,091202,,,A*5E
-Results:  3,2002-12-09 09:27:25.00,472852395,85652537,7752,4,,,,,,,,,
+Results:  3,2002-12-09 09:27:25.00,472852395,85652537,7752,4,,,,,,,,,[],2,0,
+
 Input:  $GPGGA,064951.000,2307.1256,N,12016.4438,E,1,8,0.95,39.9,M,17.8,M,,*63
-Results:  3,2002-12-09 06:49:51.00,231187600,1202740633,,,3990,8,950,,,,,,
+Results:  3,2002-12-09 06:49:51.00,231187600,1202740633,,,3990,950,,,,,,8,[],3,0,
+
 Input:  $GPRMC,064951.000,A,2307.1256,N,12016.4438,E,0.03,165.48,260406,3.05,W,A*2C
-Results:  3,2006-04-26 06:49:51.00,231187600,1202740633,16548,30,,,,,,,,,
+Results:  3,2006-04-26 06:49:51.00,231187600,1202740633,16548,30,,,,,,,,,[],4,0,
+
 Input:  $GPVTG,165.48,T,,M,0.03,N,0.06,K,A*36
-Results:  3,,,,16548,30,,,,,,,,,
+Results:  3,,,,16548,30,,,,,,,,,[],5,0,
+
 Input:  $GPGSA,A,3,29,21,26,15,18,09,06,10,,,,,2.32,0.95,2.11*00
-Results:  3,,,,,,,,950,2110,2320,,,,
+Results:  3,,,,,,,950,2110,2320,,,,,[],6,0,
+
 Input:  $GPGSV,3,1,09,29,36,029,42,21,46,314,43,26,44,020,43,15,21,321,39*7D
-Results:  ,,,,,,,9,,,,,,,
+Results:  ,,,,,,,,,,,,,9,[],7,0,
+
 Input:  $GPGSV,3,2,09,18,26,314,40,09,57,170,44,06,20,229,37,10,26,084,37*77
-Results:  ,,,,,,,9,,,,,,,
+Results:  ,,,,,,,,,,,,,9,[],8,0,
+
 Input:  $GPGSV,3,3,09,07,,,26*73
-Results:  ,,,,,,,9,,,,,,,[29,21,26,15,18,9,6,10,7,]
+Results:  ,,,,,,,,,,,,,9,[29,21,26,15,18,9,6,10,7,],9,0,
 ```
 
 Acknowledgements
@@ -404,5 +432,3 @@ Acknowledgements
 Mikal Hart's [TinyGPS](https://github.com/mikalhart/TinyGPS) for the generic `decode` approach.
 
 tht's [initial implementation](http://forum.arduino.cc/index.php?topic=150299.msg1863220#msg1863220) of a Cosa `IOStream::Device`.
-
-Paul Stoffregen's excellent [Time](https://github.com/PaulStoffregen/Time) library.
