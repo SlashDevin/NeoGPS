@@ -87,23 +87,31 @@ void NMEAGPS::sentenceOk()
 #endif
 }
 
-
+/**
+ * There was something wrong with the sentence.
+ */
 void NMEAGPS::sentenceInvalid()
 {
   rxState = NMEA_IDLE;
 
-  // There was something wrong with the sentence,
-  // all the values are suspect.  Start over.
+  // All the values are suspect.  Start over.
   m_fix.valid.init();
   nmeaMessage = NMEA_UNKNOWN;
 }
 
+/**
+ *  The sentence is well-formed, but is an unrecognized type
+ */
 
 void NMEAGPS::sentenceUnrecognized()
 {
   rxState     = NMEA_IDLE;
   nmeaMessage = NMEA_UNKNOWN;
 }
+
+/**
+ * Process one character of an NMEA GPS sentence. 
+ */
 
 NMEAGPS::decode_t NMEAGPS::decode( char c )
 {
@@ -549,6 +557,7 @@ bool NMEAGPS::parseDDMMYY( char chr )
 bool NMEAGPS::parseFix( char chr )
 {
   if (chrCount == 0) {
+    NMEAGPS_INVALIDATE( status );
     bool ok = true;
     if ((chr == '1') || (chr == 'A'))
       m_fix.status = gps_fix::STATUS_STD;
@@ -643,11 +652,13 @@ to_binary(uint8_t value)
   return ((high << 3) + (high << 1) + low);
 }
 
+/**
+ * Parse lat/lon dddmm.mmmm fields
+ */
+
 bool NMEAGPS::parseDDDMM( int32_t & val, char chr )
 {
 #ifdef GPS_FIX_LOCATION
-
-  // parse lat/lon dddmm.mmmm fields
 
   if (chrCount == 0) {
     val          = 0;

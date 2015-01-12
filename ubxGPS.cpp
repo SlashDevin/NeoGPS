@@ -31,7 +31,7 @@ bool ubloxGPS::rxEnd()
   } else if (rx().msg_class != UBX_UNK) {
 
 #ifdef NMEAGPS_STATS
-        statistics.parser_ok++;
+        statistics.ok++;
 #endif
 
     visible_msg = true;
@@ -153,7 +153,7 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
           if (chr != m_rx_msg.crc_a) {
             rx().msg_class = UBX_UNK;
 #ifdef NMEAGPS_STATS
-            statistics.parser_crcerr++;
+            statistics.crc_errors++;
 #endif
           }
           rxState = (rxState_t) UBX_CRC_B;
@@ -163,7 +163,7 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
           if (chr != m_rx_msg.crc_b) {
             rx().msg_class = UBX_UNK;
 #ifdef NMEAGPS_STATS
-            statistics.parser_crcerr++;
+            statistics.crc_errors++;
 #endif
           } else if (rxEnd()) {
 //trace << '!';

@@ -321,8 +321,10 @@ void loop()
     trace_header();
     trace << '\n';
 
+#ifdef NMEAGPS_STATS
     gps.statistics.ok         = 0L;
     gps.statistics.crc_errors = 0L;
+#endif
 
     traceSample( validGGA );
     traceSample( validRMC );

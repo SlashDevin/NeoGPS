@@ -255,6 +255,7 @@ void setup()
 {
   // Start the normal trace output
   Serial.begin(9600);
+  trace << F("ublox binary protocol example started.\n");
   trace << F("fix object size = ") << sizeof(gps.fix()) << '\n';
   trace << F("ubloxGPS object size = ") << sizeof(ubloxGPS) << '\n';
   trace << F("MyGPS object size = ") << sizeof(gps) << '\n';
