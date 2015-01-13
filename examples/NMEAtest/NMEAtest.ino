@@ -86,11 +86,28 @@ const char mtk6[] __PROGMEM =
 const char mtk7[] __PROGMEM =
 "$GPGSV,3,3,09,07,,,26*73\r\n";
 
-static void traceSample( const char *ptr )
+const char fpGGA1[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8169,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*49\r\n";
+const char fpGGA2[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8170,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*41\r\n";
+const char fpGGA3[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8171,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*40\r\n";
+const char fpGGA4[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8172,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*43\r\n";
+const char fpGGA5[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8173,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*42\r\n";
+const char fpGGA6[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8174,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*45\r\n";
+const char fpGGA7[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8175,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*44\r\n";
+const char fpGGA8[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8176,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*47\r\n";
+
+//--------------------------
+
+static bool parse_P( const char *ptr )
 {
     bool decoded = false;
-
-    trace << F("Input:  ") << (const __FlashStringHelper *) ptr;
     char c;
 
     gps.fix().init();
@@ -99,6 +116,17 @@ static void traceSample( const char *ptr )
         decoded = true;
       }
     }
+
+    return decoded;
+}
+
+//--------------------------
+
+static void traceSample( const char *ptr )
+{
+    trace << F("Input:  ") << (const __FlashStringHelper *) ptr;
+
+    bool decoded = parse_P( ptr );
 
     if (decoded)
       trace << F("Results:  ");
@@ -335,6 +363,23 @@ void loop()
     traceSample( mtk5 );
     traceSample( mtk6 );
     traceSample( mtk7 );
+
+    /**
+     * This next section displays incremental longitudes.
+     * If you have defined USE_FLOAT in Streamers.cpp, this will show
+     * how the conversion to /float/ causes loss of accuracy compared 
+     * to the /uint32_t/ values.
+     */
+    trace << F("--- floating point conversion tests ---\n\n");
+
+    traceSample( fpGGA1 );
+    traceSample( fpGGA2 );
+    traceSample( fpGGA3 );
+    traceSample( fpGGA4 );
+    traceSample( fpGGA5 );
+    traceSample( fpGGA6 );
+    traceSample( fpGGA7 );
+    traceSample( fpGGA8 );
   }
 
   for (;;);

@@ -96,34 +96,31 @@ public:
     int32_t       lon;  // degrees * 1e7, negative is West
 
     int32_t latitudeL() const { return lat; };
-    float latitudeF() const { return ((float) lat) * 1.0e-7; };
-    double latitude() const { return ((double) lat) * 1.0e-7; };
+    float   latitude () const { return ((float) lat) * 1.0e-7; }; // accuracy loss
 
     int32_t longitudeL() const { return lon; };
-    float longitudeF() const { return ((float) lon) * 1.0e-7; };
-    double longitude() const { return ((double) lon) * 1.0e-7; };
+    float   longitude () const { return ((float) lon) * 1.0e-7; }; // accuracy loss
 #endif
 
 #ifdef GPS_FIX_ALTITUDE
     whole_frac    alt; // .01 meters
 
     int32_t altitude_cm() const { return alt.int32_00(); };
-    float altitudeF() const { return alt.float_00(); };
-    double altitude() const { return alt.double_00(); };
+    float   altitude   () const { return alt.float_00(); };
 #endif
 
 #ifdef GPS_FIX_SPEED
     whole_frac    spd; // .001 nautical miles per hour
 
     uint32_t speed_mkn() const { return spd.int32_000(); };
-    float speed() const { return spd.float_000(); };
+    float    speed    () const { return spd.float_000(); };
 #endif
 
 #ifdef GPS_FIX_HEADING
     whole_frac    hdg; //  .01 degrees
 
     uint16_t heading_cd() const { return hdg.int16_00(); };
-    float heading() const { return hdg.float_00(); };
+    float    heading   () const { return hdg.float_00(); };
 #endif
 
  /**
