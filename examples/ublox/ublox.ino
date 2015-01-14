@@ -12,10 +12,8 @@ Stream & trace = Serial;
 
 #include "ubxGPS.h"
 
-#if defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
 // uncomment this to display just one pulse-per-day.
 //#define PULSE_PER_DAY
-#endif
 
 //--------------------------
 
@@ -38,7 +36,7 @@ public:
     uint32_t last_trace;
     uint32_t last_sentence;
 
-
+    // Prevent recursive sentence processing while waiting for ACKs
     bool ok_to_process;
     
     MyGPS( Stream *device ) : ubloxGPS( device )
@@ -91,6 +89,145 @@ public:
 
     //--------------------------
 
+    void get_status()
+    {
+      static bool acquiring = false;
+
+      if (fix().status == gps_fix::STATUS_NONE) {
+        if (!acquiring) {
+          acquiring = true;
+          trace << F("Acquiring...");
+        } else
+          trace << '.';
+
+      } else {
+        if (acquiring)
+          trace << '\n';
+        trace << F("Acquired status: ") << (uint8_t) fix().status << '\n';
+
+#if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE) & defined(UBLOX_PARSE_TIMEGPS)
+        if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEGPS ))
+          trace << F("enable TIMEGPS failed!\n");
+
+        state = GETTING_LEAP_SECONDS;
+#else
+        start_running();
+        state = RUNNING;
+#endif
+      }
+    } // get_status
+
+    //--------------------------
+
+    void get_leap_seconds()
+    {
+#if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE) & defined(UBLOX_PARSE_TIMEGPS)
+        if (GPSTime::leap_seconds != 0) {
+          trace << F("Acquired leap seconds: ") << GPSTime::leap_seconds << '\n';
+
+          if (!disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEGPS ))
+            trace << F("disable TIMEGPS failed!\n");
+
+#if defined(UBLOX_PARSE_TIMEUTC)
+          if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC ))
+            trace << F("enable TIMEUTC failed!\n");
+          state = GETTING_UTC;
+#else
+          start_running();
+#endif
+        }
+#endif
+    } // get_leap_seconds
+
+    //--------------------------
+
+    void get_utc()
+    {
+#if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE) & defined(UBLOX_PARSE_TIMEUTC)
+        if (GPSTime::start_of_week() != 0) {
+          trace << F("Acquired UTC: ") << fix().dateTime << '\n';
+          trace << F("Acquired Start-of-Week: ") << GPSTime::start_of_week() << '\n';
+
+          start_running();
+        }
+#endif
+    } // get_utc
+
+    //--------------------------
+
+    void start_running()
+    {
+      bool enabled_msg_with_time = false;
+
+#if (defined(GPS_FIX_LOCATION) | defined(GPS_FIX_ALTITUDE)) & \
+    defined(UBLOX_PARSE_POSLLH)
+        if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_POSLLH ))
+          trace << F("enable POSLLH failed!\n");
+        enabled_msg_with_time = true;
+#endif
+
+#if (defined(GPS_FIX_SPEED) | defined(GPS_FIX_HEADING)) & \
+    defined(UBLOX_PARSE_VELNED)
+        if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_VELNED ))
+          trace << F("enable VELNED failed!\n");
+        enabled_msg_with_time = true;
+#endif
+
+#if defined(NMEAGPS_PARSE_SATELLITES) & \
+    defined(UBLOX_PARSE_SVINFO)
+        if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_SVINFO ))
+          trace << PSTR("enable SVINFO failed!\n");
+        enabled_msg_with_time = true;
+#endif
+
+#if defined(UBLOX_PARSE_TIMEUTC)
+#if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
+        if (enabled_msg_with_time &&
+            !disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC ))
+          trace << F("disable TIMEUTC failed!\n");
+
+#elif defined(GPS_FIX_TIME) | defined(GPS_FIX_DATE)
+        // If both aren't defined, we can't convert TOW to UTC,
+        // so ask for the separate UTC message.
+        if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC ))
+          trace << F("enable TIMEUTC failed!\n");
+#endif
+#endif
+        state = RUNNING;
+        trace_header();
+    }
+
+    //--------------------------
+
+    bool is_new_interval()
+    {
+        // See if we stepped into a different time interval,
+        //   or if it has finally become valid after a cold start.
+
+        bool new_interval;
+#if defined(GPS_FIX_TIME)
+        new_interval = (fix().valid.time &&
+                      (!merged.valid.time ||
+                       (merged.dateTime.seconds != fix().dateTime.seconds) ||
+                       (merged.dateTime.minutes != fix().dateTime.minutes) ||
+                       (merged.dateTime.hours   != fix().dateTime.hours)));
+#elif defined(PULSE_PER_DAY)
+        new_interval = (fix().valid.date &&
+                      (!merged.valid.date ||
+                       (merged.dateTime.date  != fix().dateTime.date) ||
+                       (merged.dateTime.month != fix().dateTime.month) ||
+                       (merged.dateTime.year  != fix().dateTime.year)));
+#else
+        //  No date/time configured, so let's assume it's a new
+        //  if the seconds have changed.
+        new_interval = (seconds != last_sentence);
+#endif
+      return new_interval;
+
+    } // is_new_interval
+
+    //--------------------------
+
     bool processSentence()
       {
         bool old_otp = ok_to_process;
@@ -98,9 +235,8 @@ public:
 
         bool ok = false;
 
-        if (!ok && (nmeaMessage >= (nmea_msg_t)ubloxGPS::PUBX_00)) {
+        if (!ok && (nmeaMessage >= (nmea_msg_t)ubloxGPS::PUBX_00))
           ok = true;
-        }
 
         if (!ok && (rx().msg_class != ublox::UBX_UNK)) {
           ok = true;
@@ -114,104 +250,14 @@ public:
         if (ok) {
 
           switch (state) {
-            case GETTING_STATUS:
-              if (fix().status != gps_fix::STATUS_NONE) {
-                trace << F("Acquired status: ") << (uint8_t) fix().status << '\n';
-#if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
-                if (enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEGPS ))
-                  state = GETTING_LEAP_SECONDS;
-                else
-                  trace << F("enable TIMEGPS failed!\n");
-              }
-              break;
+            case GETTING_STATUS      : get_status      (); break;
 
-            case GETTING_LEAP_SECONDS:
-              if (GPSTime::leap_seconds != 0) {
-                trace << F("Acquired leap seconds: ") << GPSTime::leap_seconds << '\n';
-              }
-              if (!disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEGPS ))
-                trace << F("disable TIMEGPS failed!\n");
-              else if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC ))
-                trace << F("enable TIMEUTC failed!\n");
-              else
-                state = GETTING_UTC;
-              break;
+            case GETTING_LEAP_SECONDS: get_leap_seconds(); break;
 
-            case GETTING_UTC:
-              if (GPSTime::start_of_week() != 0) {
-                trace << F("Acquired UTC: ") << fix().dateTime << '\n';
-                trace << F("Acquired Start-of-Week: ") << GPSTime::start_of_week() << '\n';
+            case GETTING_UTC         : get_utc         (); break;
 
-#if defined(GPS_FIX_LOCATION) | defined(GPS_FIX_ALTITUDE) | \
-    defined(GPS_FIX_SPEED) | defined(GPS_FIX_HEADING)
-                if (!disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC ))
-                  trace << F("disable TIMEUTC failed!\n");
-                else
-                  state = RUNNING;
-#else
-                state = RUNNING;
-#endif
-
-#else
-
-#if defined(GPS_FIX_TIME) | defined(GPS_FIX_DATE)
-                if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC ))
-                  trace << F("enable TIMEUTC failed!\n");
-                else
-                  state = RUNNING;
-#else
-                state = RUNNING;
-#endif
-
-#endif
-
-#if (defined(GPS_FIX_LOCATION) | defined(GPS_FIX_ALTITUDE)) & \
-    defined(UBLOX_PARSE_POSLLH)
-
-                if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_POSLLH ))
-                  trace << F("enable POSLLH failed!\n");
-#endif
-
-#if (defined(GPS_FIX_SPEED) | defined(GPS_FIX_HEADING)) & \
-    defined(UBLOX_PARSE_VELNED)
-                if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_VELNED ))
-                  trace << F("enable VELNED failed!\n");
-#endif
-
-#if defined(NMEAGPS_PARSE_SATELLITES) & \
-    defined(UBLOX_PARSE_SVINFO)
-                if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_SVINFO ))
-                  trace << PSTR("enable SVINFO failed!\n");
-#endif
-
-                trace_header();
-              }
-              break;
-
-            default:
-              // See if we stepped into a different time interval,
-              //   or if it has finally become valid after a cold start.
-
-              bool newInterval;
-#if defined(GPS_FIX_TIME)
-              newInterval = (fix().valid.time &&
-                            (!merged.valid.time ||
-                             (merged.dateTime.seconds != fix().dateTime.seconds) ||
-                             (merged.dateTime.minutes != fix().dateTime.minutes) ||
-                             (merged.dateTime.hours   != fix().dateTime.hours)));
-#elif defined(PULSE_PER_DAY)
-              newInterval = (fix().valid.date &&
-                            (!merged.valid.date ||
-                             (merged.dateTime.date  != fix().dateTime.date) ||
-                             (merged.dateTime.month != fix().dateTime.month) ||
-                             (merged.dateTime.year  != fix().dateTime.year)));
-#else
-              //  No date/time configured, so let's assume it's a new
-              //  if the seconds have changed.
-              newInterval = (seconds != last_sentence);
-#endif
-
-              if (newInterval) {
+            case RUNNING:
+              if (is_new_interval()) {
 
                 //  Since we're into the next time interval, we throw away
                 //     all of the previous fix and start with what we

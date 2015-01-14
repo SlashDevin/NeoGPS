@@ -113,7 +113,7 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
               chrCount = 0;
               rxState = (rxState_t) UBX_RECEIVING_DATA;
               
-              m_fix.valid.init();
+              NMEAGPS_INIT_FIX(m_fix);
               safe = false;
               
               if (rx().msg_class == UBX_ACK) {
@@ -151,6 +151,8 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
 
       case UBX_CRC_A:
           if (chr != m_rx_msg.crc_a) {
+            // All the values are suspect.  Start over.
+            m_fix.valid.init();
             rx().msg_class = UBX_UNK;
 #ifdef NMEAGPS_STATS
             statistics.crc_errors++;
@@ -161,6 +163,8 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
 
       case UBX_CRC_B:
           if (chr != m_rx_msg.crc_b) {
+            // All the values are suspect.  Start over.
+            m_fix.valid.init();
             rx().msg_class = UBX_UNK;
 #ifdef NMEAGPS_STATS
             statistics.crc_errors++;
@@ -348,11 +352,9 @@ bool ubloxGPS::parseField( char c )
 //if (chrCount == 0) trace << F( "stat ");
 #ifdef UBLOX_PARSE_STATUS
             switch (chrCount) {
-#if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
               case 0: case 1: case 2: case 3:
                 ok = parseTOW( chr );
                 break;
-#endif
               case 4:
                 ok = parseFix( chr );
                 break;
@@ -375,14 +377,14 @@ bool ubloxGPS::parseField( char c )
 #ifdef UBLOX_PARSE_POSLLH
             switch (chrCount) {
 
-#if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
               case 0: case 1: case 2: case 3:
                 ok = parseTOW( chr );
                 break;
-#endif
 
 #ifdef GPS_FIX_LOCATION
-              case 4: case 5: case 6: case 7:
+              case 4:
+                NMEAGPS_INVALIDATE( location );
+              case 5: case 6: case 7:
                  ((uint8_t *)&m_fix.lon) [ chrCount-4 ] = chr;
                  break;
               case 8: case 9: case 10: case 11:
@@ -393,7 +395,9 @@ bool ubloxGPS::parseField( char c )
 #endif
 
 #ifdef GPS_FIX_ALTITUDE
-              case 16: case 17: case 18: case 19:
+              case 16:
+                NMEAGPS_INVALIDATE( altitude );
+              case 17: case 18: case 19:
                 ((uint8_t *)&m_fix.alt) [ chrCount-16 ] = chr;
                 if (chrCount == 19) {
                   gps_fix::whole_frac *altp = &m_fix.alt;
@@ -410,7 +414,14 @@ bool ubloxGPS::parseField( char c )
 #endif
 
 #if defined( GPS_FIX_LAT_ERR ) | defined( GPS_FIX_LON_ERR )
-              case 20: case 21: case 22: case 23:
+              case 20:
+#ifdef GPS_FIX_LAT_ERR
+                NMEAGPS_INVALIDATE( lat_err );
+#endif
+#ifdef GPS_FIX_LON_ERR
+                NMEAGPS_INVALIDATE( lon_err );
+#endif
+              case 21: case 22: case 23:
                 U1[ chrCount-20 ] = chr;
                 if (chrCount == 23) {
                   uint16_t err_cm = U4/100;
@@ -427,7 +438,9 @@ bool ubloxGPS::parseField( char c )
 #endif
 
 #ifdef GPS_FIX_ALT_ERR
-              case 24: case 25: case 26: case 27:
+              case 24:
+                NMEAGPS_INVALIDATE( alt_err );
+              case 25: case 26: case 27:
                 U1[ chrCount-24 ] = chr;
                 if (chrCount == 27) {
                   m_fix.alt_err_cm = U4/100;
@@ -444,14 +457,14 @@ bool ubloxGPS::parseField( char c )
 #ifdef UBLOX_PARSE_VELNED
             switch (chrCount) {
 
-#if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
               case 0: case 1: case 2: case 3:
                 ok = parseTOW( chr );
                 break;
-#endif
 
 #ifdef GPS_FIX_SPEED
-              case 20: case 21: case 22: case 23:
+              case 20:
+                NMEAGPS_INVALIDATE( speed );
+              case 21: case 22: case 23:
                 ((uint8_t *)&m_fix.spd) [ chrCount-20 ] = chr;
                 if (chrCount == 23) {
                   gps_fix::whole_frac *spdp = &m_fix.spd;
@@ -465,7 +478,9 @@ bool ubloxGPS::parseField( char c )
 #endif
 
 #ifdef GPS_FIX_HEADING
-              case 24: case 25: case 26: case 27:
+              case 24:
+                NMEAGPS_INVALIDATE( heading );
+              case 25: case 26: case 27:
                 ((uint8_t *)&m_fix.hdg) [ chrCount-24 ] = chr;
                 if (chrCount == 27) {
                   gps_fix::whole_frac *hdgp = &m_fix.hdg;
@@ -524,7 +539,8 @@ bool ubloxGPS::parseField( char c )
             switch (chrCount) {
 
 #if defined(GPS_FIX_DATE)
-              case 12: m_fix.dateTime.year   = chr; break;
+              case 12: NMEAGPS_INVALIDATE( date );
+                       m_fix.dateTime.year   = chr; break;
               case 13: m_fix.dateTime.year   =
                         ((((uint16_t)chr) << 8) + m_fix.dateTime.year) % 100;
                 break;
@@ -532,7 +548,8 @@ bool ubloxGPS::parseField( char c )
               case 15: m_fix.dateTime.date   = chr; break;
 #endif
 #if defined(GPS_FIX_TIME)
-              case 16: m_fix.dateTime.hours   = chr; break;
+              case 16: NMEAGPS_INVALIDATE( time );
+                       m_fix.dateTime.hours   = chr; break;
               case 17: m_fix.dateTime.minutes = chr; break;
               case 18: m_fix.dateTime.seconds = chr; break;
 #endif
@@ -565,35 +582,34 @@ bool ubloxGPS::parseField( char c )
 #ifdef UBLOX_PARSE_SVINFO
             switch (chrCount) {
 
-#if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
               case 0: case 1: case 2: case 3:
                 ok = parseTOW( chr );
                 break;
-#endif
+
 #ifdef GPS_FIX_SATELLITES
               case 4:
                 m_fix.satellites = chr;
                 m_fix.valid.satellites = true;
 #ifdef NMEAGPS_PARSE_SATELLITES
-                sat_index = 0;
+                sat_count = 0;
                 break;
               default:
-                if ((chrCount >= 8) && (sat_index < MAX_SATELLITES)) {
+                if ((chrCount >= 8) && (sat_count < MAX_SATELLITES)) {
                   uint8_t i =
-                    (uint8_t) (chrCount - 8 - (12 * (uint16_t)sat_index));
+                    (uint8_t) (chrCount - 8 - (12 * (uint16_t)sat_count));
 
                   switch (i) {
-                    case 1: satellites[sat_index].id        = chr; break;
+                    case 1: satellites[sat_count].id        = chr; break;
 #ifdef NMEAGPS_PARSE_SATELLITE_INFO
-                    case 0: satellites[sat_index].tracked   = (chr != 255); break;
-                    case 4: satellites[sat_index].snr       = chr; break;
-                    case 5: satellites[sat_index].elevation = chr; break;
-                    case 6: satellites[sat_index].azimuth   = chr; break;
+                    case 0: satellites[sat_count].tracked   = (chr != 255); break;
+                    case 4: satellites[sat_count].snr       = chr; break;
+                    case 5: satellites[sat_count].elevation = chr; break;
+                    case 6: satellites[sat_count].azimuth   = chr; break;
                     case 7:
-                      satellites[sat_index].azimuth += (chr << 8);
+                      satellites[sat_count].azimuth += (chr << 8);
                       break;
 #endif
-                    case 11: sat_index++; break;
+                    case 11: sat_count++; break;
                   }
                 }
 #endif

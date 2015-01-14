@@ -276,9 +276,9 @@ private:
 
     bool parseFix( uint8_t c );
 
-#if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
     bool parseTOW( uint8_t chr )
     {
+#if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
       if (chrCount == 0) {
         m_fix.valid.date =
         m_fix.valid.time = false;
@@ -296,9 +296,11 @@ private:
           m_fix.dateTime = (clock_t) 0L;
 //trace << PSTR(".") << m_fix.dateTime_cs;
       }
+#endif
+
       return true;
     }
-#endif
+
 } __attribute__((packed));
 
 #endif
