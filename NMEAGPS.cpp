@@ -251,9 +251,11 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
     else if ((msg_offset <= nmeaMessage) && (nmeaMessage < msg_offset+table_size))
       // In range of this table, pick up where we left off
       entry = nmeaMessage - msg_offset;
+#ifdef NMEAGPS_DERIVED_TYPES
     else
       // Try the next table
       check_this_table = false;
+#endif
 
     if (check_this_table) {
       uint8_t i = entry;
