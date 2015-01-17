@@ -45,12 +45,19 @@ In an attempt to be reusable in a variety of different programming styles, this 
 * multiple protocols from same device
 * any kind of input stream (Serial, SoftwareSerial, PROGMEM arrays, etc.)
 
-##[Data Model](doc/Data Model.md)
-##[Configuration](doc/Configuration.md)
-##[RAM requirements](doc/RAM.md)
-##[Program Space requirements](doc/Program.md)
-##[Performance](doc/Performance.md)
-##[Extending NeoGPS](doc/Extending.md)
-##[Tradeoffs](doc/Tradeoffs.md)
-##[Examples](doc/Examples.md)
-##[Acknowledgements](doc/Acknowledgements.md)
+Inconceivable!
+=============
+
+Don't believe it?  Check out these detailed sections:
+
+Section  |  Description
+-------- |  ------------
+[Data Model](doc/Data Model.md) | Aggregating pieces into a *fix*
+[Configurations](doc/Configurations.md) | Tailoring NeoGPS to your needs
+[Performance](doc/Performance.md) | 33% faster!  Really!
+[RAM requirements](doc/RAM.md) | Doing it without buffers!
+[Program Space requirements](doc/Program.md) | Making it fit
+[Extending NeoGPS](doc/Extending.md) | Using specific devices
+[Tradeoffs](doc/Tradeoffs.md) | Comparing to other libraries
+[Examples](doc/Examples.md) | Programming styles
+[Acknowledgements](doc/Acknowledgements.md) | Thanks!
