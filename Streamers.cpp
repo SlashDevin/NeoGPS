@@ -284,20 +284,18 @@ void trace_all( const NMEAGPS &gps, const gps_fix &fix )
 #if defined(NMEAGPS_PARSE_SATELLITES)
   trace << '[';
 
-  if (gps.satellites_valid()) {
-    for (uint8_t i=0; i < gps.sat_count; i++) {
-      trace << gps.satellites[i].id;
+  for (uint8_t i=0; i < gps.sat_count; i++) {
+    trace << gps.satellites[i].id;
 #if defined(NMEAGPS_PARSE_SATELLITE_INFO)
-      trace << ' ' << 
-        gps.satellites[i].elevation << '/' << gps.satellites[i].azimuth;
-      trace << '@';
-      if (gps.satellites[i].tracked)
-        trace << gps.satellites[i].snr;
-      else
-        trace << '-';
+    trace << ' ' << 
+      gps.satellites[i].elevation << '/' << gps.satellites[i].azimuth;
+    trace << '@';
+    if (gps.satellites[i].tracked)
+      trace << gps.satellites[i].snr;
+    else
+      trace << '-';
 #endif
-      trace << ',';
-    }
+    trace << ',';
   }
 
   trace << F("],");
