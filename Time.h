@@ -26,16 +26,23 @@
 
 #include "CosaCompat.h"
 
+//------------------------------------------------------
+//  Enable/disable run-time modification of the epoch.
+//  If this is defined, epoch mutators are available.
+//  If this is not defined, the epoch is a hard-coded constant.
+//     Only epoch accessors are available.
+//#define TIME_EPOCH_MODIFIABLE
+
 /**
  * Number of seconds elapsed since January 1 of the Epoch Year,
  * 00:00:00 +0000 (UTC). 
  */
 typedef uint32_t clock_t;
 
-const uint32_t SECONDS_PER_DAY = 86400L;
-const uint16_t SECONDS_PER_HOUR = 3600;
-const uint8_t SECONDS_PER_MINUTE = 60;
-const uint8_t DAYS_PER_WEEK = 7;
+const uint32_t SECONDS_PER_DAY    = 86400L;
+const uint16_t SECONDS_PER_HOUR   = 3600;
+const uint8_t  SECONDS_PER_MINUTE = 60;
+const uint8_t  DAYS_PER_WEEK      = 7;
 
 /**
  * Common date/time structure
@@ -43,34 +50,34 @@ const uint8_t DAYS_PER_WEEK = 7;
 struct time_t {
 
   enum weekday_t {
-    SUNDAY = 1,
-    MONDAY = 2,
-    TUESDAY = 3,
+    SUNDAY    = 1,
+    MONDAY    = 2,
+    TUESDAY   = 3,
     WEDNESDAY = 4,
-    THURSDAY = 5,
-    FRIDAY = 6,
-    SATURDAY = 7
+    THURSDAY  = 5,
+    FRIDAY    = 6,
+    SATURDAY  = 7
   };
 
   // NTP epoch year and weekday (Monday)
-  static const uint16_t NTP_EPOCH_YEAR = 1900;
-  static const uint8_t  NTP_EPOCH_WEEKDAY = MONDAY;
+  static const uint16_t NTP_EPOCH_YEAR      = 1900;
+  static const uint8_t  NTP_EPOCH_WEEKDAY   = MONDAY;
 
   // POSIX epoch year and weekday (Thursday)
-  static const uint16_t POSIX_EPOCH_YEAR = 1970;
+  static const uint16_t POSIX_EPOCH_YEAR    = 1970;
   static const uint8_t  POSIX_EPOCH_WEEKDAY = THURSDAY;
 
   // Y2K epoch year and weekday (Saturday)
-  static const uint16_t Y2K_EPOCH_YEAR = 2000;
-  static const uint8_t  Y2K_EPOCH_WEEKDAY = SATURDAY;
+  static const uint16_t Y2K_EPOCH_YEAR      = 2000;
+  static const uint8_t  Y2K_EPOCH_WEEKDAY   = SATURDAY;
 
   uint8_t seconds;		//!< 00-59 Seconds.
   uint8_t minutes;		//!< 00-59 Minutes.
-  uint8_t hours;		//!< 00-23 Hours.
-  uint8_t day;			//!< 01-07 Day.
-  uint8_t date;			//!< 01-31 Date.
-  uint8_t month;		//!< 01-12 Month.
-  uint8_t year;			//!< 00-99 Year.
+  uint8_t hours;		  //!< 00-23 Hours.
+  uint8_t day;			  //!< 01-07 Day.
+  uint8_t date;			  //!< 01-31 Date.
+  uint8_t month;		  //!< 01-12 Month.
+  uint8_t year;			  //!< 00-99 Year.
 
   /**
    * Constructor.
@@ -129,7 +136,7 @@ struct time_t {
   {
     uint16_t y = year;
 
-    if (y < pivot_year)
+    if (y < pivot_year())
       y += 100 * (epoch_year()/100 + 1);
     else
       y += 100 * (epoch_year()/100);
@@ -175,7 +182,7 @@ struct time_t {
    */
   static uint8_t weekday_for(uint16_t dayno)
   {
-    return ((dayno+epoch_weekday-1) % DAYS_PER_WEEK) + 1;
+    return ((dayno+epoch_weekday()-1) % DAYS_PER_WEEK) + 1;
   }
 
   /**
@@ -188,10 +195,9 @@ struct time_t {
       ((year <= 99) &&
        (1 <= month) && (month <= 12) &&
        ((1 <= date) &&
-	((date <= pgm_read_byte(&days_in[month])) ||
+        ((date <= pgm_read_byte(&days_in[month])) ||
          ((month == 2) && is_leap() && (date == 29)))) &&
-       (1 <= day) && (day <= 7) &&
-       (hours <= 23) &&
+       (hours   <= 23) &&
        (minutes <= 59) &&
        (seconds <= 59));
   }
@@ -204,12 +210,14 @@ struct time_t {
    * @param[in] y epoch year to set.
    * See also /full_year/.
    */
+#ifdef TIME_EPOCH_MODIFIABLE
   static void epoch_year(uint16_t y)
   {
     s_epoch_year = y;
-    epoch_offset = s_epoch_year % 100;
-    pivot_year = epoch_offset;
+    epoch_offset( s_epoch_year % 100 );
+    pivot_year( epoch_offset() );
   }
+#endif
 
   /**
    * Get the epoch year.
@@ -220,21 +228,29 @@ struct time_t {
     return (s_epoch_year); 
   }
 
-  static uint8_t epoch_weekday;
+  static uint8_t epoch_weekday()             { return s_epoch_weekday; };
+#ifdef TIME_EPOCH_MODIFIABLE
+  static void    epoch_weekday( uint8_t ew ) { s_epoch_weekday = ew; };
+#endif
 
   /**
    * The pivot year determine the range of years WRT the epoch_year
    * For example, an epoch year of 2000 and a pivot year of 80 will
    * allow years in the range 1980 to 2079. Default 0 for Y2K_EPOCH.
    */
-  static uint8_t pivot_year;
+  static uint8_t pivot_year()             { return s_pivot_year; };
+#ifdef TIME_EPOCH_MODIFIABLE
+  static void    pivot_year( uint8_t py ) { s_pivot_year = py;   };
+#endif
 
   /**
    * Use the current year for the epoch year. This will result in the
    * best performance of conversions, but dates/times before January 1
    * of the epoch year cannot be represented. 
    */
+#ifdef TIME_EPOCH_MODIFIABLE
   static void use_fastest_epoch();
+#endif
 
   /**
    * Parse a character string and fill out members.
@@ -246,8 +262,22 @@ struct time_t {
   static const uint8_t days_in[] PROGMEM; // month index is 1..12, PROGMEM
 
 protected:
+  static uint8_t  epoch_offset() { return s_epoch_offset; };
+
+#ifdef TIME_EPOCH_MODIFIABLE
+  static void     epoch_offset( uint8_t eo ) { s_epoch_offset = eo; };
+
   static uint16_t s_epoch_year;
-  static uint8_t epoch_offset;
+  static uint8_t  s_pivot_year;
+  static uint8_t  s_epoch_offset;
+  static uint8_t  s_epoch_weekday;
+#else
+  static const uint16_t s_epoch_year    = Y2K_EPOCH_YEAR;
+  static const uint8_t  s_pivot_year    = 00;
+  static const uint8_t  s_epoch_offset  = 00;
+  static const uint8_t  s_epoch_weekday = Y2K_EPOCH_WEEKDAY;
+#endif
+
 } __attribute__((packed));
 
 class Stream;
