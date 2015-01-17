@@ -1,39 +1,38 @@
 #ifndef NMEAGPS_H
 #define NMEAGPS_H
 
-/**
- * @file NMEAGPS.h
- * @version 2.1
- *
- * @section License
- * Copyright (C) 2014, SlashDevin
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- */
+//------------------------------------------------------
+// @file NMEAGPS.h
+// @version 2.1
+//
+// @section License
+// Copyright (C) 2014, SlashDevin
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
 
 #include <avr/pgmspace.h>
 
 #include "GPSfix.h"
 
-/**
- * Enable/disable the parsing of specific sentences.
- *
- * Configuring out a sentence prevents its fields from being parsed.
- * However, the sentence type will still be recognized by /decode/ and 
- * stored in member /nmeaMessage/.  No valid flags would be available.
- *
- * Only RMC and ZDA contain date information.  Other
- * sentences contain time information.  Both date and time are 
- * required if you will be doing time_t-to-clock_t operations.
- */
+//------------------------------------------------------
+// Enable/disable the parsing of specific sentences.
+//
+// Configuring out a sentence prevents its fields from being parsed.
+// However, the sentence type will still be recognized by /decode/ and 
+// stored in member /nmeaMessage/.  No valid flags would be available.
+//
+// Only RMC and ZDA contain date information.  Other
+// sentences contain time information.  Both date and time are 
+// required if you will be doing time_t-to-clock_t operations.
 
 #define NMEAGPS_PARSE_GGA
 //#define NMEAGPS_PARSE_GLL
@@ -44,10 +43,10 @@
 //#define NMEAGPS_PARSE_VTG
 //#define NMEAGPS_PARSE_ZDA
 
-/**
- * Enable/disable tracking the current satellite array and,
- * optionally, all the info for each satellite.
- */
+//------------------------------------------------------
+// Enable/disable tracking the current satellite array and,
+// optionally, all the info for each satellite.
+//
 
 //#define NMEAGPS_PARSE_SATELLITES
 //#define NMEAGPS_PARSE_SATELLITE_INFO
@@ -63,59 +62,59 @@
 #error NMEAGPS_PARSE_SATELLITES must be defined!
 #endif
 
-/**
- * Enable/disable accumulating fix data across sentences.
- *
- * If not defined, the fix will contain data from only the last decoded sentence.
- *
- * If defined, the fix will contain data from all received sentences.  Each
- * fix member will contain the last value received from any sentence that
- * contains that information.  This means that fix members may contain
- * information from different time intervals (i.e., they are not coherent).
- *
- * ALSO NOTE:  If a received sentence is rejected for any reason (e.g., CRC
- *   error), all the values are suspect.  The fix will be cleared; no members
- *   will be valid until new sentences are received and accepted.
- *
- *   This is an application tradeoff between keeping a merged copy of received
- *   fix data (more RAM) vs. accommodating "gaps" in fix data (more code).
- *
- * SEE ALSO: NMEAfused.ino and NMEAcoherent.ino
- */
+//------------------------------------------------------
+// Enable/disable accumulating fix data across sentences.
+//
+// If not defined, the fix will contain data from only the last decoded sentence.
+//
+// If defined, the fix will contain data from all received sentences.  Each
+// fix member will contain the last value received from any sentence that
+// contains that information.  This means that fix members may contain
+// information from different time intervals (i.e., they are not coherent).
+//
+// ALSO NOTE:  If a received sentence is rejected for any reason (e.g., CRC
+//   error), all the values are suspect.  The fix will be cleared; no members
+//   will be valid until new sentences are received and accepted.
+//
+//   This is an application tradeoff between keeping a merged copy of received
+//   fix data (more RAM) vs. accommodating "gaps" in fix data (more code).
+//
+// SEE ALSO: NMEAfused.ino and NMEAcoherent.ino
+
 #define NMEAGPS_ACCUMULATE_FIX
+
 #ifdef NMEAGPS_ACCUMULATE_FIX
 
-// Nothing is done to the fix at the beginning of every sentence
+// When accumulating, nothing is done to the fix at the beginning of every sentence
 #define NMEAGPS_INIT_FIX(m)
 
-// Invalidate one part when it starts to get parsed.  It *may* get
-// validated when the parsing id finished
+// ...but we invalidate one part when it starts to get parsed.  It *may* get
+// validated when the parsing is finished.
 #define NMEAGPS_INVALIDATE(m) m_fix.valid.m = false
 
 #else
 
-// Invalidate the entire fix at the beginning of every sentence
+// When NOT accumulating, invalidate the entire fix at the beginning of every sentence
 #define NMEAGPS_INIT_FIX(m) m.valid.init()
 
-// Individual parts do not need to be invalidated as they are parsed
+// ...so the individual parts do not need to be invalidated as they are parsed
 #define NMEAGPS_INVALIDATE(m)
 
 #endif
 
 
-/**
- * Enable/disable gathering interface statistics:
- * CRC errors and number of sentences received
- */
+//------------------------------------------------------
+// Enable/disable gathering interface statistics:
+// CRC errors and number of sentences received
+//
 #define NMEAGPS_STATS
 
-/**
- * Configuration item for allowing derived types of NMEAGPS.
- * If you derive classes from NMEAGPS, you *must* define NMEAGPS_DERIVED_TYPES.
- * If not defined, virtuals are not used, with a slight size (2 bytes) and 
- * execution time savings.
- */
-
+//------------------------------------------------------
+// Configuration item for allowing derived types of NMEAGPS.
+// If you derive classes from NMEAGPS, you *must* define NMEAGPS_DERIVED_TYPES.
+// If not defined, virtuals are not used, with a slight size (2 bytes) and 
+// execution time savings.
+//
 #define NMEAGPS_DERIVED_TYPES
 #ifdef NMEAGPS_DERIVED_TYPES
 #define NMEAGPS_VIRTUAL virtual
@@ -123,22 +122,21 @@
 #define NMEAGPS_VIRTUAL
 #endif
 
-/**
- *
- * NMEA 0183 Parser for generic GPS Modules.  As bytes are received from
- * the device, they affect the internal FSM and set various members
- * of the current /fix/.
- *
- * @section Limitations
- * 1) Only NMEA messages of types are parsed:
- *      GGA, GLL, GSA, GST, GSV, RMC, VTG, and ZDA.
- * 2) The current `fix` is only safe to access _after_ the complete message 
- * is parsed and _before_ the next message begins to affect the members. 
- * If you access `fix` at any other time, /is_safe()/ must be checked. 
- * Otherwise, you should make a copy of `fix` after a sentence has been
- * completely DECODED.
- *
- **/
+//------------------------------------------------------
+//
+// NMEA 0183 Parser for generic GPS Modules.  As bytes are received from
+// the device, they affect the internal FSM and set various members
+// of the current /fix/.
+//
+// @section Limitations
+// 1) Only NMEA messages of types are parsed:
+//      GGA, GLL, GSA, GST, GSV, RMC, VTG, and ZDA.
+// 2) The current `fix` is only safe to access _after_ the complete message 
+// is parsed and _before_ the next message begins to affect the members. 
+// If you access `fix` at any other time, /is_safe()/ must be checked. 
+// Otherwise, you should make a copy of `fix` after a sentence has been
+// completely DECODED.
+//
 
 class NMEAGPS
 {

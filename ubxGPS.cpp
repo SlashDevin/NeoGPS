@@ -385,13 +385,13 @@ bool ubloxGPS::parseField( char c )
               case 4:
                 NMEAGPS_INVALIDATE( location );
               case 5: case 6: case 7:
-                 ((uint8_t *)&m_fix.lon) [ chrCount-4 ] = chr;
-                 break;
+                ((uint8_t *)&m_fix.lon) [ chrCount-4 ] = chr;
+                break;
               case 8: case 9: case 10: case 11:
-                 ((uint8_t *)&m_fix.lat) [ chrCount-8 ] = chr;
-                 if (chrCount == 11)
-                   m_fix.valid.location = true;
-                 break;
+                ((uint8_t *)&m_fix.lat) [ chrCount-8 ] = chr;
+                if (chrCount == 11)
+                  m_fix.valid.location = true;
+                break;
 #endif
 
 #ifdef GPS_FIX_ALTITUDE
@@ -565,7 +565,7 @@ bool ubloxGPS::parseField( char c )
 #if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
                   if (m_fix.valid.date &&
                       (GPSTime::start_of_week() == 0) &&
-                      (GPSTime::leap_seconds != 0))
+                      (GPSTime::leap_seconds    != 0))
                     GPSTime::start_of_week( m_fix.dateTime );
 #endif
 //trace << m_fix.dateTime << F(".") << m_fix.dateTime_cs;
