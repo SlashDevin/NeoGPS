@@ -437,9 +437,11 @@ bool NMEAGPS::parseField(char chr)
                         sat_count++; // field 3 can be omitted, increment now
                       break;
                     case 3:
-                      if (chr != ',')
-                        parseInt( satellites[sat_count-1].snr, chr );
-                      else
+                      if (chr != ',') {
+                        uint8_t snr = satellites[sat_count-1].snr;
+                        parseInt( snr, chr );
+                        satellites[sat_count-1].snr = snr;
+                      } else
                         satellites[sat_count-1].tracked = (chrCount != 0);
                       break;
 #else
