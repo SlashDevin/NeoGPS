@@ -234,7 +234,7 @@ public:
     //  take a snapshot while it is_safe, and then use the snapshot
     //  later.
 
-    struct gps_fix & fix() { return m_fix; };
+    gps_fix & fix() { return m_fix; };
 
     //  Determine whether the members of /fix/ are "currently" safe.
     //  It will return true when a complete sentence and the CRC characters 
