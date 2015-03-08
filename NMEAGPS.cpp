@@ -836,7 +836,7 @@ bool NMEAGPS::parsePDOP( char chr )
 
 bool NMEAGPS::parse_lat_err( char chr )
 {
-#ifdef GPS_FIX_lat_ERR
+#ifdef GPS_FIX_LAT_ERR
   if (chrCount == 0)
     NMEAGPS_INVALIDATE( lat_err );
   if (parseFloat( m_fix.lat_err_cm, chr, 2 ))
@@ -847,7 +847,7 @@ bool NMEAGPS::parse_lat_err( char chr )
 
 bool NMEAGPS::parse_lon_err( char chr )
 {
-#ifdef GPS_FIX_lon_ERR
+#ifdef GPS_FIX_LON_ERR
   if (chrCount == 0)
     NMEAGPS_INVALIDATE( lon_err );
   if (parseFloat( m_fix.lon_err_cm, chr, 2 ))
@@ -858,7 +858,7 @@ bool NMEAGPS::parse_lon_err( char chr )
 
 bool NMEAGPS::parse_alt_err( char chr )
 {
-#ifdef GPS_FIX_alt_ERR
+#ifdef GPS_FIX_ALT_ERR
   if (chrCount == 0)
     NMEAGPS_INVALIDATE( alt_err );
   if (parseFloat( m_fix.alt_err_cm, chr, 2 ))

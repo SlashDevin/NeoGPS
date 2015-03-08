@@ -87,7 +87,6 @@ public:
     int16_t int16_00() const { return whole * 100 + frac; };
     int32_t int32_000() const { return whole * 1000L + frac; };
     float float_00() const { return ((float)whole) + ((float)frac)*0.01; };
-    double double_00() const { return ((double)whole) + ((double)frac)*0.01; };
     float float_000() const { return ((float)whole) + ((float)frac)*0.001; };
   } __attribute__((packed));
 

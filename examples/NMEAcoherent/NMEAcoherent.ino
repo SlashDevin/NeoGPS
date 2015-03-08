@@ -71,6 +71,8 @@ static void sentenceReceived()
     //     just received.
     fused = gps.fix();
 
+    gps.poll( &Serial1, NMEAGPS::NMEA_GST );
+
   } else {
     // Accumulate all the reports in this time interval into a /coherent/ fix
     fused |= gps.fix();
