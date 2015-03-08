@@ -25,6 +25,7 @@ namespace ublox {
         UBX_ACK_ACK     = 0x01, // Reply to CFG messages
         UBX_CFG_MSG     = 0x01, // Configure which messages to send
         UBX_CFG_RATE    = 0x08, // Configure message rate
+        UBX_CFG_NMEA    = 0x17, // Configure NMEA protocol
         UBX_CFG_NAV5    = 0x24, // Configure navigation engine settings
         UBX_MON_VER     = 0x04, // Monitor Receiver/Software version
         UBX_NAV_POSLLH  = 0x02, // Current Position
@@ -341,6 +342,81 @@ namespace ublox {
           msg_id    = UBX_NAV_SVINFO;
           length    = size_for( max_channels ) - sizeof(ublox::msg_t);
         }
+
+      }  __attribute__((packed));
+
+    struct cfg_nmea_t : msg_t {
+        bool  always_output_pos  :1; // invalid or failed
+        bool  output_invalid_pos :1;
+        bool  output_invalid_time:1;
+        bool  output_invalid_date:1;
+        bool  use_GPS_only       :1;
+        bool  output_heading     :1; // even if frozen
+        bool  __not_used__       :2;
+        enum {
+            NMEA_V_2_1 = 0x21,
+            NMEA_V_2_3 = 0x23,
+            NMEA_V_4_0 = 0x40,  // Neo M8 family only
+            NMEA_V_4_1 = 0x41   // Neo M8 family only
+          }
+            nmea_version : 8;
+        enum {
+            SV_PER_TALKERID_UNLIMITED =  0,
+            SV_PER_TALKERID_8         =  8,
+            SV_PER_TALKERID_12        = 12,
+            SV_PER_TALKERID_16        = 16
+          }
+            num_sats_per_talker_id : 8;
+        bool    compatibility_mode:1;
+        bool    considering_mode  :1;
+        bool    max_line_length_82:1;   // Neo M8 family only
+        uint8_t __not_used_1__    :5;
+
+        cfg_nmea_t() : msg_t( UBX_CFG, UBX_CFG_NMEA, UBX_MSG_LEN(*this) ) {};
+
+      }  __attribute__((packed));
+
+    struct cfg_nmea_v1_t : cfg_nmea_t {
+        bool     filter_gps    :1;
+        bool     filter_sbas   :1;
+        uint8_t  __not_used_2__:2;
+        bool     filter_qzss   :1;
+        bool     filter_glonass:1;
+        bool     filter_beidou :1;
+        uint32_t __not_used_3__:25;
+
+        bool proprietary_sat_numbering; // for non-NMEA satellites
+        enum {
+            MAIN_TALKER_ID_COMPUTED,
+            MAIN_TALKER_ID_GP,
+            MAIN_TALKER_ID_GL,
+            MAIN_TALKER_ID_GN,
+            MAIN_TALKER_ID_GA,
+            MAIN_TALKER_ID_GB
+          }
+            main_talker_id : 8;
+        bool gsv_uses_main_talker_id; // false means COMPUTED
+        enum cfg_nmea_version_t {
+            CFG_NMEA_V_0,  // length = 12
+            CFG_NMEA_V_1   // length = 20 (default)
+          }
+            version : 8;
+
+        //  Remaining fields are CFG_NMEA_V_1 only!
+        char beidou_talker_id[2]; // NULs mean default
+        uint8_t __reserved__[6];
+
+        cfg_nmea_v1_t( cfg_nmea_version_t v = CFG_NMEA_V_1 )
+          {
+            version = v;
+            if (version == CFG_NMEA_V_0)
+              length = 12;
+            else {
+              length = 20;
+              for (uint8_t i=0; i<8;) // fills 'reserved' too
+                beidou_talker_id[i++] = 0;
+            }
+          };
 
       }  __attribute__((packed));
 

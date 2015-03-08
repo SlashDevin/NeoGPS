@@ -217,7 +217,7 @@ bool ubloxGPS::wait_for_ack()
       wait_for_idle();
       sent = millis();
     } else if (!waiting()) {
-      return true;
+      return ack_received || reply_received || !nak_received;
     } else {
       // Idle, accumulate time
       uint16_t ms = millis();
