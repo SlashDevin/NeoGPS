@@ -119,51 +119,6 @@ void NMEAGPS::sentenceUnrecognized()
   nmeaMessage = NMEA_UNKNOWN;
 }
 
-//----------------
-//  The first 2 or 4 bytes are a talker ID or a manufacturer ID for
-//  standard and proprietary messages, respectively.  Consume them
-//  until we get to the actual message type.
-
-bool NMEAGPS::pastHeader( char c )
-{
-  bool past = true;
-
-  if ((chrCount == 0) && (c == 'P')) {
-    proprietary = true;
-    past        = false;
-
-  } else if (proprietary) {
-
-    if (chrCount < 4) {
-      // manufacturer ID
-#ifdef NMEAGPS_PARSE_MFR_ID
-      if (!parseMfrID( c ))
-        sentenceUnrecognized();
-#endif
-#ifdef NMEAGPS_SAVE_MFR_ID
-      mfr_id[chrCount-1] = c;
-#endif
-
-      past = false;
-    }
-
-  } else if (chrCount < 2) {
-    // talker ID
-#ifdef NMEAGPS_PARSE_TALKER_ID
-    if (!parseTalkerID( c ))
-      sentenceUnrecognized();
-#endif
-#ifdef NMEAGPS_SAVE_TALKER_ID
-    talker_id[chrCount] = c;
-#endif
-
-    past = false;
-  }
-
-  return past;
-
-} // pastHeader
-
 /**
  * Process one character of an NMEA GPS sentence. 
  */
@@ -204,18 +159,16 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
               crc ^= c;  // accumulate CRC as the chars come in...
 
               if (fieldIndex == 0) {
-                //  The first field is the sentence type.  It will be used later
-                //  by the virtual /parseField/
+                //  The first field is the sentence type.  It will be used
+                //  later by the virtual /parseField/.
 
-                if (pastHeader( c )) {
-                  decode_t cmd_res = parseCommand( c );
+                decode_t cmd_res = parseCommand( c );
 
-                  if (cmd_res == DECODE_COMPLETED) {
-                    NMEAGPS_INIT_FIX(m_fix);
-                    safe = false;
-                  } else if (cmd_res == DECODE_CHR_INVALID) {
-                    sentenceUnrecognized();
-                  }
+                if (cmd_res == DECODE_COMPLETED) {
+                  NMEAGPS_INIT_FIX(m_fix);
+                  safe = false;
+                } else if (cmd_res == DECODE_CHR_INVALID) {
+                  sentenceUnrecognized();
                 }
 
               } else if (!parseField( c )) {
@@ -295,11 +248,54 @@ const NMEAGPS::msg_table_t NMEAGPS::nmea_msg_table __PROGMEM =
 
 NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
 {
-  if (c == ',')
+  if (c == ',') {
     // End of field, did we get a sentence type yet?
-    return (nmeaMessage == NMEA_UNKNOWN) ? DECODE_CHR_INVALID : DECODE_COMPLETED;
+    return
+      (nmeaMessage == NMEA_UNKNOWN) ?
+        DECODE_CHR_INVALID :
+        DECODE_COMPLETED;
+  }
 
-  uint8_t cmdCount = chrCount - (proprietary ? 4 : 2);
+  if ((chrCount == 0) && (c == 'P')) {
+    //  Starting a proprietary message...
+    proprietary = true;
+    return DECODE_CHR_OK;
+  }
+  
+  uint8_t cmdCount = chrCount;
+
+  if (proprietary) {
+
+    // Next three chars are the manufacturer ID
+    if (chrCount < 4) {
+#ifdef NMEAGPS_PARSE_MFR_ID
+      if (!parseMfrID( c ))
+        sentenceUnrecognized();
+#endif
+#ifdef NMEAGPS_SAVE_MFR_ID
+      mfr_id[chrCount-1] = c;
+#endif
+      return DECODE_CHR_OK;
+    }
+
+    cmdCount -= 4;
+
+  } else { // non-proprietary
+
+    // First two chars are talker ID
+    if (chrCount < 2) {
+#ifdef NMEAGPS_PARSE_TALKER_ID
+      if (!parseTalkerID( c ))
+        sentenceUnrecognized();
+#endif
+#ifdef NMEAGPS_SAVE_TALKER_ID
+      talker_id[chrCount] = c;
+#endif
+      return DECODE_CHR_OK;
+    }
+    
+    cmdCount -= 2;
+  }
 
   const msg_table_t *msgs = msg_table();
 
@@ -337,7 +333,11 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
           break;
         }
 
-        // Mismatch, check another entry
+        if (c < rc)
+          // Alphabetical rejection, check next table
+          break;
+
+        // Ok to check another entry in this table
         uint8_t next_msg = i+1;
         if (next_msg >= table_size) {
           // No more entries in this table.
@@ -484,7 +484,7 @@ bool NMEAGPS::parseField(char chr)
                 break;
 
               default:
-                if (sat_count < MAX_SATELLITES) {
+                if (sat_count < NMEAGPS_MAX_SATELLITES) {
                   switch (fieldIndex % 4) {
 #ifdef NMEAGPS_PARSE_SATELLITE_INFO
                     case 0: parseInt( satellites[sat_count].id       , chr ); break;

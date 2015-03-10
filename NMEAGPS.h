@@ -90,7 +90,7 @@
 //#define NMEAGPS_PARSE_TALKER_ID
 
 //#define NMEAGPS_SAVE_MFR_ID
-#define NMEAGPS_PARSE_MFR_ID
+//#define NMEAGPS_PARSE_MFR_ID
 
 //------------------------------------------------------
 // Enable/disable tracking the current satellite array and,
@@ -99,6 +99,7 @@
 
 //#define NMEAGPS_PARSE_SATELLITES
 //#define NMEAGPS_PARSE_SATELLITE_INFO
+#define NMEAGPS_MAX_SATELLITES (20)
 
 #ifdef NMEAGPS_PARSE_SATELLITES
 #ifndef GPS_FIX_SATELLITES
@@ -357,7 +358,6 @@ private:
     void sentenceOk          ();
     void sentenceInvalid     ();
     void sentenceUnrecognized();
-    bool pastHeader( char c );
 
 protected:
     /*
@@ -366,9 +366,7 @@ protected:
      * in derived classes by adding a second table.  Additional tables
      * can be singly-linked through the /previous/ member.  The instantiated
      * class's table is the head, and should be returned by the derived
-     * /msg_table/ function.  Tables should be sorted by the commonality
-     * of the starting characters: alphabetical would work but is not strictly
-     * required.
+     * /msg_table/ function.  Tables should be sorted alphabetically.
      */
     struct msg_table_t {
       uint8_t             offset;  // nmea_msg_t enum starting value
@@ -443,8 +441,7 @@ public:
 #endif
     } __attribute__((packed));
 
-    static const uint8_t MAX_SATELLITES = 20;
-    satellite_view_t satellites[ MAX_SATELLITES ];
+    satellite_view_t satellites[ NMEAGPS_MAX_SATELLITES ];
     uint8_t sat_count;
 
     bool satellites_valid() const { return (sat_count >= m_fix.satellites); }
