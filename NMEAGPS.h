@@ -44,6 +44,55 @@
 //#define NMEAGPS_PARSE_ZDA
 
 //------------------------------------------------------
+// Enable/disable the talker ID and manufacturer ID processing.
+//
+// First, some background information.  There are two kinds of NMEA sentences:
+//
+// 1. Standard NMEA sentences begin with "$ttccc", where
+//      "tt" is the talker ID, and
+//      "ccc" is the variable-length sentence type (i.e., command).
+//
+//    For example, "$GPGLL,..." is a GLL sentence (Geographic Lat/Long) 
+//    transmitted by talker "GP".  This is the most common talker ID.  Some
+//    devices may report "$GNGLL,..." when a mix of GPS and non-GPS
+//    satellites have been used to determine the GLL data.
+//
+// 2. Proprietary NMEA sentences (i.e., those unique to a particular
+//    manufacturer) begin with "$Pmmmccc", where
+//      "P" is the NMEA-defined prefix indicator for proprietary messages,
+//      "mmm" is the 3-character manufacturer ID, and
+//      "ccc" is the variable-length sentence type (it can be empty).
+//
+// No validation of manufacturer ID and talker ID is performed in this
+// base class.  For example, although "GP" is a common talker ID, it is not
+// guaranteed to be transmitted by your particular device, and it IS NOT
+// REQUIRED.  If you need validation of these IDs, or you need to use the
+// extra information provided by some devices, you have two independent
+// options:
+//
+// 1. Enable SAVING the ID: When /decode/ returns DECODE_COMPLETED, the
+// /talker_id/ and/or /mfr_id/ members will contain ID bytes.  The entire
+// sentence will be parsed, perhaps modifying members of /fix/.  You should
+// enable one or both IDs if you want the information in all sentences *and*
+// you also want to know the ID bytes.  This add two bytes of RAM for the
+// talker ID, and 3 bytes of RAM for the manufacturer ID.
+//
+// 2. Enable PARSING the ID:  The virtual /parse_talker_id/ and
+// /parse_mfr_id/ will receive each ID character as it is received.  If it
+// is not a valid ID, return /false/ to abort processing the rest of the
+// sentence.  No CPU time will be wasted on the invalid sentence, and no
+// /fix/ members will be modified.  You should enable this if you want to
+// ignore some IDs.  You must override /parse_talker_id/ and/or
+// /parse_mfr_id/ in a derived class.
+//
+
+//#define NMEAGPS_SAVE_TALKER_ID
+//#define NMEAGPS_PARSE_TALKER_ID
+
+//#define NMEAGPS_SAVE_MFR_ID
+#define NMEAGPS_PARSE_MFR_ID
+
+//------------------------------------------------------
 // Enable/disable tracking the current satellite array and,
 // optionally, all the info for each satellite.
 //
@@ -107,7 +156,7 @@
 // Enable/disable gathering interface statistics:
 // CRC errors and number of sentences received
 //
-#define NMEAGPS_STATS
+//#define NMEAGPS_STATS
 
 //------------------------------------------------------
 // Configuration item for allowing derived types of NMEAGPS.
@@ -116,10 +165,16 @@
 // execution time savings.
 //
 #define NMEAGPS_DERIVED_TYPES
+
 #ifdef NMEAGPS_DERIVED_TYPES
 #define NMEAGPS_VIRTUAL virtual
 #else
 #define NMEAGPS_VIRTUAL
+#endif
+
+#if (defined(NMEAGPS_PARSE_TALKER_ID) | defined(NMEAGPS_PARSE_MFR_ID)) &  \
+           !defined(NMEAGPS_DERIVED_TYPES)
+#error You must define NMEAGPS_DERIVED_TYPES in NMEAGPS.h in order to parse talker ids!
 #endif
 
 //------------------------------------------------------
@@ -129,7 +184,7 @@
 // of the current /fix/.
 //
 // @section Limitations
-// 1) Only NMEA messages of types are parsed:
+// 1) Only these NMEA messages are parsed:
 //      GGA, GLL, GSA, GST, GSV, RMC, VTG, and ZDA.
 // 2) The current `fix` is only safe to access _after_ the complete message 
 // is parsed and _before_ the next message begins to affect the members. 
@@ -174,6 +229,7 @@ protected:
       bool       safe        :1; // fix is safe to access
       bool       comma_needed:1; // field needs a comma to finish parsing
       bool       group_valid :1; // multi-field group valid
+      bool       proprietary :1; // receiving proprietary message
     } __attribute__((packed));
 
     /*
@@ -225,6 +281,14 @@ public:
      */
     enum nmea_msg_t nmeaMessage:8;
     
+#ifdef NMEAGPS_SAVE_TALKER_ID
+    char talker_id[2];
+#endif
+
+#ifdef NMEAGPS_SAVE_MFR_ID
+    char mfr_id[3];
+#endif
+
     //  Current fix accessor.
     //  /fix/ will be constantly changing as characters are received.
     //  For example, fix().longitude() may return nonsense data if
@@ -293,6 +357,7 @@ private:
     void sentenceOk          ();
     void sentenceInvalid     ();
     void sentenceUnrecognized();
+    bool pastHeader( char c );
 
 protected:
     /*
@@ -316,6 +381,14 @@ protected:
 
     NMEAGPS_VIRTUAL const msg_table_t *msg_table() const
       { return &nmea_msg_table; };
+
+#ifdef NMEAGPS_PARSE_TALKER_ID
+    NMEAGPS_VIRTUAL bool parseTalkerID( char chr ) { return true; };
+#endif
+
+#ifdef NMEAGPS_PARSE_MFR_ID
+    NMEAGPS_VIRTUAL bool parseMfrID( char chr ) { return true; };
+#endif
 
     /*
      * Use the list of tables to recognize an NMEA sentence type.

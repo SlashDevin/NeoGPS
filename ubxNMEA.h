@@ -32,6 +32,20 @@
 #define NMEAGPS_PARSE_PUBX_00
 #define NMEAGPS_PARSE_PUBX_04
 
+// Ublox proprietary messages do not have a message type.  These
+// messages start with "$PUBX," which ends with the manufacturer ID.  The
+// message type is actually specified by the first numeric field.  In order
+// to parse these messages, /parse_mfr_ID/ must be overridden to set the
+// /nmeaMessage/ to PUBX_00 during /parseCommand/.  When the first numeric
+// field is completed by /parseField/, it may change /nmeamessage/ to one 
+// of the other PUBX message types.
+
+#if (defined(NMEAGPS_PARSE_PUBX_00) | defined(NMEAGPS_PARSE_PUBX_00))  \
+        &                \
+    !defined(NMEAGPS_PARSE_MFR_ID)
+#error NMEAGPS_PARSE_MFR_ID must be defined in NMEAGPS.h in order to parse PUBX messages!
+#endif
+
 #ifndef NMEAGPS_DERIVED_TYPES
 #error You must "#define NMEAGPS_DERIVED_TYPES" in NMEAGPS.h!
 #endif
@@ -61,9 +75,20 @@ public:
     static const nmea_msg_t PUBX_LAST_MSG  = (nmea_msg_t) PUBX_04;
 
 protected:
-    static const msg_table_t ublox_msg_table __PROGMEM;
-
-    const msg_table_t *msg_table() const { return &ublox_msg_table; };
+    bool parseMfrID( char chr )
+      { bool ok;
+        switch (chrCount) {
+          case  1: ok = (chr == 'U'); break;
+          case  2: ok = (chr == 'B'); break;
+          default: if (chr == 'X') {
+                     ok = true;
+                     nmeaMessage = (nmea_msg_t) PUBX_00;
+                   } else
+                     ok = false;
+                   break;
+        }
+        return ok;
+      };
 
     bool parseField( char chr );
     bool parseFix( char chr );

@@ -1,16 +1,5 @@
 #include "ubxNMEA.h"
 
-static const char pubx[] __PROGMEM =  "PUBX";
-static const char * const ublox_nmea[] __PROGMEM = { pubx };
-
-const NMEAGPS::msg_table_t ubloxNMEA::ublox_msg_table __PROGMEM =
-  {
-    ubloxNMEA::PUBX_FIRST_MSG,
-    &NMEAGPS::nmea_msg_table,
-    sizeof(ublox_nmea)/sizeof(ublox_nmea[0]),
-    ublox_nmea
-  };
-
 //---------------------------------------------
 
 bool ubloxNMEA::parseField(char chr)
@@ -58,6 +47,8 @@ bool ubloxNMEA::parseField(char chr)
 
   return ok;
 }
+
+//---------------------------------------------
 
 bool ubloxNMEA::parseFix( char chr )
 {

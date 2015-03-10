@@ -326,6 +326,43 @@ void setup()
   gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_VELNED );
   gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_POSLLH );
 
+#if 0
+  // Test a Neo M8 message -- should be rejected by Neo-6 and Neo7
+  ublox::cfg_nmea_v1_t test;
+
+  test.always_output_pos  = false; // invalid or failed
+  test.output_invalid_pos = false;
+  test.output_invalid_time= false;
+  test.output_invalid_date= false;
+  test.use_GPS_only       = false;
+  test.output_heading     = false; // even if frozen
+  test.__not_used__       = false;
+
+  test.nmea_version = ublox::cfg_nmea_v1_t::NMEA_V_4_0;
+  test.num_sats_per_talker_id = ublox::cfg_nmea_v1_t::SV_PER_TALKERID_UNLIMITED;
+
+  test.compatibility_mode = false;
+  test.considering_mode   = true;
+  test.max_line_length_82 = false;
+  test.__not_used_1__     = 0;
+
+  test.filter_gps    = false;
+  test.filter_sbas   = false;
+  test.__not_used_2__= 0;
+  test.filter_qzss   = false;
+  test.filter_glonass= false;
+  test.filter_beidou = false;
+  test.__not_used_3__= 0;
+
+  test.proprietary_sat_numbering = false;
+  test.main_talker_id = ublox::cfg_nmea_v1_t::MAIN_TALKER_ID_GP;
+  test.gsv_uses_main_talker_id = true;
+  test.beidou_talker_id[0] = 'G';
+  test.beidou_talker_id[1] = 'P';
+
+  trace << F("CFG_NMEA result = ") << gps.send( test );
+#endif
+
   gps.ok_to_process = true;
 }
 

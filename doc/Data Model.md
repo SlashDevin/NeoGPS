@@ -16,8 +16,22 @@ The members of `gps_fix` include
 * horizontal, vertical and position dilutions of precision (HDOP, VDOP and PDOP)
 * latitude, longitude and altitude error in centimeters
 
-Constellation Information is also available in the GPS instance:
-* satellite ID, azimuth, elevation and SNR
+The members of `NMEAGPS` include
+* Talker ID (usually GP)
+* Manufacturer ID (from proprietary sentences)
+* Satellite Constellation (ID, azimuth, elevation, SNR and tracking)
+
+You should declare an instance of `NMEAGPS`, which contains an instance of `gps_fix`, called `fix()`:
+
+```
+NMEAGPS gps;
+
+void loop()
+{
+  ...
+  if (gps.fix().valid.status && gps.fix().status != gps_fix::STATUS_NONE)
+    // We can hear satellites!
+```
 
 Except for `status`, each member is conditionally compiled; any, all, or *no* members can be selected for parsing, storing and fusing.  This allows configuring an application to use the minimum amount of RAM for the particular `fix` members of interest.
 

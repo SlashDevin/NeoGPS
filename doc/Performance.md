@@ -31,10 +31,10 @@ $GPGGA,092725.00,4717.11399,N,00833.91590,E,1,8,1.01,499.6,M,48.0,M,,0*5B
 $GPRMC,083559.00,A,4717.11437,N,00833.91522,E,0.004,77.52,091202,,,A*57
 ```
 
-**NeoGPS** takes 1074uS to completely parse a GPGGA sentence, and **TinyGPS** takes 1448uS.
+**NeoGPS** takes 950uS to completely parse a GPGGA sentence, and **TinyGPS** takes 1448uS.
 
-**NeoGPS** takes 1106uS to completely parse a GPRMC sentence, and **TinyGPS** takes 1435uS.
+**NeoGPS** takes 972uS to completely parse a GPRMC sentence, and **TinyGPS** takes 1435uS.
  
-The **DTL** configuration of **NeoGPS** takes 912uS to 
-completely parse a GPGGA sentence, and 971uS to completely parse a GPRMC sentence.
+The **DTL** configuration of **NeoGPS** takes 866uS to 
+completely parse a GPGGA sentence, and 894uS to completely parse a GPRMC sentence.
 

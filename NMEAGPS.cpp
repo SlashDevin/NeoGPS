@@ -62,6 +62,16 @@ void NMEAGPS::sentenceBegin()
   fieldIndex   = 0;
   chrCount     = 0;
   comma_needed = false;
+  proprietary  = false;
+#ifdef NMEAGPS_SAVE_TALKER_ID
+  talker_id[0] =
+  talker_id[1] = 0;
+#endif
+#ifdef NMEAGPS_SAVE_MFR_ID
+  mfr_id[0] =
+  mfr_id[1] =
+  mfr_id[2] = 0;
+#endif
 }
 
 
@@ -109,6 +119,51 @@ void NMEAGPS::sentenceUnrecognized()
   nmeaMessage = NMEA_UNKNOWN;
 }
 
+//----------------
+//  The first 2 or 4 bytes are a talker ID or a manufacturer ID for
+//  standard and proprietary messages, respectively.  Consume them
+//  until we get to the actual message type.
+
+bool NMEAGPS::pastHeader( char c )
+{
+  bool past = true;
+
+  if ((chrCount == 0) && (c == 'P')) {
+    proprietary = true;
+    past        = false;
+
+  } else if (proprietary) {
+
+    if (chrCount < 4) {
+      // manufacturer ID
+#ifdef NMEAGPS_PARSE_MFR_ID
+      if (!parseMfrID( c ))
+        sentenceUnrecognized();
+#endif
+#ifdef NMEAGPS_SAVE_MFR_ID
+      mfr_id[chrCount-1] = c;
+#endif
+
+      past = false;
+    }
+
+  } else if (chrCount < 2) {
+    // talker ID
+#ifdef NMEAGPS_PARSE_TALKER_ID
+    if (!parseTalkerID( c ))
+      sentenceUnrecognized();
+#endif
+#ifdef NMEAGPS_SAVE_TALKER_ID
+    talker_id[chrCount] = c;
+#endif
+
+    past = false;
+  }
+
+  return past;
+
+} // pastHeader
+
 /**
  * Process one character of an NMEA GPS sentence. 
  */
@@ -151,12 +206,16 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
               if (fieldIndex == 0) {
                 //  The first field is the sentence type.  It will be used later
                 //  by the virtual /parseField/
-                decode_t cmd_res = parseCommand( c );
-                if (cmd_res == DECODE_COMPLETED) {
-                  NMEAGPS_INIT_FIX(m_fix);
-                  safe = false;
-                } else if (cmd_res == DECODE_CHR_INVALID) {
-                  sentenceUnrecognized();
+
+                if (pastHeader( c )) {
+                  decode_t cmd_res = parseCommand( c );
+
+                  if (cmd_res == DECODE_COMPLETED) {
+                    NMEAGPS_INIT_FIX(m_fix);
+                    safe = false;
+                  } else if (cmd_res == DECODE_CHR_INVALID) {
+                    sentenceUnrecognized();
+                  }
                 }
 
               } else if (!parseField( c )) {
@@ -205,24 +264,24 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
 /*
  * NMEA Sentence strings
  */
-static const char gpgga[] __PROGMEM =  "GPGGA";
-static const char gpgll[] __PROGMEM =  "GPGLL";
-static const char gpgsa[] __PROGMEM =  "GPGSA";
-static const char gpgst[] __PROGMEM =  "GPGST";
-static const char gpgsv[] __PROGMEM =  "GPGSV";
-static const char gprmc[] __PROGMEM =  "GPRMC";
-static const char gpvtg[] __PROGMEM =  "GPVTG";
-static const char gpzda[] __PROGMEM =  "GPZDA";
+static const char gga[] __PROGMEM =  "GGA";
+static const char gll[] __PROGMEM =  "GLL";
+static const char gsa[] __PROGMEM =  "GSA";
+static const char gst[] __PROGMEM =  "GST";
+static const char gsv[] __PROGMEM =  "GSV";
+static const char rmc[] __PROGMEM =  "RMC";
+static const char vtg[] __PROGMEM =  "VTG";
+static const char zda[] __PROGMEM =  "ZDA";
 
 static const char * const std_nmea[] __PROGMEM = {
-  gpgga,
-  gpgll,
-  gpgsa,
-  gpgst,
-  gpgsv,
-  gprmc,
-  gpvtg,
-  gpzda
+  gga,
+  gll,
+  gsa,
+  gst,
+  gsv,
+  rmc,
+  vtg,
+  zda
 };
 
 const NMEAGPS::msg_table_t NMEAGPS::nmea_msg_table __PROGMEM =
@@ -236,6 +295,12 @@ const NMEAGPS::msg_table_t NMEAGPS::nmea_msg_table __PROGMEM =
 
 NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
 {
+  if (c == ',')
+    // End of field, did we get a sentence type yet?
+    return (nmeaMessage == NMEA_UNKNOWN) ? DECODE_CHR_INVALID : DECODE_COMPLETED;
+
+  uint8_t cmdCount = chrCount - (proprietary ? 4 : 2);
+
   const msg_table_t *msgs = msg_table();
 
   for (;;) {
@@ -264,17 +329,11 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
       const char *        table_i = (const char *) pgm_read_word( &table[i] );
       
       for (;;) {
-        char rc = pgm_read_byte( &table_i[chrCount] );
+        char rc = pgm_read_byte( &table_i[cmdCount] );
         if (c == rc) {
           // ok so far...
           entry = i;
           res = DECODE_CHR_OK;
-          break;
-        }
-
-        if ((c == ',') && (rc == 0)) {
-          // End of string and it still matches:  it's this one!
-          res = DECODE_COMPLETED;
           break;
         }
 
@@ -287,7 +346,7 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
 
         //  See if the next entry starts with the same characters.
         const char *table_next = (const char *) pgm_read_word( &table[next_msg] );
-        for (uint8_t j = 0; j < chrCount; j++)
+        for (uint8_t j = 0; j < cmdCount; j++)
           if (pgm_read_byte( &table_i[j] ) != pgm_read_byte( &table_next[j] )) {
             // Nope, a different start to this entry
             break;
