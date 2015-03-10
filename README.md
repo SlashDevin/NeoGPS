@@ -16,6 +16,8 @@ It supports the following protocols and messages:
 * GPVTG - Course over ground and Ground speed
 * GPZDA - UTC Time and Date
 
+Actually, _all_ Talker IDs are accommodated, not just GP.  That is, messages GNRMC, GLRMC, etc. will also be correctly parsed.  See discussion in [Configurations](doc/Configurations.md).
+
 ####u-blox NEO-6
 #####NMEA 0183 Protocol Messages
 * UBX,00 - Lat/Long Position Data
