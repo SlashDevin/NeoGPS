@@ -58,8 +58,7 @@ void NMEAGPS::sentenceBegin()
 {
   crc          = 0;
   nmeaMessage  = NMEA_UNKNOWN;
-  rxState      = NMEA_RECEIVING_DATA;
-  fieldIndex   = 0;
+  rxState      = NMEA_RECEIVING_HEADER;
   chrCount     = 0;
   comma_needed = false;
   proprietary  = false;
@@ -119,6 +118,15 @@ void NMEAGPS::sentenceUnrecognized()
   nmeaMessage = NMEA_UNKNOWN;
 }
 
+void NMEAGPS::headerReceived()
+{
+  NMEAGPS_INIT_FIX(m_fix);
+  safe       = false;
+  fieldIndex = 1;
+  chrCount   = 0;
+  rxState    = NMEA_RECEIVING_DATA;
+}
+
 /**
  * Process one character of an NMEA GPS sentence. 
  */
@@ -130,84 +138,86 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
   if (c == '$') {  // Always restarts
     sentenceBegin();
 
-  } else {
-    switch (rxState) {
-      case NMEA_IDLE: //---------------------------
-          // Reject non-start characters
+  } else if (rxState == NMEA_IDLE) { //---------------------------
+    // Reject non-start characters
 
-          res         = DECODE_CHR_INVALID;
-          nmeaMessage = NMEA_UNKNOWN;
-          break;
+    res         = DECODE_CHR_INVALID;
+    nmeaMessage = NMEA_UNKNOWN;
 
-      case NMEA_RECEIVING_DATA: //---------------------------
-          // Receive complete sentence
+  } else if (rxState == NMEA_RECEIVING_DATA) { //---------------------------
+    // Receive complete sentence
 
-          if (c == '*') {   // Line finished, CRC follows
-              rxState = NMEA_RECEIVING_CRC;
-              chrCount = 0;
+    if (c == '*') {                // Line finished, CRC follows
+        rxState = NMEA_RECEIVING_CRC;
+        chrCount = 0;
 
-          } else if ((c == CR) || (c == LF)) { // Line finished, no CRC
-              sentenceOk();
-              res = DECODE_COMPLETED;
+    } else if (c < ' ') {
 
-          } else if ((c < ' ') || ('~' < c)) { // Invalid char
-              sentenceInvalid();
-              res = DECODE_CHR_INVALID;
+      if ((c == CR) || (c == LF)) { // Line finished, no CRC
+        sentenceOk();
+        res = DECODE_COMPLETED;
+      } else {                      // Invalid char < ' '
+        sentenceInvalid();
+        res = DECODE_CHR_INVALID;
+      }
 
-          } else {            // normal data character
+    } else if (c <= '~') {          // Normal data character
 
-              crc ^= c;  // accumulate CRC as the chars come in...
+        crc ^= c;  // accumulate CRC as the chars come in...
 
-              if (fieldIndex == 0) {
-                //  The first field is the sentence type.  It will be used
-                //  later by the virtual /parseField/.
+        if (!parseField( c ))
+          sentenceInvalid();
+        else if (c == ',') {
+          // Start the next field
+          comma_needed = false;
+          fieldIndex++;
+          chrCount     = 0;
+        } else
+          chrCount++;
 
-                decode_t cmd_res = parseCommand( c );
+    } else {                        // Invalid char > '~'
+      sentenceInvalid();
+      res = DECODE_CHR_INVALID;
+    }
+    
+    
+  } else if (rxState == NMEA_RECEIVING_HEADER) { //------------------------
 
-                if (cmd_res == DECODE_COMPLETED) {
-                  NMEAGPS_INIT_FIX(m_fix);
-                  safe = false;
-                } else if (cmd_res == DECODE_CHR_INVALID) {
-                  sentenceUnrecognized();
-                }
+    //  The first field is the sentence type.  It will be used
+    //  later by the virtual /parseField/.
 
-              } else if (!parseField( c )) {
-                sentenceInvalid();
-              }
+    crc ^= c;  // accumulate CRC as the chars come in...
 
-              if (c == ',') {
-                // Start the next field
-                comma_needed = false;
-                fieldIndex++;
-                chrCount     = 0;
-              } else
-                chrCount++;
-          }
-          break;
-          
-          
-      case NMEA_RECEIVING_CRC: //---------------------------
-        {
-          bool err;
-          uint8_t nybble = parseHEX( c );
-          if (chrCount == 0) {
-            chrCount++;
-            err = ((crc >> 4) != nybble);
-          } else { // == 1
-            err = ((crc & 0x0F) != nybble);
-            if (!err) {
-              sentenceOk();
-              res = DECODE_COMPLETED;
-            }
-          }
-          if (err) {
+    decode_t cmd_res = parseCommand( c );
+
+    if (cmd_res == DECODE_CHR_OK) {
+      chrCount++;
+    } else if (cmd_res == DECODE_COMPLETED) {
+      headerReceived();
+    } else // DECODE_CHR_INVALID
+      sentenceUnrecognized();
+
+
+  } else if (rxState == NMEA_RECEIVING_CRC) { //---------------------------
+    bool    err;
+    uint8_t nybble = parseHEX( c );
+
+    if (chrCount == 0) {
+      chrCount++;
+      err = ((crc >> 4) != nybble);
+    } else { // chrCount == 1
+      err = ((crc & 0x0F) != nybble);
+      if (!err) {
+        sentenceOk();
+        res = DECODE_COMPLETED;
+      }
+    }
+
+    if (err) {
 #ifdef NMEAGPS_STATS
-            statistics.crc_errors++;
+      statistics.crc_errors++;
 #endif
-            sentenceInvalid();
-          }
-        }
-        break;
+      sentenceInvalid();
     }
   }
 

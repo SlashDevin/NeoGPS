@@ -237,9 +237,10 @@ protected:
      * Internal FSM states
      */
     enum rxState_t {
-        NMEA_IDLE,           // Waiting for initial '$'
-        NMEA_RECEIVING_DATA, // Parsing fields up to the terminating '*'
-        NMEA_RECEIVING_CRC   // Receiving two-byte transmitted CRC
+        NMEA_IDLE,             // Waiting for initial '$'
+        NMEA_RECEIVING_HEADER, // Parsing sentence type field
+        NMEA_RECEIVING_DATA,   // Parsing fields up to the terminating '*'
+        NMEA_RECEIVING_CRC     // Receiving two-byte transmitted CRC
     };
     static const uint8_t NMEA_FIRST_STATE = NMEA_IDLE;
     static const uint8_t NMEA_LAST_STATE  = NMEA_RECEIVING_CRC;
