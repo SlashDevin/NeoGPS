@@ -138,12 +138,6 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
   if (c == '$') {  // Always restarts
     sentenceBegin();
 
-  } else if (rxState == NMEA_IDLE) { //---------------------------
-    // Reject non-start characters
-
-    res         = DECODE_CHR_INVALID;
-    nmeaMessage = NMEA_UNKNOWN;
-
   } else if (rxState == NMEA_RECEIVING_DATA) { //---------------------------
     // Receive complete sentence
 
@@ -219,6 +213,12 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
 #endif
       sentenceInvalid();
     }
+
+  } else if (rxState == NMEA_IDLE) { //---------------------------
+    // Reject non-start characters
+
+    res         = DECODE_CHR_INVALID;
+    nmeaMessage = NMEA_UNKNOWN;
   }
 
   return res;
@@ -278,12 +278,12 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
 
     // Next three chars are the manufacturer ID
     if (chrCount < 4) {
-#ifdef NMEAGPS_PARSE_MFR_ID
-      if (!parseMfrID( c ))
-        sentenceUnrecognized();
-#endif
 #ifdef NMEAGPS_SAVE_MFR_ID
       mfr_id[chrCount-1] = c;
+#endif
+#ifdef NMEAGPS_PARSE_MFR_ID
+      if (!parseMfrID( c ))
+        return DECODE_CHR_INVALID;
 #endif
       return DECODE_CHR_OK;
     }
@@ -294,18 +294,20 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
 
     // First two chars are talker ID
     if (chrCount < 2) {
-#ifdef NMEAGPS_PARSE_TALKER_ID
-      if (!parseTalkerID( c ))
-        sentenceUnrecognized();
-#endif
 #ifdef NMEAGPS_SAVE_TALKER_ID
       talker_id[chrCount] = c;
+#endif
+#ifdef NMEAGPS_PARSE_TALKER_ID
+      if (!parseTalkerID( c ))
+        return DECODE_CHR_INVALID;
 #endif
       return DECODE_CHR_OK;
     }
     
     cmdCount -= 2;
   }
+
+  //  The remaining characters are the message type.
 
   const msg_table_t *msgs = msg_table();
 
@@ -324,7 +326,6 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
       entry = nmeaMessage - msg_offset;
 #ifdef NMEAGPS_DERIVED_TYPES
     else
-      // Try the next table
       check_this_table = false;
 #endif
 
@@ -664,6 +665,8 @@ bool NMEAGPS::parseFloat( gps_fix::whole_frac & val, char chr, uint8_t max_decim
   }
 
   if (chr == ',') {
+    comma_needed = false;
+
     // End of field, make sure it's scaled up
     if (!decimal)
       decimal = 1;
@@ -702,9 +705,12 @@ bool NMEAGPS::parseFloat( uint16_t & val, char chr, uint8_t max_decimal )
   }
 
   if (chr == ',') {
+    comma_needed = false;
     if (val)
       while (decimal++ <= max_decimal)
         val *= 10;
+    if (negative)
+      val = -val;
     done = true;
   } else if (chr == '.')
     decimal = 1;

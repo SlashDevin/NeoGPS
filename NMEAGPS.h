@@ -359,6 +359,7 @@ private:
     void sentenceOk          ();
     void sentenceInvalid     ();
     void sentenceUnrecognized();
+    void headerReceived      ();
 
 protected:
     /*

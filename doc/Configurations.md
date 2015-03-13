@@ -145,6 +145,6 @@ A few common configurations are defined as follows
 **Nominal**: date, time, lat/lon, altitude, speed, heading, number of 
 satellites, HDOP, GPRMC and GPGGA messages.
 
-**Full**: Nominal plus VDOP, PDOP, lat/lon/alt errors, satellite array with satellite info, and all messages.
+**Full**: Nominal plus talker ID, VDOP, PDOP, lat/lon/alt errors, satellite array with satellite info, all messages, and parser statistics.
 
 (**TinyGPS** uses the **Nominal** configuration + a second `fix`.)
