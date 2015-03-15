@@ -762,8 +762,19 @@ bool NMEAGPS::parseDDDMM( int32_t & val, char chr )
     if (val) {
       // If the last chars in ".mmmm" were not received,
       //    force the value into its final state.
-      while (decimal++ < 6)
+      if (decimal == 4)
+        val *= 100;
+      else if (decimal == 5)
         val *= 10;
+      else if (decimal >= 6)
+        ;
+      else if (decimal == 3)
+        val *= 1000;
+      else if (decimal == 2)
+        val *= 10000;
+      else if (decimal == 1)
+        val *= 100000;
+
       // Value was in minutes x 1000000, convert to degrees x 10000000.
       val += (val*2 + 1)/3; // aka (100*val+30)/60, but without sign truncation
     }

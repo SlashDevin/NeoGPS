@@ -1,25 +1,24 @@
 RAM requirements
 =======
+
+####**NeoGPS** requires **72% to 96% _less_ RAM, saving 140 to 1100 bytes.**
+
+Because you can select what data members are stored, the RAM savings depends on the [configuration](doc/Configurations.md):
+
+<table>
+<tr><td>Configuration</td><td>NeoGPS<br>Size</td><td>TinyGPS<br>Size (% smaller)</td><td>TinyGPS++<br>Size (% smaller)</td><td>Adafruit_GPS<br>Size (% smaller)</td></tr>
+<tr><td>Minimal</td><td>10</td><td>-    (95%)</td><td>-    (96%)</td></tr>
+<tr><td>DTL</td><td>25</td><td>-    (86%)</td><td>-    (90%)</td></tr>
+<tr><td>Nominal</td><td>41</td><td>180 (72%)</td><td>240 (83%)</td><td>326 (87%)</td></tr>
+<tr><td>Full</td><td>242</td><td>- (-)</td><td>~1400 (83%)</td></tr>
+</table>
+
+####Why does **NeoGPS** use less RAM?
+
 As data is received from the device, various portions of a `fix` are 
 modified.  In fact, _**no buffering RAM is required**_.  Each character 
 affects the internal state machine and may also contribute to a data member 
 (e.g., latitude). 
-
-The **Minimal** configuration requires only 2 bytes, and the NMEA state 
-machine requires 7 bytes, for a total of **10 bytes** (structure alignment 
-may add 1 byte). 
-
-The **DTL** configuration requires 18 bytes, for a total of **25 bytes**.
-
-The **Nominal** configuration requires only 34 bytes, for a total of **41 
-bytes**.  For comparison, TinyGPS requires about 180 bytes (120 bytes for 
-members plus about 60 bytes of string data), and TinyGPS++ requires about 
-240 bytes.
-
-The **Full** configuration requires 44 bytes, and the full NMEA message set 
-configuration adds 130 bytes of satellite data, for a total of **174 
-bytes**.  For comparison, satellite tracking in TinyGPS++ requires over 1100 
-bytes.
 
 If your application only requires an accurate one pulse-per-second, you 
 can configure it to parse *no* sentence types and retain *no* data members. 
