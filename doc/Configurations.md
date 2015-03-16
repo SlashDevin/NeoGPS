@@ -3,10 +3,10 @@ Configuration
 All configuration items are conditional compilations: a `#define` controls an `#if`/`#endif` section.
 Delete or comment out any items to be excluded from your build.  Where 
 possible, checks are performed to verify that you have chosen a "valid" 
-configuration: you may see `#error` messages in the build log.
+configuration: you may see `#error` messages in the build log.  See also **Troubleshooting** section below.
 
 ####gps_fix
-The following configuration items are near the top of GPSfix.h:
+The following configuration items are near the top of GPSfix_cfg.h:
 ```
 // Enable/Disable individual parts of a fix, as parsed from fields of a $GPxxx sentence
 #define GPS_FIX_DATE
@@ -24,7 +24,7 @@ The following configuration items are near the top of GPSfix.h:
 #define GPS_FIX_ALT_ERR
 ```
 ####NMEAGPS
-The following configuration items are near the top of NMEAGPS.h.
+The following configuration items are near the top of NMEAGPS_cfg.h.
 ####Enable/Disable parsing the fields of a $GPxxx sentence
 ```
 #define NMEAGPS_PARSE_GGA
@@ -114,7 +114,8 @@ This derived class has the following configuration items near the top of ubxNMEA
 #define NMEAGPS_PARSE_PUBX_04
 ```
 
-Streamers.cpp has a choice for using floating-point output.
+####Floating-point output.
+Streamers.cpp has one configuration item:
 ```
 #define USE_FLOAT
 ```
@@ -146,5 +147,12 @@ A few common configurations are defined as follows
 satellites, HDOP, GPRMC and GPGGA messages.
 
 **Full**: Nominal plus talker ID, VDOP, PDOP, lat/lon/alt errors, satellite array with satellite info, all messages, and parser statistics.
+______________
 
-(**TinyGPS** uses the **Nominal** configuration + a second `fix`.)
+####Configurations of other libraries
+
+**TinyGPS** uses the **Nominal** configuration + a second `fix`.
+
+**TinyGPSPlus** uses the **Nominal** configuration + statistics + a second fix + timestamps for each `fix` member.
+
+**Adafruit_GPS** uses the **Nominal** configuration + geoid height and IGNORES CHECKSUM!)
