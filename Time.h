@@ -92,6 +92,11 @@ struct time_t {
   time_t(clock_t c, int8_t zone = 0);
 
   /**
+   * Initialize to January 1 of the Epoch Year, 00:00:00
+   */
+    void init();
+  
+  /**
    * Convert to seconds.
    * @return seconds from epoch.
    */

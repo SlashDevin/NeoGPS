@@ -51,6 +51,16 @@ static char formatHex( uint8_t val )
   return (val >= 10) ? ((val - 10) + 'A') : (val + '0');
 }
 
+NMEAGPS::NMEAGPS()
+{
+#ifdef NMEAGPS_STATS
+  statistics.ok         = 0;
+  statistics.crc_errors = 0;
+#endif
+  rxState               = NMEA_IDLE;
+  safe                  = true;
+};
+
 /*
  * Prepare internal members to receive data from sentence fields.
  */

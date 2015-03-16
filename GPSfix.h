@@ -20,35 +20,7 @@
  */
 
 #include "Time.h"
-
-/**
- * Enable/disable the storage for the members of a fix.
- *
- * Disabling a member prevents it from being parsed from a received message.
- * The disabled member cannot be accessed or stored, and its validity flag 
- * would not be available.  It will not be declared, and code that uses that
- * member will not compile.
- *
- * DATE and TIME are somewhat coupled in that they share a single `time_t`,
- * but they have separate validity flags.
- *
- * See also note regarding the DOP members, below.
- *
- */
-
-#define GPS_FIX_DATE
-#define GPS_FIX_TIME
-#define GPS_FIX_LOCATION
-#define GPS_FIX_ALTITUDE
-#define GPS_FIX_SPEED
-#define GPS_FIX_HEADING
-#define GPS_FIX_SATELLITES
-#define GPS_FIX_HDOP
-//#define GPS_FIX_VDOP
-//#define GPS_FIX_PDOP
-//#define GPS_FIX_LAT_ERR
-//#define GPS_FIX_LON_ERR
-//#define GPS_FIX_ALT_ERR
+#include "GPSfix_cfg.h"
 
 /**
  * A structure for holding a GPS fix: time, position, velocity, etc.
@@ -276,12 +248,6 @@ public:
     hdg.init();
 #endif
 
-#ifdef GPS_FIX_SATELLITES
-    satellites = 0;
-#endif
-
-    status = STATUS_NONE;
-
 #ifdef GPS_FIX_HDOP
     hdop = 0;
 #endif
@@ -301,6 +267,15 @@ public:
 #ifdef GPS_FIX_ALT_ERR
     alt_err_cm = 0;
 #endif
+
+#ifdef GPS_FIX_SATELLITES
+    satellites = 0;
+#endif
+
+    dateTime.init();
+    dateTime_cs = 0;
+    
+    status = STATUS_NONE;
 
     valid.init();
   };
@@ -390,6 +365,7 @@ public:
         alt_err_cm = r.alt_err_cm;
 #endif
 
+      // Update all the valid flags
       valid |= r.valid;
 
       return *this;

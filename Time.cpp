@@ -127,6 +127,17 @@ time_t::time_t(clock_t c, int8_t zone)
   seconds = c_ms - (minutes * SECONDS_PER_MINUTE);
 }
 
+void time_t::init()
+{
+  seconds =
+  hours   =
+  minutes = 0;
+  date    = 1;
+  month   = 1;
+  year    = epoch_year() % 100;
+  day     = epoch_weekday();
+}
+
 time_t::operator clock_t() const
 {
   clock_t c = days() * SECONDS_PER_DAY;
