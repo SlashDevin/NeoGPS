@@ -20,6 +20,7 @@
  */
 
 #include "NMEAGPS.h"
+#include "Streamers.h"
 
 /**
  * Enable/disable the parsing of specific NMEA sentences.
