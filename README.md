@@ -16,9 +16,8 @@ It supports the following protocols and messages:
 * GPVTG - Course over ground and Ground speed
 * GPZDA - UTC Time and Date
 
-Actually, _all_ Talker IDs are accommodated, not just GP; GNRMC, GLRMC, etc. 
-will also be correctly parsed.  See discussion in 
-[Configurations](doc/Configurations.md).
+GNRMC, GLRMC, etc. will also be correctly parsed.  See discussion of Talker 
+IDs in [Configurations](doc/Configurations.md).
 
 ####u-blox NEO-6
 #####NMEA 0183 Protocol Messages
@@ -56,6 +55,7 @@ Don't believe it?  Check out these detailed sections:
 
 Section  |  Description
 -------- |  ------------
+[Installing] (doc/Installing.md) | Copying files
 [Data Model](doc/Data Model.md) | Aggregating pieces into a *fix*
 [Configurations](doc/Configurations.md) | Tailoring NeoGPS to your needs
 [Performance](doc/Performance.md) | 37% to 72% faster!  Really!
