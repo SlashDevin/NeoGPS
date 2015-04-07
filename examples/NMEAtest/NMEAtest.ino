@@ -85,6 +85,12 @@ const char mtk6[] __PROGMEM =
 "$GPGSV,3,2,09,18,26,314,40,09,57,170,44,06,20,229,37,10,26,084,37*77\r\n";
 const char mtk7[] __PROGMEM =
 "$GPGSV,3,3,09,07,,,26*73\r\n";
+const char mtk8[] __PROGMEM =
+"$GNGST,082356.00,1.8,,,,1.7,1.3,2.2*60\r\n";
+const char mtk9[] __PROGMEM =
+"$GNRMC,083559.00,A,4717.11437,N,00833.91522,E,0.004,77.52,091202,,,A,V*33\r\n";
+const char mtk10[] __PROGMEM =
+"$GNGGA,092725.00,4717.11399,N,00833.91590,E,1,08,1.01,499.6,M,48.0,M,,*45\r\n";
 
 const char fpGGA1[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8169,W,"
   "1,8,1.01,499.6,M,48.0,M,,0*49\r\n";
@@ -363,6 +369,9 @@ void loop()
     traceSample( mtk5 );
     traceSample( mtk6 );
     traceSample( mtk7 );
+    traceSample( mtk8 );
+    traceSample( mtk9 );
+    traceSample( mtk10 );
 
     /**
      * This next section displays incremental longitudes.

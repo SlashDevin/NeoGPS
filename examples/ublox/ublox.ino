@@ -5,12 +5,12 @@
 
 #include <Arduino.h>
 
+#include "ubxGPS.h"
 #include "Streamers.h"
 
 // Set this to your debug output device.
 Stream & trace = Serial;
 
-#include "ubxGPS.h"
 
 // uncomment this to display just one pulse-per-day.
 //#define PULSE_PER_DAY
@@ -62,9 +62,9 @@ public:
     {
       bool rx = false;
 
-      while (Serial1.available()) {
+      while (Device()->available()) {
         rx = true;
-        if (decode( Serial1.read() ) == DECODE_COMPLETED) {
+        if (decode( Device()->read() ) == DECODE_COMPLETED) {
           if (ok_to_process)
             processSentence();
         }
@@ -293,6 +293,7 @@ public:
 
 } __attribute__((packed));
 
+// Construct the GPS object and hook it to the appropriate serial device
 static MyGPS gps( &Serial1 );
 
 //--------------------------

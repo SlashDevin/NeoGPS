@@ -155,7 +155,7 @@ Stream & operator <<( Stream &outs, const gps_fix &fix )
 #endif
 #ifdef GPS_FIX_VDOP
   if (fix.valid.vdop)
-    outs.print( (fix.vdop * 0.001) 3 );
+    outs.print( (fix.vdop * 0.001), 3 );
   outs << ',';
 #endif
 #ifdef GPS_FIX_PDOP

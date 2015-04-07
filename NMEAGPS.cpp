@@ -155,17 +155,7 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
         rxState = NMEA_RECEIVING_CRC;
         chrCount = 0;
 
-    } else if (c < ' ') {
-
-      if ((c == CR) || (c == LF)) { // Line finished, no CRC
-        sentenceOk();
-        res = DECODE_COMPLETED;
-      } else {                      // Invalid char < ' '
-        sentenceInvalid();
-        res = DECODE_CHR_INVALID;
-      }
-
-    } else if (c <= '~') {          // Normal data character
+    } else if ((' ' <= c) && (c <= '~')) { // Normal data character
 
         crc ^= c;  // accumulate CRC as the chars come in...
 
@@ -179,7 +169,11 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
         } else
           chrCount++;
 
-    } else {                        // Invalid char > '~'
+    } else if ((c == CR) || (c == LF)) { // Line finished, no CRC
+      sentenceOk();
+      res = DECODE_COMPLETED;
+
+    } else {                           // Invalid char
       sentenceInvalid();
       res = DECODE_CHR_INVALID;
     }
@@ -843,7 +837,7 @@ bool NMEAGPS::parseEW( char chr )
 #ifdef GPS_FIX_LOCATION
   if (group_valid) {
     if (chr == 'W')
-      m_fix.lat = -m_fix.lat;
+      m_fix.lon = -m_fix.lon;
 
     m_fix.valid.location = true;
   }
@@ -1008,13 +1002,17 @@ void NMEAGPS::send( Stream *device, const char *msg )
     device->print('$');
     if (*msg == '$')
       msg++;
+    uint8_t sent_trailer = 0;
     uint8_t crc = 0;
     while (*msg) {
       crc ^= *msg;
+      if (*msg == '*' || (sent_trailer > 0))
+        sent_trailer++;
       device->print( *msg++ );
     }
 
-    send_trailer( device, crc );
+    if (sent_trailer != 3)
+      send_trailer( device, crc );
   }
 }
 
@@ -1023,17 +1021,21 @@ void NMEAGPS::send( Stream *device, const char *msg )
 void NMEAGPS::send_P( Stream *device, str_P msg )
 {
   if (msg) {
-    uint8_t crc = 0;
     const char *ptr = (const char *)msg;
     char chr = pgm_read_byte(ptr++);
     if (chr && (chr != '$'))
       device->print('$');
+    uint8_t sent_trailer = 0;
+    uint8_t crc = 0;
     while (chr) {
       crc ^= chr;
+      if (*msg == '*' || (sent_trailer > 0))
+        sent_trailer++;
       device->print( chr );
       chr = pgm_read_byte(ptr++);
     }
 
-    send_trailer( device, crc );
+    if (sent_trailer != 3)
+      send_trailer( device, crc );
   }
 }

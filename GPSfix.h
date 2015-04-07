@@ -131,7 +131,7 @@ public:
 #endif
 
 #if defined(GPS_FIX_DATE) | defined(GPS_FIX_TIME)
-  time_t  dateTime;
+  NeoGPS::time_t  dateTime;
   uint8_t dateTime_cs; // hundredths of a second
 #endif
 

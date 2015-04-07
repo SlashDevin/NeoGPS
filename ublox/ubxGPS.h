@@ -53,6 +53,7 @@ class ubloxGPS : public ubloxNMEA
 
 public:
 
+    // Constructor needs to know the device to handle the UBX binary protocol
     ubloxGPS( Stream *device )
       :
         storage( (ublox::msg_t *) NULL ),
@@ -145,6 +146,9 @@ public:
                       (ublox::msg_id_t) pgm_read_byte( &msg.msg_id ), 0 );
       return send( poll_msg, reply_msg );
     };
+
+    //  Return the Stream that was passed into the constructor.
+    Stream *Device() const { return (Stream *)m_device; };
 
 protected:
 
@@ -293,7 +297,7 @@ private:
           m_fix.valid.time = true;
           m_fix.valid.date = true;
         } else
-          m_fix.dateTime = (clock_t) 0L;
+          m_fix.dateTime.init();
 //trace << PSTR(".") << m_fix.dateTime_cs;
       }
 #endif

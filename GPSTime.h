@@ -7,7 +7,7 @@ class GPSTime
 {
   GPSTime();
 
-  static clock_t s_start_of_week;
+  static NeoGPS::clock_t s_start_of_week;
 
 public:
 
@@ -23,18 +23,18 @@ public:
      * Sunday 00:00:00.  To save fairly expensive date/time calculations,
      * the UTC start of week is cached
      */
-    static void start_of_week( time_t & now )
+    static void start_of_week( NeoGPS::time_t & now )
       {
         now.set_day();
         s_start_of_week =
-          (clock_t) now  -  
-          (clock_t) ((((now.day-1)*24L + 
-                       now.hours)*60L + 
-                       now.minutes)*60L +
-                       now.seconds);
+          (NeoGPS::clock_t) now  -  
+          (NeoGPS::clock_t) ((((now.day-1  ) * 24L + 
+                                now.hours  ) * 60L + 
+                                now.minutes) * 60L +
+                                now.seconds);
       }
 
-    static clock_t start_of_week()
+    static NeoGPS::clock_t start_of_week()
     {
       return s_start_of_week;
     }
@@ -43,19 +43,21 @@ public:
      * Convert a GPS time-of-week to UTC.
      * Requires /leap_seconds/ and /start_of_week/.
      */
-    static clock_t TOW_to_UTC( uint32_t time_of_week )
-      { return (clock_t) (start_of_week() + time_of_week - leap_seconds); }
+    static NeoGPS::clock_t TOW_to_UTC( uint32_t time_of_week )
+      { return (NeoGPS::clock_t)
+          (start_of_week() + time_of_week - leap_seconds); }
 
     /**
      * Set /fix/ timestamp from a GPS time-of-week in milliseconds.
      * Requires /leap_seconds/ and /start_of_week/.
      **/
-    static bool from_TOWms( uint32_t time_of_week_ms, time_t &dt, uint16_t &ms )
+    static bool from_TOWms
+      ( uint32_t time_of_week_ms, NeoGPS::time_t &dt, uint16_t &ms )
     {
 //trace << PSTR("from_TOWms(") << time_of_week_ms << PSTR("), sow = ") << start_of_week() << PSTR(", leap = ") << leap_seconds << endl;
       bool ok = (start_of_week() != 0) && (leap_seconds != 0);
       if (ok) {
-        clock_t tow_s = time_of_week_ms/1000UL;
+        NeoGPS::clock_t tow_s = time_of_week_ms/1000UL;
         dt = TOW_to_UTC( tow_s ); 
         ms = (uint16_t)(time_of_week_ms - tow_s*1000UL);
       }

@@ -26,6 +26,8 @@
 
 #include "CosaCompat.h"
 
+namespace NeoGPS {
+
 //------------------------------------------------------
 //  Enable/disable run-time modification of the epoch.
 //  If this is defined, epoch mutators are available.
@@ -285,6 +287,8 @@ protected:
 
 } __attribute__((packed));
 
+}; // namespace NeoGPS
+
 class Stream;
 
 /**
@@ -293,6 +297,6 @@ class Stream;
  * @param[in] t time structure.
  * @return iostream.
  */
-Stream & operator <<( Stream & outs, const time_t &t );
+Stream & operator <<( Stream & outs, const NeoGPS::time_t &t );
 
 #endif

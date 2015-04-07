@@ -22,9 +22,9 @@
 #include "Time.h"
 #include "Streamers.h"
 
-Stream& operator<<(Stream& outs, const time_t& t)
+Stream& operator<<(Stream& outs, const NeoGPS::time_t& t)
 {
-  outs << time_t::full_year( t.year ) << '-';
+  outs << t.full_year( t.year ) << '-';
   if (t.month < 10) outs << '0';
   outs << t.month << '-';
   if (t.date < 10) outs << '0';
@@ -37,6 +37,8 @@ Stream& operator<<(Stream& outs, const time_t& t)
   outs << t.seconds;
   return (outs);
 }
+
+using NeoGPS::time_t;
 
 bool 
 time_t::parse(str_P s)
