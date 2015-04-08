@@ -85,7 +85,7 @@ public:
     /**
      * Most recent NMEA sentence type received.
      */
-    enum nmea_msg_t nmeaMessage:8;
+    enum nmea_msg_t nmeaMessage NEOGPS_BF(8);
     
 #ifdef NMEAGPS_SAVE_TALKER_ID
     char talker_id[2];
@@ -170,12 +170,12 @@ protected:
     uint8_t      chrCount;       // index of current character in current field
     uint8_t      decimal;        // digits received after the decimal point
     struct {
-      bool       negative    :1; // field had a leading '-'
-      bool       safe        :1; // fix is safe to access
-      bool       comma_needed:1; // field needs a comma to finish parsing
-      bool       group_valid :1; // multi-field group valid
-      bool       proprietary :1; // receiving proprietary message
-    } __attribute__((packed));
+      bool       negative     NEOGPS_BF(1); // field had a leading '-'
+      bool       safe         NEOGPS_BF(1); // fix is safe to access
+      bool       comma_needed NEOGPS_BF(1); // field needs a comma to finish parsing
+      bool       group_valid  NEOGPS_BF(1); // multi-field group valid
+      bool       proprietary  NEOGPS_BF(1); // receiving proprietary message
+    } NEOGPS_PACKED;
 
     /*
      * Internal FSM states
@@ -189,7 +189,7 @@ protected:
     static const uint8_t NMEA_FIRST_STATE = NMEA_IDLE;
     static const uint8_t NMEA_LAST_STATE  = NMEA_RECEIVING_CRC;
 
-    rxState_t rxState:8;
+    rxState_t rxState NEOGPS_BF(8);
 
     /*
      * Table entry for NMEA sentence type string and its offset
@@ -267,10 +267,10 @@ public:
 #ifdef NMEAGPS_PARSE_SATELLITE_INFO
       uint8_t  elevation; // 0..99 deg
       uint16_t azimuth;   // 0..359 deg
-      uint8_t  snr    :7; // 0..99 dBHz
-      bool     tracked:1;
+      uint8_t  snr     NEOGPS_BF(7); // 0..99 dBHz
+      bool     tracked NEOGPS_BF(1);
 #endif
-    } __attribute__((packed));
+    } NEOGPS_PACKED;
 
     satellite_view_t satellites[ NMEAGPS_MAX_SATELLITES ];
     uint8_t sat_count;
@@ -336,6 +336,6 @@ private:
     void sentenceUnrecognized();
     void headerReceived      ();
 
-} __attribute__((packed));
+} NEOGPS_PACKED;
 
 #endif

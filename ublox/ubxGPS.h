@@ -238,13 +238,13 @@ private:
     ublox::msg_t   *reply;
 
     struct {
-      bool     reply_expected:1;
-      bool     reply_received:1;
-      bool     ack_expected:1;
-      bool     ack_received:1;
-      bool     nak_received:1;
-      bool     ack_same_as_sent:1;
-    } __attribute__((packed));
+      bool     reply_expected NEOGPS_BF(1);
+      bool     reply_received NEOGPS_BF(1);
+      bool     ack_expected NEOGPS_BF(1);
+      bool     ack_received NEOGPS_BF(1);
+      bool     nak_received NEOGPS_BF(1);
+      bool     ack_same_as_sent NEOGPS_BF(1);
+    } NEOGPS_PACKED;
     struct ublox::msg_hdr_t sent;
 
     struct rx_msg_t : ublox::msg_t
@@ -266,7 +266,7 @@ private:
         crc_b = 0;
       }
 
-    } __attribute__((packed));
+    } NEOGPS_PACKED;
 
     rx_msg_t m_rx_msg;
 
@@ -305,6 +305,6 @@ private:
       return true;
     }
 
-} __attribute__((packed));
+} NEOGPS_PACKED;
 
 #endif

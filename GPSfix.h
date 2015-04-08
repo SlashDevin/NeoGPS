@@ -60,7 +60,7 @@ public:
     int32_t int32_000() const { return whole * 1000L + frac; };
     float float_00() const { return ((float)whole) + ((float)frac)*0.01; };
     float float_000() const { return ((float)whole) + ((float)frac)*0.001; };
-  } __attribute__((packed));
+  } NEOGPS_PACKED;
 
 #ifdef GPS_FIX_LOCATION
     int32_t       lat;  // degrees * 1e7, negative is South
@@ -153,61 +153,61 @@ public:
     STATUS_DGPS
   };
 
-  status_t  status:8;
+  status_t  status NEOGPS_BF(8);
 
   //  Flags to indicate which members of this fix are valid.
 
   struct valid_t {
-    bool status:1;
+    bool status NEOGPS_BF(1);
 
 #if defined(GPS_FIX_DATE)
-    bool date:1;
+    bool date NEOGPS_BF(1);
 #endif
 
 #if defined(GPS_FIX_TIME)
-    bool time:1;
+    bool time NEOGPS_BF(1);
 #endif
 
 #ifdef GPS_FIX_LOCATION
-    bool location:1;
+    bool location NEOGPS_BF(1);
 #endif
 
 #ifdef GPS_FIX_ALTITUDE
-    bool altitude:1;
+    bool altitude NEOGPS_BF(1);
 #endif
 
 #ifdef GPS_FIX_SPEED
-    bool speed:1;
+    bool speed NEOGPS_BF(1);
 #endif
 
 #ifdef GPS_FIX_HEADING
-    bool heading:1;
+    bool heading NEOGPS_BF(1);
 #endif
 
 #ifdef GPS_FIX_SATELLITES
-    bool satellites:1;
+    bool satellites NEOGPS_BF(1);
 #endif
 
 #ifdef GPS_FIX_HDOP
-    bool hdop:1;
+    bool hdop NEOGPS_BF(1);
 #endif
 #ifdef GPS_FIX_VDOP
-    bool vdop:1;
+    bool vdop NEOGPS_BF(1);
 #endif
 #ifdef GPS_FIX_PDOP
-    bool pdop:1;
+    bool pdop NEOGPS_BF(1);
 #endif
 
 #ifdef GPS_FIX_LAT_ERR
-    bool lat_err:1;
+    bool lat_err NEOGPS_BF(1);
 #endif
 
 #ifdef GPS_FIX_LON_ERR
-    bool lon_err:1;
+    bool lon_err NEOGPS_BF(1);
 #endif
 
 #ifdef GPS_FIX_ALT_ERR
-    bool alt_err:1;
+    bool alt_err NEOGPS_BF(1);
 #endif
 
     void init()
@@ -224,7 +224,7 @@ public:
         for (uint8_t i=0; i<sizeof(*this); i++)
           *all++ |= *r_all++;
       }
-  } __attribute__((packed))
+  } NEOGPS_PACKED
       valid;
 
   /*
@@ -371,6 +371,6 @@ public:
       return *this;
     }
 
-} __attribute__((packed));
+} NEOGPS_PACKED;
 
 #endif

@@ -24,6 +24,7 @@
 
 #include <stdint.h>
 
+#include "NeoGPS_cfg.h"
 #include "CosaCompat.h"
 
 namespace NeoGPS {
@@ -285,7 +286,7 @@ protected:
   static const uint8_t  s_epoch_weekday = Y2K_EPOCH_WEEKDAY;
 #endif
 
-} __attribute__((packed));
+} NEOGPS_PACKED;
 
 }; // namespace NeoGPS
 

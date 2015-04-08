@@ -68,9 +68,31 @@ static NMEAGPS gps;
 const char validGGA[] __PROGMEM =
   "$GPGGA,092725.00,4717.11399,N,00833.91590,E,"
     "1,8,1.01,499.6,M,48.0,M,,0*5B\r\n";
+
+// Ayers Rock
+//  -25.3448688,131.0324914
+//  2520.692128,S,13101.949484,E
 const char validRMC[] __PROGMEM =
-  "$GPRMC,092725.00,A,4717.11437,N,00833.91522,E,"
-    "0.004,77.52,091202,,,A*5E\r\n";
+  "$GPRMC,092725.00,A,2520.69213,S,13101.94948,E,"
+    "0.004,77.52,091202,,,A*43\r\n";
+
+// Macchu Picchu
+//  -13.162805, -72.545508
+//  13.162805,S,72.545508,W
+//  1309.7683,S,7232.7305,W
+
+const char validGGA2[] __PROGMEM =
+  "$GPGGA,162254.00,1309.7683,S,7232.7305,W,"
+    "1,03,2.36,2430.2,M,-25.6,M,,*7E\r\n";
+
+// Dexter MO
+//  36.794405, -89.958655
+//  36.794405,N,89.958655,W
+//  3647.6643,N,8957.5193,W
+
+const char validRMC2[] __PROGMEM =
+  "$GPRMC,162254.00,A,3647.6643,N,8957.5193,W,0.820,188.36,110706,,,A*49\r\n";
+
 const char mtk1[] __PROGMEM =
 "$GPGGA,064951.000,2307.1256,N,12016.4438,E,1,8,0.95,39.9,M,17.8,M,,*63\r\n";
 const char mtk2[] __PROGMEM =
@@ -147,6 +169,48 @@ static void traceSample( const char *ptr )
 
 static uint8_t passed = 0;
 static uint8_t failed = 0;
+
+static void checkLatLon
+  ( const char *msg, NMEAGPS::nmea_msg_t msg_type, uint32_t lat, uint32_t lon )
+{
+  const char *ptr = msg;
+  for (;;) {
+    char c = pgm_read_byte( ptr++ );
+    if (!c) {
+      trace.print( F("FAILED to parse \"") );
+      trace.print( (const __FlashStringHelper *) msg );
+      trace.println( F("\"\n") );
+      failed++;
+      break;
+    }
+    if (NMEAGPS::DECODE_COMPLETED == gps.decode( c )) {
+
+      if (gps.nmeaMessage != msg_type) {
+        trace.print( F("FAILED wrong message type ") );
+        trace.println( gps.nmeaMessage );
+        failed++;
+        break;
+      }
+      if (gps.fix().latitudeL() != lat) {
+        trace.print( F("FAILED wrong latitude ") );
+        trace.println( gps.fix().latitudeL() );
+        failed++;
+        break;
+      }
+      if (gps.fix().longitudeL() != lon) {
+        trace.print( F("FAILED wrong longitude ") );
+        trace.println( gps.fix().longitudeL() );
+        failed++;
+        break;
+      }
+
+      passed++;
+      break;
+    }
+  }
+}
+
+//--------------------------
 
 void setup()
 {
@@ -295,13 +359,13 @@ void setup()
           failed++;
           break;
         }
-        if (gps.fix().latitudeL() != 472852332) {
+        if (gps.fix().latitudeL() != 472852332L) {
           trace.print( F("FAILED wrong latitude ") );
           trace.println( gps.fix().latitudeL() );
           failed++;
           break;
         }
-        if (gps.fix().longitudeL() != 85652650) {
+        if (gps.fix().longitudeL() != 85652650L) {
           trace.print( F("FAILED wrong longitude ") );
           trace.println( gps.fix().longitudeL() );
           failed++;
@@ -336,6 +400,10 @@ void setup()
     }
   }
   passed++;
+
+  checkLatLon( validRMC , NMEAGPS::NMEA_RMC, -253448688L, 1310324913L );
+  checkLatLon( validGGA2, NMEAGPS::NMEA_GGA, -131628050L, -725455083L );
+  checkLatLon( validRMC2, NMEAGPS::NMEA_RMC,  367944050L, -899586550L );
 }
 
 //--------------------------

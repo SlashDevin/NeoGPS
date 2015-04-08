@@ -30,7 +30,7 @@ public:
         GETTING_UTC, 
         RUNNING
       }
-        state:8;
+        state NEOGPS_BF(8);
 
     uint32_t last_rx;
     uint32_t last_trace;
@@ -291,7 +291,7 @@ public:
     } // traceIt
 
 
-} __attribute__((packed));
+} NEOGPS_PACKED;
 
 // Construct the GPS object and hook it to the appropriate serial device
 static MyGPS gps( &Serial1 );

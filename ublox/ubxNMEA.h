@@ -93,6 +93,6 @@ protected:
 
     bool parseField( char chr );
     bool parseFix( char chr );
-} __attribute__((packed));
+} NEOGPS_PACKED;
 
 #endif
