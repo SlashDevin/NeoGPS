@@ -19,18 +19,9 @@ It supports the following protocols and messages:
 GNRMC, GLRMC, etc. will also be correctly parsed.  See discussion of Talker 
 IDs in [Configurations](doc/Configurations.md).
 
-####u-blox NEO-6
-#####NMEA 0183 Protocol Messages
-* UBX,00 - Lat/Long Position Data
-* UBX,04 - Time of Day and Clock Information
+Most applications can be fully implemented with the standard NMEA messages above.  They are supported by almost all GPS manufacturers.
 
-#####UBX Protocol Messages
-* NAV_STATUS - Receiver Navigation Status
-* NAV_TIMEGPS - GPS Time Solution
-* NAV_TIMEUTC - UTC Time Solution
-* NAV_POSLLH - Geodetic Position Solution
-* NAV_VELNED - Velocity Solution in NED (North/East/Down)
-* NAV_SVINFO - Space Vehicle Information
+However, to illustrate how unique capabilities of a particular device can be utilized, derived classes are also provided for ublox devices.
 
 (This is the plain Arduino version of the [CosaGPS](https://github.com/SlashDevin/CosaGPS) library for [Cosa](https://github.com/mikaelpatel/Cosa).)
 
@@ -64,4 +55,6 @@ Section  |  Description
 [Extending NeoGPS](doc/Extending.md) | Using specific devices
 [Tradeoffs](doc/Tradeoffs.md) | Comparing to other libraries
 [Examples](doc/Examples.md) | Programming styles
+[ublox](doc/ublox.md) | ublox-specific code
+[Troubleshooting](doc/Troubleshooting.md) | Troubleshooting
 [Acknowledgements](doc/Acknowledgements.md) | Thanks!

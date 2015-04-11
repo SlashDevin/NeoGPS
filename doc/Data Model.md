@@ -3,6 +3,7 @@ Data Model
 Rather than holding onto individual fields, the concept of a **fix** is used to group data members of the GPS acquisition.
 This also facilitates the merging of separately received packets into a fused or coherent position.
 
+##Members
 The members of `gps_fix` include 
 
 * fix status
@@ -80,9 +81,23 @@ Bonus: The compiler will optimize this into a single bit mask operation.
     foobar = (lat - last_lat);
 ```
 
-####Merge two fixes with `operator |=`
-As sentences are received, you can merge the information from multiple sentences into 
-one fix object:
+##Merging
+There are several ways to use the GPS fix data: without merging, implicit merging, and explicit merging.
+
+###1. On a per-sentence basis (no merging)
+If you are interested in a few pieces of information, and these pieces can be obtained from one or two sentences, you can wait for that specific sentence to arrive, and then use one or more members of the `fix()` at that time.  See NMEA.ino.
+
+###2. On a free-running basis (implicit merging)
+If you are interested in more pieces of information, perhaps requiring more kinds of sentences to be decoded, but don't really care about what time the pieces were received, you could enable `NMEAGPS_ACCUMULATE_FIX` (see [Configurations](Configurations.md#nmeagps) and 
+[NMEAGPS.h](/NMEAGPS.h#L66)).  The `fix()` data can be accessed only after DECODE_COMPLETED, or when it `is_safe()`.This data is not necessarily coherent.  
+
+It is possible to achieve coherency if you detect the "quiet" time between batches of sentences.  When new data starts coming in, simply call `gps.fix.init()`; all new sentences will set the fix members.  Note that if the GPS device loses its fix on the satellites, you can be left without _any_ valid data.
+
+example/NMEA.ino can be used with implicit merging.  However, NMEAfused.ino and NMEAcoherent.ino should not, because they perform their own explicit merging.
+
+###3. In selective batches (explicit merging)
+If you are interested in pieces of information that are grouped by some criteria, you must perform explicit merging.  Additionally, the `merged` object "buffers" the main loop from the constantly-changing `gps.fix()`.  The `merged' copy is safe to access at any time:
+
 ```
     gps_fix_t merged;
 
@@ -90,19 +105,18 @@ one fix object:
     {
       while (Serial1.available())
         if (gps.decode( Serial1.read() ) == NMEAGPS::DECODE_COMPLETED)
+          // ...and other criteria
           merged |= gps.fix();
 
       check_position( merged );
 ```
-This is an explicit merging of fix information into a second copy.  The `merged` 
-object "buffers" the main loop from the constantly-changing `gps.fix()`, and it is 
-safe to access at any time.  See [NMEAfused.ino](/examples/NMEAfused/NMEAfused.ino).
+See [NMEAfused.ino](/examples/NMEAfused/NMEAfused.ino).
 
-Implicit merging into `gps.fix()` can be enabled, eliminating the need for the 
-`merged` copy.  See [Configurations](Configurations.md#nmeagps) and 
-[NMEAGPS.h](/NMEAGPS.h#L66).
+For example, you may use the Talker ID to separate the fix data into independent groups.  Obviously, explicit merging requires one or more extra `gps_fix` copies.  
 
-If you need coherency, you should clear out the merged fix when a new time 
+Explicit merging is also required to implement coherency.  Because a sentence has to be parsed to know its timestamp, invalidating old data (i.e., data from a previous update period) must be performed _before_ the sentence parsing begins.  That can only be accomplished with a second 'safe' copy of the fix data and explicit merging.    With implicit merging, new data has already been mixed with old data by the time DECODE_COMPLETED occurs and timestamps can be checked.
+
+To implement coherency, you should clear out the merged fix when a new time 
 interval begins:
 ```
     if (new_interval)

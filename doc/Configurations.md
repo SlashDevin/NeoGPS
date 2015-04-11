@@ -89,6 +89,8 @@ derive any classes from NMEAGPS, for slightly smaller/faster code.
 #define NMEAGPS_DERIVED_TYPES
 ```
 
+The ublox-specific files require this define (see [ublox](doc/ublox.md) section).
+
 ###Enable/disable tracking the current satellite array
 You can also enable tracking the detailed information for each satellite, and how many satellites you want to track.
 Although many GPS receivers claim to have 66 channels of tracking, 16 is usually the maximum number of satellites 
@@ -100,21 +102,17 @@ tracked at any one time.
 ```
 
 ###Enable/disable accumulating fix data across sentences.
-When enabled, the fix data in a new sentence will replace _only_ the members that are in that sentence.  Any fix data that was filled by a previous sentence _is not_ invalidated.  This can eliminate the need for a second `fix` (i.e., reduced RAM), but it could prevent coherency.  Because a sentence has to be parsed to know its timestamp, invalidating old data must be performed _before_ the sentence parsing begins.  By the time DECODE_COMPLETED occurs, new data has been mixed with old data.
+When enabled, `decode` will perform implicit merging of fix data as it is parsed from a new sentence.  Each field of a new sentence will invalidate, set and then validate the corresponding member of `fix()`.  Any other fix data that was filled by a previous sentence _is not_ invalidated.  To enable implicit merging, uncomment this define:
 
-It is possible to achieve coherency if you detect the "quiet" time between batches of sentences.  When new data starts coming in, simply call `gps.fix.init()`; all new sentences will set the fix members.  Note that if the GPS device loses its fix on the satellites, you can be left without _any_ valid data.
 ```
 #define NMEAGPS_ACCUMULATE_FIX
 ```
 
-####ubloxNMEA
-This derived class has the following configuration items near the top of ubxNMEA.h:
-```
-#define NMEAGPS_PARSE_PUBX_00
-#define NMEAGPS_PARSE_PUBX_04
-```
+Implicit merging can eliminate the need for a second `fix` (i.e., reduced RAM), but it could prevent coherency.  See [Data Model - Merging](Data%20Model.md#Merging) for a discussion of the different types of merging.
 
 ####Floating-point output.
+Streamers.cpp is used by the example programs for printing members of `fix()`.  It is not required for parsing the GPS data stream, and this file may be deleted.  It is an example of checking validity flags and formatting the various members of `fix()` for textual streams (e.g., Serial prints or SD writes).
+
 Streamers.cpp has one configuration item:
 ```
 #define USE_FLOAT
@@ -125,17 +123,6 @@ Most example programs have a choice for displaying fix information once per day.
 ```
 #define PULSE_PER_DAY
 ```
-
-####Troubleshooting
-The compiler will catch any attempt to use parts of a `fix` that have been 
-configured out: you will see something like `gps_fix does not have member 
-xxx`.
-
-The compiler **cannot** catch message set dependencies: the enum 
-`nmea_msg_t` is always available.  So even though a `fix` member is enabled, 
-you may have disabled all messages that would have set its value.  
-NMEAtest.ino can be used to check some configurations.
-
 ####Typical configurations
 A few common configurations are defined as follows
 
@@ -147,6 +134,8 @@ A few common configurations are defined as follows
 satellites, HDOP, GPRMC and GPGGA messages.
 
 **Full**: Nominal plus talker ID, VDOP, PDOP, lat/lon/alt errors, satellite array with satellite info, all messages, and parser statistics.
+
+These configurations are available in the [configs](configs) subdirectory.
 ______________
 
 ####Configurations of other libraries
