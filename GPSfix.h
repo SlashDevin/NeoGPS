@@ -272,9 +272,13 @@ public:
     satellites = 0;
 #endif
 
+#if defined(GPS_FIX_DATE) | defined(GPS_FIX_TIME)
     dateTime.init();
+#endif
+#if defined(GPS_FIX_TIME)
     dateTime_cs = 0;
-    
+#endif
+
     status = STATUS_NONE;
 
     valid.init();

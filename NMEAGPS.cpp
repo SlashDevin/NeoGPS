@@ -328,10 +328,8 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
     else if ((msg_offset <= nmeaMessage) && (nmeaMessage < msg_offset+table_size))
       // In range of this table, pick up where we left off
       entry = nmeaMessage - msg_offset;
-#ifdef NMEAGPS_DERIVED_TYPES
     else
       check_this_table = false;
-#endif
 
     if (check_this_table) {
       uint8_t i = entry;
@@ -1029,7 +1027,7 @@ void NMEAGPS::send_P( Stream *device, str_P msg )
     uint8_t crc = 0;
     while (chr) {
       crc ^= chr;
-      if (*msg == '*' || (sent_trailer > 0))
+      if ((chr == '*') || (sent_trailer > 0))
         sent_trailer++;
       device->print( chr );
       chr = pgm_read_byte(ptr++);

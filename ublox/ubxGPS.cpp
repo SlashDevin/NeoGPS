@@ -594,7 +594,7 @@ bool ubloxGPS::parseField( char c )
                 sat_count = 0;
                 break;
               default:
-                if ((chrCount >= 8) && (sat_count < MAX_SATELLITES)) {
+                if ((chrCount >= 8) && (sat_count < NMEAGPS_MAX_SATELLITES)) {
                   uint8_t i =
                     (uint8_t) (chrCount - 8 - (12 * (uint16_t)sat_count));
 

@@ -139,7 +139,7 @@ static bool parse_P( const char *ptr )
     char c;
 
     gps.fix().init();
-    while ( c = pgm_read_byte( ptr++ ) ) {
+    while ( (c = pgm_read_byte( ptr++ )) != '\0' ) {
       if (NMEAGPS::DECODE_COMPLETED == gps.decode( c )) {
         decoded = true;
       }
@@ -171,7 +171,7 @@ static uint8_t passed = 0;
 static uint8_t failed = 0;
 
 static void checkLatLon
-  ( const char *msg, NMEAGPS::nmea_msg_t msg_type, uint32_t lat, uint32_t lon )
+  ( const char *msg, NMEAGPS::nmea_msg_t msg_type, int32_t lat, int32_t lon )
 {
   const char *ptr = msg;
   for (;;) {
@@ -246,10 +246,10 @@ void setup()
   }
   passed++;
 
-  uint8_t validGGA_len = 0;
+  uint16_t validGGA_len = 0;
 
   // Insert a ' ' at each position of the test sentence
-  uint16_t insert_at=1;
+  uint16_t insert_at = 1;
   do {
     const char *ptr = validGGA;
     uint8_t j = 0;
