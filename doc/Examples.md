@@ -11,11 +11,13 @@ Several programs are provided to demonstrate how to use the classes in these dif
 
 Preprocessor symbol `USE_FLOAT` can be used in [Streamers.cpp](Streamers.cpp) to select integer or floating-point output.
 
-A self-test test program is also provided:
+See also the [Installing](Installing.md) and [Configurations](Configurations.md) sections.
+
+##Self-test Program
 
 * [NMEAtest.ino](examples/NMEAtest/NMEAtest.ino) - sync, polled, not fused, standard NMEA only
 
-No GPS device is required; the bytes are streamed from PROGMEM character arrays.  Various strings are passed to `decode` and the expected pass or fail results are displayed.  If **NeoGPS** is correctly configured, you should see this on your SerialMonitor:
+For this example, **No GPS device is required**.  Test bytes are streamed from PROGMEM character arrays.  Various strings are passed to `decode` and the expected pass or fail results are displayed.  If **NeoGPS** is correctly configured, you should see this on your SerialMonitor:
 
 ```
 NMEA test: started
