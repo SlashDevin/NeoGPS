@@ -1,11 +1,11 @@
 Configuration
 =============
 All configuration items are conditional compilations: a `#define` controls an `#if`/`#endif` section.
-Delete or comment out any items to be excluded from your build.  Where 
-possible, checks are performed to verify that you have chosen a "valid" 
-configuration: you may see `#error` messages in the build log.  See also **Troubleshooting** section below.
+Comment out any items to be disabled or excluded from your build.
+Where possible, checks are performed to verify that you have chosen a "valid" 
+configuration: you may see `#error` messages in the build log.  See also [Troubleshooting](Troubleshooting.md).
 
-####gps_fix
+#class gps_fix
 The following configuration items are near the top of GPSfix_cfg.h:
 ```
 // Enable/Disable individual parts of a fix, as parsed from fields of a $GPxxx sentence
@@ -23,7 +23,8 @@ The following configuration items are near the top of GPSfix_cfg.h:
 #define GPS_FIX_LON_ERR
 #define GPS_FIX_ALT_ERR
 ```
-####NMEAGPS
+========================
+#class NMEAGPS
 The following configuration items are near the top of NMEAGPS_cfg.h.
 ####Enable/Disable parsing the fields of a $GPxxx sentence
 ```
@@ -36,7 +37,7 @@ The following configuration items are near the top of NMEAGPS_cfg.h.
 #define NMEAGPS_PARSE_VTG
 #define NMEAGPS_PARSE_ZDA
 ```
-### Enable/disable the talker ID and manufacturer ID processing.
+####Enable/Disable the talker ID and manufacturer ID processing.
 There are two kinds of NMEA sentences:
 
 1. Standard NMEA sentences begin with "$ttccc", where
@@ -82,16 +83,15 @@ and/or `parse_mfr_id` in a derived class.
 #define NMEAGPS_PARSE_MFR_ID
 ```
 
-###Disable derived types
-Although normally enabled, this can be disabled if you *do not*
-derive any classes from NMEAGPS, for slightly smaller/faster code.
+###Enable/Disable derived types
+Although normally disabled, this must be enabled if you derive any classes from NMEAGPS.
 ```
-#define NMEAGPS_DERIVED_TYPES
+//#define NMEAGPS_DERIVED_TYPES
 ```
 
-The ublox-specific files require this define (see [ublox](doc/ublox.md) section).
+The ublox-specific files require this define (see [ublox](ublox.md) section).
 
-###Enable/disable tracking the current satellite array
+###Enable/Disable tracking the current satellite array
 You can also enable tracking the detailed information for each satellite, and how many satellites you want to track.
 Although many GPS receivers claim to have 66 channels of tracking, 16 is usually the maximum number of satellites 
 tracked at any one time.
@@ -101,7 +101,7 @@ tracked at any one time.
 #define NMEAGPS_MAX_SATELLITES (20)
 ```
 
-###Enable/disable accumulating fix data across sentences.
+###Enable/Disable accumulating fix data across sentences.
 When enabled, `decode` will perform implicit merging of fix data as it is parsed from a new sentence.  Each field of a new sentence will invalidate, set and then validate the corresponding member of `fix()`.  Any other fix data that was filled by a previous sentence _is not_ invalidated.  To enable implicit merging, uncomment this define:
 
 ```
@@ -110,7 +110,8 @@ When enabled, `decode` will perform implicit merging of fix data as it is parsed
 
 Implicit merging can eliminate the need for a second `fix` (i.e., reduced RAM), but it could prevent coherency.  See [Data Model - Merging](Data%20Model.md#Merging) for a discussion of the different types of merging.
 
-####Floating-point output.
+========================
+#Floating-point output.
 Streamers.cpp is used by the example programs for printing members of `fix()`.  It is not required for parsing the GPS data stream, and this file may be deleted.  It is an example of checking validity flags and formatting the various members of `fix()` for textual streams (e.g., Serial prints or SD writes).
 
 Streamers.cpp has one configuration item:
@@ -123,7 +124,25 @@ Most example programs have a choice for displaying fix information once per day.
 ```
 #define PULSE_PER_DAY
 ```
-####Typical configurations
+========================
+#Platforms
+The following configuration items are near the top of NeoGPS_cfg.h.
+####Enable/Disable packed bitfields
+```
+#define NEOGPS_PACKED_DATA
+```
+8-bit Arduino platforms can address memory by bytes or words.  This allows passing data by reference or 
+address, as long as it is one or more bytes in length.  The `gps_fix` class has some members which are 
+only one bit; these members cannot be passed by reference or address, only by value.  NeoGPS uses an 
+approprite passing technique, depending on the size of these members.
+
+32-bit Arduino platforms require *all* memory accesses to be 32-bit aligned, which precludes passing 
+bitfield, byte, or word members by reference or address.  Rather than penalize the 8-bit platforms with 
+unpacked classes and structs, the `NEOGPS_PACKED_DATA` can be disabled on 32-bit platforms.  This 
+increases the RAM requirements, but these platforms typically have more available RAM.
+
+========================
+#Typical configurations
 A few common configurations are defined as follows
 
 **Minimal**: no fix members, no messages (pulse-per-second only)
@@ -135,10 +154,10 @@ satellites, HDOP, GPRMC and GPGGA messages.
 
 **Full**: Nominal plus talker ID, VDOP, PDOP, lat/lon/alt errors, satellite array with satellite info, all messages, and parser statistics.
 
-These configurations are available in the [configs](configs) subdirectory.
-______________
+These configurations are available in the [configs](/configs) subdirectory.
 
-####Configurations of other libraries
+========================
+#Configurations of other libraries
 
 **TinyGPS** uses the **Nominal** configuration + a second `fix`.
 
