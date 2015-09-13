@@ -68,7 +68,7 @@
 //#define NMEAGPS_PARSE_TALKER_ID
 
 //#define NMEAGPS_SAVE_MFR_ID
-#define NMEAGPS_PARSE_MFR_ID
+//#define NMEAGPS_PARSE_MFR_ID
 
 //------------------------------------------------------
 // Enable/disable tracking the current satellite array and,
