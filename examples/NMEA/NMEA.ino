@@ -91,11 +91,6 @@ void loop()
 
     if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
 
-      // Make sure that the only sentence we care about is enabled
-      #ifndef NMEAGPS_PARSE_RMC
-        #error NMEAGPS_PARSE_RMC must be defined in NMEAGPS_cfg.h!
-      #endif
-
       if (gps.nmeaMessage == NMEAGPS::NMEA_RMC) {
         rmc_data = gps.fix(); // copied for printing later...
 
