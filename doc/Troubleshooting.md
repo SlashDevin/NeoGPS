@@ -11,10 +11,11 @@ NMEAtest.ino can be used to check some configurations.
 
 For example, if your application needs altitude, you **must** enable the GGA sentence.  No other sentence provides the altitude member.  If `NMEA_PARSE_GGA` is not defined,  `gps.decode()` will return COMPLETED after a GGA is received, but no parts of the GGA sentence will have been parsed, and altitude will never be valid.  NeoGPS will _recognize_ the GGA sentence, but it will not be parsed.
 
-
 The compiler will catch any attempt to use parts of a `fix` that have been 
 configured out: you will see something like `gps_fix does not have member 
 xxx`.
+
+There are also compile-time checks to make sure the configuration is valid.  For example, if you enable `NMEAGPS_PARSE_TALKER_ID` so that you can handle GLONASS messages differently than GPS messages, you *must* enable `NMEAGPS_DERIVED_TYPES`.  An error message will tell you to do that.  Until you disable `NMEAGPS_PARSE_TALKER_ID` **or** enable `NMEAGPS_DERIVED_TYPES`, it will not compile.
 
 ##GPS device connection problems
 You can use the NMEA.INO example program to verify that your GPS device is correctly connected and operating.
