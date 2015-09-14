@@ -134,7 +134,7 @@ The following configuration items are near the top of NeoGPS_cfg.h.
 8-bit Arduino platforms can address memory by bytes or words.  This allows passing data by reference or 
 address, as long as it is one or more bytes in length.  The `gps_fix` class has some members which are 
 only one bit; these members cannot be passed by reference or address, only by value.  NeoGPS uses an 
-approprite passing technique, depending on the size of these members.
+appropriate passing technique, depending on the size of these members.
 
 32-bit Arduino platforms require *all* memory accesses to be 32-bit aligned, which precludes passing 
 bitfield, byte, or word members by reference or address.  Rather than penalize the 8-bit platforms with 
@@ -163,4 +163,4 @@ These configurations are available in the [configs](/configs) subdirectory.
 
 **TinyGPSPlus** uses the **Nominal** configuration + statistics + a second fix + timestamps for each `fix` member.
 
-**Adafruit_GPS** uses the **Nominal** configuration + geoid height and IGNORES CHECKSUM!)
+**Adafruit_GPS** uses the **Nominal** configuration + geoid height and IGNORES CHECKSUM!
