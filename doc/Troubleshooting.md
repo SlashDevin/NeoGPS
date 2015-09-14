@@ -1,7 +1,7 @@
 Troubleshooting
 ===============
 
-##Configurations errors
+##Configuration errors
 Because there are so many configurable items, it is possible that your configuration prevents acquiring the desired GPS information.
 
 The compiler **cannot** catch message set dependencies: the enum 
