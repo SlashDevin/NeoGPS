@@ -67,6 +67,10 @@ void setup()
   trace.print( F("NMEAGPS object size = ") );
   trace.println( sizeof(NMEAGPS) );
   trace.println( F("Looking for GPS device on " USING_GPS_PORT) );
+
+  #if defined(GPS_FIX_TIME)
+    trace.print( F("Local time,") );
+  #endif
   trace_header();
 
   trace.flush();
@@ -94,7 +98,7 @@ void loop()
 
       if (gps.nmeaMessage == NMEAGPS::NMEA_RMC) {
         rmc_data = gps.fix(); // copied for printing later...
-        
+
         //  Use received GPRMC sentence as a pulse
         seconds++;
       }
@@ -126,6 +130,21 @@ void loop()
     last_trace = seconds;
 
     // It's been 5ms since we received anything, log what we have so far...
+
+    #if defined(GPS_FIX_TIME)
+      // Display the local time
+      if (rmc_data.valid.time) {
+        static const int32_t         zone_hours   = -4L; // EST
+        static const int32_t         zone_minutes =  0L;
+        static const NeoGPS::clock_t zone_offset  =
+                          zone_hours   * NeoGPS::SECONDS_PER_HOUR +
+                          zone_minutes * NeoGPS::SECONDS_PER_MINUTE;
+
+        trace << NeoGPS::time_t( rmc_data.dateTime + zone_offset );
+      }
+      trace << ',';
+    #endif
+
     trace_all( gps, rmc_data );
   }
 }
