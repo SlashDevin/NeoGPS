@@ -1,10 +1,22 @@
 Installing
 ==========
-For processing NMEA sentences from almost _any_ GPS manufacturer, copy all the .H and .CPP files from the top directory of NeoGPS to your application directory.  You do not need the files from any other subdirectories, like **ublox**.  Most of the example programs only use these generic NMEA files.
+**1.**  For processing NMEA sentences from almost _any_ GPS manufacturer, copy all the .H and .CPP files from the top directory of NeoGPS to your application directory.  You do not need the files from any other subdirectories, like **ublox**.  Most of the example programs only use these generic NMEA files:
+```
+    CosaCompat.h
+    GPSfix.h
+    GPSfix_cfg.h
+    NMEAGPS.cpp
+    NMEAGPS.h
+    NMEAGPS_cfg.h
+    NeoGPS_cfg.h
+    Streamers.cpp
+    Streamers.h
+    Time.cpp
+    Time.h
+```
+**2.**  Next, review and edit each of the configuration files: NeoGPS_cfg.h, GPSfix_cfg.h, and NMEAGPS_cfg.h.  Alternatively, you can copy a set of these files from one of the [example configurations](../configs).</li>
 
-Next, review and edit each of the configuration files: NeoGPS_cfg.h, GPSfix_cfg.h, and NMEAGPS_cfg.h.  Alternatively, you can copy a set of these files from one of the [example configurations subdirectories](../configs).
-
-To try the example programs, you can copy the entire example tree, or just one example subdirectory, into your Arduino directory.  Simply start the IDE by double-clicking on the INO file in those subdirectories.  However, the sad state of Arduino library management will still require you to copy the library files as decribed above into *each* example subdirectory.  :(
+**3.**  To try the example programs, you can copy the entire examples tree, or just one example subdirectory, into your Arduino directory.  Simply start the IDE by double-clicking on the INO file in those subdirectories.  However, the sad state of Arduino library management will still require you to copy the library files as decribed above into *each* example subdirectory.  :(
 
 **Note:**  Not all configurations will work with all example applications.  Because each example application has its own copy of the configuration files, you can have separate configurations.
 
