@@ -86,6 +86,8 @@ In **NMEAGPS_cfg.h** uncomment these lines:
 #define NMEAGPS_PARSE_SATELLITES
 #define NMEAGPS_PARSE_SATELLITE_INFO
 #define NMEAGPS_MAX_SATELLITES (40)
+
+#define NMEAGPS_ACCUMULATE_FIX
 ```
 This will display additional fields for how many satellites are in view, whether they are being "tracked", and their individual signal strengths.
 ```
