@@ -8,7 +8,7 @@ NeoGPS-master/examples/NMEA  ->  Arduino
 ```
 This creates an `Arduino/NMEA` sketch subdirectory containing `NMEA.INO`.
 
-**3.**  Unfortunately, the sad state of Arduino library management requires you to copy copy all the .H and .CPP files from the top directory of NeoGPS-master into *each* example subdirectory that you would like to try.  :(  Fortunately, this will allow you to have a different configuration for each example. :)
+**3.**  Unfortunately, the sad state of Arduino library management requires you to copy all the .H and .CPP files from the top directory of NeoGPS-master into *each* example subdirectory that you would like to try.  :(  Fortunately, this will allow you to have a different configuration for each example. :)
 
 You do not need the files from any other subdirectories, like **ublox**.  Most of the example programs only use these generic NMEA files:
 ```
@@ -60,18 +60,7 @@ This output can be copy & pasted into a spreadsheet for graphing or analysis, or
 
 Please see the [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section if you do not see this output.
 
-#ublox-specific capabilities
-Once you have verified the GPS device connection and build process with the generic NMEA examples, you may want to try the  ublox-specific capabilities of NeoGPS.  These are only valid for ublox GPS devices: Neo-6, Neo-7 and Neo8 have been tried, and other ublox variant may work.  Please compare the ublox protocol documents to verify compatibility.
+#The examples work!
+Once you have verified the GPS device connection and build process with the generic NMEA examples, you may want to try other configurations.  Simply edit `GPSfix_cfg.h` or `NMEAGPS_cfg.h`.
 
-##ublox-specific NMEA messages
-If you want to handle $PUBX messages from a ublox Neo GPS device, you must copy the above files *and* also copy the ublox/ubxNMEA.* files into your application directory.  (This is required if you are trying the example/PUBX/PUBX.ino application.)
-
-##ublox-specific binary protocol
-If you want to handle the UBX binary protocol from a ublox Neo GPS device, you must copy the above files *and* also copy the ublox/ubxGPS.* and ublox/ubxmsg.* into your application directory.  (This is required if you are trying the example/ublox/ublox.ino application.)
-
-To use ublox-specific messages, you must enable the following:
-```
-#define NMEAGPS_DERIVED_TYPES
-```
-
-You may also want to change the configured PUBX messages in ubxNMEA.h, or the UBX binary messages in ubxGPS.h.  They are currently configured to work with the example applications PUBX.ino and ublox.ino, respectively.
+If you have a ublox GPS device and want to try the ublox-specific capabilities of NeoGPS, please see the [ublox](ublox.md) section.

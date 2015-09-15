@@ -111,6 +111,11 @@ When enabled, `decode` will perform implicit merging of fix data as it is parsed
 Implicit merging can eliminate the need for a second `fix` (i.e., reduced RAM), but it could prevent coherency.  See [Data Model - Merging](Data%20Model.md#Merging) for a discussion of the different types of merging.
 
 ========================
+#ublox-specific configuration items
+
+See the [ublox](ublox.md) section.
+
+========================
 #Floating-point output.
 Streamers.cpp is used by the example programs for printing members of `fix()`.  It is not required for parsing the GPS data stream, and this file may be deleted.  It is an example of checking validity flags and formatting the various members of `fix()` for textual streams (e.g., Serial prints or SD writes).
 
