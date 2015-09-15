@@ -87,9 +87,8 @@ const uint8_t time_t::days_in[] __PROGMEM = {
   0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 
-time_t::time_t(clock_t c, int8_t zone)
+time_t::time_t(clock_t c)
 {
-  c += zone * (int32_t) SECONDS_PER_HOUR;
   uint16_t dayno = c / SECONDS_PER_DAY;
   c -= dayno * (uint32_t) SECONDS_PER_DAY;
   day = weekday_for(dayno);

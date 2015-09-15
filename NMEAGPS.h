@@ -138,9 +138,10 @@ public:
     /**
      * Statistics.
      */
-    struct {
+    struct statistics_t {
         uint32_t ok;         // count of successfully parsed sentences
         uint32_t crc_errors; // count of CRC errors
+        uint32_t chars;
     } statistics;
 #endif
 

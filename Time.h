@@ -42,9 +42,11 @@ namespace NeoGPS {
  */
 typedef uint32_t clock_t;
 
-const uint32_t SECONDS_PER_DAY    = 86400L;
-const uint16_t SECONDS_PER_HOUR   = 3600;
 const uint8_t  SECONDS_PER_MINUTE = 60;
+const uint8_t  MINUTES_PER_HOUR   = 60;
+const uint16_t SECONDS_PER_HOUR   = (uint16_t) SECONDS_PER_MINUTE * MINUTES_PER_HOUR;
+const uint8_t  HOURS_PER_DAY      = 24;
+const uint32_t SECONDS_PER_DAY    = (uint32_t) SECONDS_PER_HOUR * HOURS_PER_DAY;
 const uint8_t  DAYS_PER_WEEK      = 7;
 
 /**
@@ -88,11 +90,10 @@ struct time_t {
   time_t() {}
 
   /**
-   * Construct from seconds from the Epoch.
+   * Construct from seconds since the Epoch.
    * @param[in] c clock.
-   * @param[in] zone time (hours adjustment from UTC).
    */
-  time_t(clock_t c, int8_t zone = 0);
+  time_t(clock_t c);
 
   /**
    * Initialize to January 1 of the Epoch Year, 00:00:00
@@ -104,6 +105,14 @@ struct time_t {
    * @return seconds from epoch.
    */
   operator clock_t() const;
+
+  /**
+   * Offset by a number of seconds.
+   * @param[in] seconds to offset.
+   * @return *this
+   */
+  void operator +=( clock_t offset )
+    { *this = offset + operator clock_t(); }
 
   /**
    * Set day member from current value.  This is a relatively expensive

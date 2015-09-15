@@ -29,6 +29,8 @@ const char gps_fix_header[] __PROGMEM =
 
 #if defined(GPS_FIX_DATE) | defined(GPS_FIX_TIME)
 
+  "UTC "
+
 #if defined(GPS_FIX_DATE)
   "Date"
 #endif
@@ -262,7 +264,7 @@ static const char NMEAGPS_header[] __PROGMEM =
 #endif
 
 #ifdef NMEAGPS_STATS
-  "Rx ok,Rx err,"
+  "Rx ok,Rx err,Rx chars,"
 #endif
 
   "";
@@ -302,7 +304,9 @@ void trace_all( const NMEAGPS &gps, const gps_fix &fix )
 #endif
 
 #ifdef NMEAGPS_STATS
-  trace << gps.statistics.ok << ',' << gps.statistics.crc_errors << ',';
+  trace << gps.statistics.ok         << ','
+        << gps.statistics.crc_errors << ','
+        << gps.statistics.chars      << ',';
 #endif
 
   trace << '\n';

@@ -56,6 +56,7 @@ NMEAGPS::NMEAGPS()
 #ifdef NMEAGPS_STATS
   statistics.ok         = 0;
   statistics.crc_errors = 0;
+  statistics.chars      = 0;
 #endif
   rxState               = NMEA_IDLE;
   safe                  = true;
@@ -143,6 +144,10 @@ void NMEAGPS::headerReceived()
 
 NMEAGPS::decode_t NMEAGPS::decode( char c )
 {
+#ifdef NMEAGPS_STATS
+  statistics.chars++;
+#endif
+
   decode_t res = DECODE_CHR_OK;
 
   if (c == '$') {  // Always restarts
@@ -169,9 +174,11 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
         } else
           chrCount++;
 
+#ifdef NMEAGPS_CS_OPTIONAL
     } else if ((c == CR) || (c == LF)) { // Line finished, no CRC
       sentenceOk();
       res = DECODE_COMPLETED;
+#endif
 
     } else {                           // Invalid char
       sentenceInvalid();
@@ -328,8 +335,10 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
     else if ((msg_offset <= nmeaMessage) && (nmeaMessage < msg_offset+table_size))
       // In range of this table, pick up where we left off
       entry = nmeaMessage - msg_offset;
+#ifdef NMEAGPS_DERIVED_TYPES
     else
       check_this_table = false;
+#endif
 
     if (check_this_table) {
       uint8_t i = entry;
@@ -598,7 +607,7 @@ bool NMEAGPS::parseTime(char chr)
       case 4: m_fix.dateTime.seconds  = (chr - '0')*10; break;
       case 5: m_fix.dateTime.seconds += (chr - '0');    break;
       case 7: m_fix.dateTime_cs       = (chr - '0')*10; break;
-      case 8: m_fix.dateTime_cs       += (chr - '0');
+      case 8: m_fix.dateTime_cs      += (chr - '0');
               m_fix.valid.time = true;
               break;
   }
