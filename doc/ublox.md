@@ -14,7 +14,7 @@ To use either ublox-specific NMEA messages ($PUBX) or the UBX binary protocol, y
 * UBX,00 - Lat/Long Position Data
 * UBX,04 - Time of Day and Clock Information
 
-If you want to handle $PUBX messages from a ublox Neo GPS device, you must copy the generic files (see [Installing](Installing.md)) *and* also copy the ublox/ubxNMEA.* files into your application directory.  This is required if you are trying the example/PUBX/PUBX.ino application.
+If you want to handle $PUBX messages from a ublox Neo GPS device, you must copy the generic files (see [Installing](Installing.md)) *and* also copy the ublox/ubxNMEA.* files into your application directory.  If you are trying the example/PUBX/PUBX.ino application, you should also copy the configs/PUBX files.
 
 You may also want to change the configured PUBX messages in `ubxNMEA.h`.  It is currently configured to work with the example application, `PUBX.ino`.
 
