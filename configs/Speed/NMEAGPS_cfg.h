@@ -137,7 +137,7 @@
 // Enable/disable gathering interface statistics:
 // CRC errors and number of sentences received
 
-#define NMEAGPS_STATS
+//#define NMEAGPS_STATS
 
 //------------------------------------------------------
 // Configuration item for allowing derived types of NMEAGPS.
