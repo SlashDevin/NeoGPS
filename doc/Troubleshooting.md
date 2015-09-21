@@ -121,13 +121,13 @@ This is a very common problem!  Here's some diagrams to help explain the timing 
 
 <img src="images/GPS%20Timing%200.jpg"/>
 
-Note how loop calls GPS.read, and when it has read all the chars that have been received up to that point, it returns.  loop may get called lots of times while it's waiting for the chars to come in.  Eventually, the whole sentence is received, newNMEAreceived returns true, and you can go parse the new data.
+Note how loop calls GPS.read, and when it has read all the chars that have been received up to that point, it returns.  loop may get called lots of times while it's waiting for the chars to come in.  Eventually, the whole sentence is received, newNMEAreceived returns true, and your sketch can `parse` the new data (not needed for **NeoGPS**).
 
-The problem is that if you try to do anything that takes "too long", GPS.read won't get called.  The incoming chars stack up in the input buffer until it's full.  After that, the chars will be dropped:
+The problem is that if you try to do anything that takes "too long", `GPS.read` won't get called.  The incoming chars stack up in the input buffer until it's full.  After that, the chars will be dropped:
 
 <img src="images/GPS%20Timing%201.jpg"/>
 
-The next sentence, a GPRMC, continues to come in while Serial.print and SD.write are doing their thing... and data gets lost.
+The next sentence, a GPRMC, continues to come in while `Serial.print` and `SD.write` are doing their thing... and data gets lost.
 
 Fortunately, there is a way to work around this.  It turns out that the GPS device is sending a batch of sentences once every second, maybe 5 at a time.  Most of that one-second interval is actually is a "quiet time" that is perfect for doing other things:
 
@@ -140,6 +140,6 @@ This is why NeoGPS uses a `fix` structure: it can be
    * _copied/merged_ when a sentence is complete, and then
    * _used_ anytime (for fast operations) or during the quiet time (for slow operations).
 
-You do not have to call a "parse" function after a complete sentence has been received -- the data was parsed as it was received.  Essentially, the processing time for parsing is spread out across the receipt of all characters.  When the last character of the sentence is received, the relevant members of `gps.fix()` have already been populated.
+You do not have to call a "parse" function after a complete sentence has been received -- the data was parsed as it was received.  Essentially, the processing time for parsing is spread out across the receipt of all characters.  When the last character of the sentence is received (i.e. `gps.decode(c) == DECODE_COMPLETED`), the relevant members of `gps.fix()` have already been populated.
 
 All the example programs are structured so that the (relatively) slow printing operations are performed during the GPS quiet time.  Simply replace those trace/print statements with your specific code.
