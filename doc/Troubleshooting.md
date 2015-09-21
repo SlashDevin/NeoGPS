@@ -1,5 +1,9 @@
 Troubleshooting
 ===============
+Many problems are caused by these three kinds of errors:
+   1. [Configuration](#configuration-errors)
+   2. [Device connection](#GPS-device-connection-problems)
+   3. [Trying to do too many things](#Trying-to-do-too-many-things) at the same time
 
 ##Configuration errors
 Because there are so many configurable items, it is possible that your configuration prevents acquiring the desired GPS information.
@@ -20,6 +24,7 @@ There are also compile-time checks to make sure the configuration is valid.  For
 ##GPS device connection problems
 You can use the NMEA.INO example program to verify that your GPS device is correctly connected and operating.
 
+####Not correctly wired
 If the GPS device is not correctly connected, or it **does not** have a fix yet, you will see lines of empty data:
 ```
 Local time,Status,UTC Date/Time,Lat,Lon,Hdg,Spd,Alt,HDOP,
@@ -39,6 +44,7 @@ Local time,Status,UTC Date/Time,Lat,Lon,Hdg,Spd,Alt,HDOP,Rx ok,Rx err,Rx chars,
 ```
 This shows that **no** data is being received: no characters and no sentences.  You may have the GPS device connected to the wrong pins (GPS RX should be connected to Arduino TX, and GPS TX should be connected to Arduino RX), or the .INO may be using the wrong serial object: review the comments at the top of the example program for the expected connections.
 
+####Wrong baud rate
 If you are seeing
 ```
 Local time,Status,UTC Date/Time,Lat,Lon,Hdg,Spd,Alt,HDOP,Rx ok,Rx err,Rx chars,
@@ -50,6 +56,7 @@ You may be using the wrong baud rate.  This says that characters are being recei
   // Start the UART for the GPS device
   gps_port.begin(4800); // 2400, 19200, 38400, and 115200 are also possible
 ```
+####Poor satellite reception
 If you are seeing
 ```
 Local time,Status,UTC Date/Time,Lat,Lon,Hdg,Spd,Alt,HDOP,Rx ok,Rx err,Rx chars,
@@ -96,3 +103,43 @@ Local time,Status,UTC Date/Time,Lat,Lon,Hdg,Spd,Alt,HDOP,VDOP,PDOP,Lat err,Lon e
 2015-09-14 16:03:08,3,2015-09-14 20:03:08.00,,,,,,,,,,,,2,[2 71/27@14,5 65/197@33,],16,0,952,
 ```
 This shows that only two satellites are being tracked.  You must move to a position with a better view of the sky.
+
+##Trying to do too many things
+Many libraries and their examples, and I mean almost all of 'em, are not structured in a way that lets you do more than one thing in a sketch.   The result: the example program works great, but adding anything to it breaks it.
+
+####Printing too much
+Many programmers run into trouble because they try to print too much debug info.  The Arduino `Serial.print` function will "block" until those output characters can be stored in a buffer.  While the sketch is blocked at `Serial.print`, the GPS device is probably still sending data.  The _input_ buffer on an Arduino is only 64 bytes, about the size of one NMEA sentence.  After 64 bytes have been received stored, all other data is dropped!  Depending on the GPS baud rate and the Serial Monitor baud rate, it may be very easy to lose GPS characters.
+
+It is crucial to call `serial.read` frequently, and to _never_ call a blocking function that takes more than (64*11/baud) seconds.  If the GPS is running at 9600, you cannot block for more than 70ms.  If your debug `Serial` is also running at 9600, you cannot write more than 64 bytes in a row!
+
+####Blocking operations
+Most Arduino libraries are written in a blocking fashion.  That is, if you call a library's function, it will not return from that function until the operation has been completed.  If that operation takes a long time, GPS characters will be dropped.
+
+Many programmers want to write GPS data to an SD card.  This is completely reasonable to do, but an `SD.write` can block long enough to cause the input buffer to overflow.  SD libraries have their own buffers, and when they are filled, the library performs SPI operations to "flush" the buffer to the SD card.  While that is happening, the GPS device is _still_ sending data, and it will eventually overflow the serial input buffer.
+
+This is a very common problem!  Here's some diagrams to help explain the timing for the Adafruit_GPS library.  First, lets look at how the incoming GPS data relates to reading and parsing it:
+
+<img src="images/GPS%20Timing%200.jpg"/>
+
+Note how loop calls GPS.read, and when it has read all the chars that have been received up to that point, it returns.  loop may get called lots of times while it's waiting for the chars to come in.  Eventually, the whole sentence is received, newNMEAreceived returns true, and you can go parse the new data.
+
+The problem is that if you try to do anything that takes "too long", GPS.read won't get called.  The incoming chars stack up in the input buffer until it's full.  After that, the chars will be dropped:
+
+<img src="images/GPS%20Timing%201.jpg"/>
+
+The next sentence, a GPRMC, continues to come in while Serial.print and SD.write are doing their thing... and data gets lost.
+
+Fortunately, there is a way to work around this.  It turns out that the GPS device is sending a batch of sentences once every second, maybe 5 at a time.  Most of that one-second interval is actually is a "quiet time" that is perfect for doing other things:
+
+<img src="images/GPS%20Timing%202.jpg"/>
+
+All you need to do is hold on to the GPS information (date, time, location, etc.) until the quiet time comes around.  You'll need to take the same approach for each additional task.  For additional sensors, hold on to the temperature, acceleration, whatever, until the quiet time comes around.  *Then* perform the blocking operation, like `SD.write`, and no GPS data will be lost.
+
+This is why NeoGPS uses a `fix` structure: it can be
+   * _populated_ as the characters are received,
+   * _copied/merged_ when a sentence is complete, and then
+   * _used_ anytime (for fast operations) or during the quiet time (for slow operations).
+
+You do not have to call a "parse" function after a complete sentence has been received -- the data was parsed as it was received.  Essentially, the processing time for parsing is spread out across the receipt of all characters.  When the last character of the sentence is received, the relevant members of `gps.fix()` have already been populated.
+
+All the example programs are structured so that the (relatively) slow printing operations are performed during the GPS quiet time.  Simply replace those trace/print statements with your specific code.
