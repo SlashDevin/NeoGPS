@@ -227,14 +227,14 @@ struct time_t {
    * @param[in] y epoch year to set.
    * See also /full_year/.
    */
-#ifdef TIME_EPOCH_MODIFIABLE
-  static void epoch_year(uint16_t y)
-  {
-    s_epoch_year = y;
-    epoch_offset( s_epoch_year % 100 );
-    pivot_year( epoch_offset() );
-  }
-#endif
+  #ifdef TIME_EPOCH_MODIFIABLE
+    static void epoch_year(uint16_t y)
+    {
+      s_epoch_year = y;
+      epoch_offset( s_epoch_year % 100 );
+      pivot_year( epoch_offset() );
+    }
+  #endif
 
   /**
    * Get the epoch year.
@@ -256,18 +256,18 @@ struct time_t {
    * allow years in the range 1980 to 2079. Default 0 for Y2K_EPOCH.
    */
   static uint8_t pivot_year()             { return s_pivot_year; };
-#ifdef TIME_EPOCH_MODIFIABLE
-  static void    pivot_year( uint8_t py ) { s_pivot_year = py;   };
-#endif
+  #ifdef TIME_EPOCH_MODIFIABLE
+    static void    pivot_year( uint8_t py ) { s_pivot_year = py;   };
+  #endif
 
-  /**
-   * Use the current year for the epoch year. This will result in the
-   * best performance of conversions, but dates/times before January 1
-   * of the epoch year cannot be represented. 
-   */
-#ifdef TIME_EPOCH_MODIFIABLE
-  static void use_fastest_epoch();
-#endif
+  #ifdef TIME_EPOCH_MODIFIABLE
+    /**
+     * Use the current year for the epoch year. This will result in the
+     * best performance of conversions, but dates/times before January 1
+     * of the epoch year cannot be represented. 
+     */
+    static void use_fastest_epoch();
+  #endif
 
   /**
    * Parse a character string and fill out members.
@@ -281,19 +281,19 @@ struct time_t {
 protected:
   static uint8_t  epoch_offset() { return s_epoch_offset; };
 
-#ifdef TIME_EPOCH_MODIFIABLE
-  static void     epoch_offset( uint8_t eo ) { s_epoch_offset = eo; };
+  #ifdef TIME_EPOCH_MODIFIABLE
+    static void     epoch_offset( uint8_t eo ) { s_epoch_offset = eo; };
 
-  static uint16_t s_epoch_year;
-  static uint8_t  s_pivot_year;
-  static uint8_t  s_epoch_offset;
-  static uint8_t  s_epoch_weekday;
-#else
-  static const uint16_t s_epoch_year    = Y2K_EPOCH_YEAR;
-  static const uint8_t  s_pivot_year    = 00;
-  static const uint8_t  s_epoch_offset  = 00;
-  static const uint8_t  s_epoch_weekday = Y2K_EPOCH_WEEKDAY;
-#endif
+    static uint16_t s_epoch_year;
+    static uint8_t  s_pivot_year;
+    static uint8_t  s_epoch_offset;
+    static uint8_t  s_epoch_weekday;
+  #else
+    static const uint16_t s_epoch_year    = Y2K_EPOCH_YEAR;
+    static const uint8_t  s_pivot_year    = 00;
+    static const uint8_t  s_epoch_offset  = 00;
+    static const uint8_t  s_epoch_weekday = Y2K_EPOCH_WEEKDAY;
+  #endif
 
 } NEOGPS_PACKED;
 

@@ -160,55 +160,55 @@ public:
   struct valid_t {
     bool status NEOGPS_BF(1);
 
-#if defined(GPS_FIX_DATE)
-    bool date NEOGPS_BF(1);
-#endif
+    #if defined(GPS_FIX_DATE)
+      bool date NEOGPS_BF(1);
+    #endif
 
-#if defined(GPS_FIX_TIME)
-    bool time NEOGPS_BF(1);
-#endif
+    #if defined(GPS_FIX_TIME)
+      bool time NEOGPS_BF(1);
+    #endif
 
-#ifdef GPS_FIX_LOCATION
-    bool location NEOGPS_BF(1);
-#endif
+    #ifdef GPS_FIX_LOCATION
+      bool location NEOGPS_BF(1);
+    #endif
 
-#ifdef GPS_FIX_ALTITUDE
-    bool altitude NEOGPS_BF(1);
-#endif
+    #ifdef GPS_FIX_ALTITUDE
+      bool altitude NEOGPS_BF(1);
+    #endif
 
-#ifdef GPS_FIX_SPEED
-    bool speed NEOGPS_BF(1);
-#endif
+    #ifdef GPS_FIX_SPEED
+      bool speed NEOGPS_BF(1);
+    #endif
 
-#ifdef GPS_FIX_HEADING
-    bool heading NEOGPS_BF(1);
-#endif
+    #ifdef GPS_FIX_HEADING
+      bool heading NEOGPS_BF(1);
+    #endif
 
-#ifdef GPS_FIX_SATELLITES
-    bool satellites NEOGPS_BF(1);
-#endif
+    #ifdef GPS_FIX_SATELLITES
+      bool satellites NEOGPS_BF(1);
+    #endif
 
-#ifdef GPS_FIX_HDOP
-    bool hdop NEOGPS_BF(1);
-#endif
-#ifdef GPS_FIX_VDOP
-    bool vdop NEOGPS_BF(1);
-#endif
-#ifdef GPS_FIX_PDOP
-    bool pdop NEOGPS_BF(1);
-#endif
+    #ifdef GPS_FIX_HDOP
+      bool hdop NEOGPS_BF(1);
+    #endif
+    #ifdef GPS_FIX_VDOP
+      bool vdop NEOGPS_BF(1);
+    #endif
+    #ifdef GPS_FIX_PDOP
+      bool pdop NEOGPS_BF(1);
+    #endif
 
-#ifdef GPS_FIX_LAT_ERR
-    bool lat_err NEOGPS_BF(1);
-#endif
+    #ifdef GPS_FIX_LAT_ERR
+      bool lat_err NEOGPS_BF(1);
+    #endif
 
-#ifdef GPS_FIX_LON_ERR
-    bool lon_err NEOGPS_BF(1);
-#endif
+    #ifdef GPS_FIX_LON_ERR
+      bool lon_err NEOGPS_BF(1);
+    #endif
 
-#ifdef GPS_FIX_ALT_ERR
-    bool alt_err NEOGPS_BF(1);
-#endif
+    #ifdef GPS_FIX_ALT_ERR
+      bool alt_err NEOGPS_BF(1);
+    #endif
 
     void init()
       {
@@ -232,52 +232,52 @@ public:
    */
   void init()
   {
-#ifdef GPS_FIX_LOCATION
-    lat = lon = 0;
-#endif
+    #ifdef GPS_FIX_LOCATION
+      lat = lon = 0;
+    #endif
 
-#ifdef GPS_FIX_ALTITUDE
-    alt.init();
-#endif
+    #ifdef GPS_FIX_ALTITUDE
+      alt.init();
+    #endif
 
-#ifdef GPS_FIX_SPEED
-    spd.init();
-#endif
+    #ifdef GPS_FIX_SPEED
+      spd.init();
+    #endif
 
-#ifdef GPS_FIX_HEADING
-    hdg.init();
-#endif
+    #ifdef GPS_FIX_HEADING
+      hdg.init();
+    #endif
 
-#ifdef GPS_FIX_HDOP
-    hdop = 0;
-#endif
-#ifdef GPS_FIX_VDOP
-    vdop = 0;
-#endif
-#ifdef GPS_FIX_PDOP
-    pdop = 0;
-#endif
+    #ifdef GPS_FIX_HDOP
+      hdop = 0;
+    #endif
+    #ifdef GPS_FIX_VDOP
+      vdop = 0;
+    #endif
+    #ifdef GPS_FIX_PDOP
+      pdop = 0;
+    #endif
 
-#ifdef GPS_FIX_LAT_ERR
-    lat_err_cm = 0;
-#endif
-#ifdef GPS_FIX_LON_ERR
-    lon_err_cm = 0;
-#endif
-#ifdef GPS_FIX_ALT_ERR
-    alt_err_cm = 0;
-#endif
+    #ifdef GPS_FIX_LAT_ERR
+      lat_err_cm = 0;
+    #endif
+    #ifdef GPS_FIX_LON_ERR
+      lon_err_cm = 0;
+    #endif
+    #ifdef GPS_FIX_ALT_ERR
+      alt_err_cm = 0;
+    #endif
 
-#ifdef GPS_FIX_SATELLITES
-    satellites = 0;
-#endif
+    #ifdef GPS_FIX_SATELLITES
+      satellites = 0;
+    #endif
 
-#if defined(GPS_FIX_DATE) | defined(GPS_FIX_TIME)
-    dateTime.init();
-#endif
-#if defined(GPS_FIX_TIME)
-    dateTime_cs = 0;
-#endif
+    #if defined(GPS_FIX_DATE) | defined(GPS_FIX_TIME)
+      dateTime.init();
+    #endif
+    #if defined(GPS_FIX_TIME)
+      dateTime_cs = 0;
+    #endif
 
     status = STATUS_NONE;
 
@@ -295,79 +295,79 @@ public:
       if (r.valid.status && (!valid.status || (status < r.status)))
         status = r.status;
 
-#ifdef GPS_FIX_DATE
-      if (r.valid.date) {
-        dateTime.date  = r.dateTime.date;
-        dateTime.month = r.dateTime.month;
-        dateTime.year  = r.dateTime.year;
-      }
-#endif
+      #ifdef GPS_FIX_DATE
+        if (r.valid.date) {
+          dateTime.date  = r.dateTime.date;
+          dateTime.month = r.dateTime.month;
+          dateTime.year  = r.dateTime.year;
+        }
+      #endif
 
-#ifdef GPS_FIX_TIME
-      if (r.valid.time) {
-        dateTime.hours   = r.dateTime.hours;
-        dateTime.minutes = r.dateTime.minutes;
-        dateTime.seconds = r.dateTime.seconds;
-        dateTime_cs      = r.dateTime_cs;
-      }
-#endif
+      #ifdef GPS_FIX_TIME
+        if (r.valid.time) {
+          dateTime.hours   = r.dateTime.hours;
+          dateTime.minutes = r.dateTime.minutes;
+          dateTime.seconds = r.dateTime.seconds;
+          dateTime_cs      = r.dateTime_cs;
+        }
+      #endif
 
-#ifdef GPS_FIX_LOCATION
-      if (r.valid.location) {
-        lat = r.lat;
-        lon = r.lon;
-      }
-#endif
+      #ifdef GPS_FIX_LOCATION
+        if (r.valid.location) {
+          lat = r.lat;
+          lon = r.lon;
+        }
+      #endif
 
-#ifdef GPS_FIX_ALTITUDE
-      if (r.valid.altitude)
-        alt = r.alt;
-#endif
+      #ifdef GPS_FIX_ALTITUDE
+        if (r.valid.altitude)
+          alt = r.alt;
+      #endif
 
-#ifdef GPS_FIX_HEADING
-      if (r.valid.heading)
-        hdg = r.hdg;
-#endif
+      #ifdef GPS_FIX_HEADING
+        if (r.valid.heading)
+          hdg = r.hdg;
+      #endif
 
-#ifdef GPS_FIX_SPEED
-      if (r.valid.speed)
-        spd = r.spd;
-#endif
+      #ifdef GPS_FIX_SPEED
+        if (r.valid.speed)
+          spd = r.spd;
+      #endif
 
-#ifdef GPS_FIX_SATELLITES
-      if (r.valid.satellites)
-        satellites = r.satellites;
-#endif
+      #ifdef GPS_FIX_SATELLITES
+        if (r.valid.satellites)
+          satellites = r.satellites;
+      #endif
 
-#ifdef GPS_FIX_HDOP
-      if (r.valid.hdop)
-        hdop = r.hdop;
-#endif
+      #ifdef GPS_FIX_HDOP
+        if (r.valid.hdop)
+          hdop = r.hdop;
+      #endif
 
-#ifdef GPS_FIX_VDOP
-      if (r.valid.vdop)
-        vdop = r.vdop;
-#endif
+      #ifdef GPS_FIX_VDOP
+        if (r.valid.vdop)
+          vdop = r.vdop;
+      #endif
 
-#ifdef GPS_FIX_PDOP
-      if (r.valid.pdop)
-        pdop = r.pdop;
-#endif
+      #ifdef GPS_FIX_PDOP
+        if (r.valid.pdop)
+          pdop = r.pdop;
+      #endif
 
-#ifdef GPS_FIX_LAT_ERR
-      if (r.valid.lat_err)
-        lat_err_cm = r.lat_err_cm;
-#endif
+      #ifdef GPS_FIX_LAT_ERR
+        if (r.valid.lat_err)
+          lat_err_cm = r.lat_err_cm;
+      #endif
 
-#ifdef GPS_FIX_LON_ERR
-      if (r.valid.lon_err)
-        lon_err_cm = r.lon_err_cm;
-#endif
+      #ifdef GPS_FIX_LON_ERR
+        if (r.valid.lon_err)
+          lon_err_cm = r.lon_err_cm;
+      #endif
 
-#ifdef GPS_FIX_ALT_ERR
-      if (r.valid.alt_err)
-        alt_err_cm = r.alt_err_cm;
-#endif
+      #ifdef GPS_FIX_ALT_ERR
+        if (r.valid.alt_err)
+          alt_err_cm = r.alt_err_cm;
+      #endif
 
       // Update all the valid flags
       valid |= r.valid;

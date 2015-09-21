@@ -91,7 +91,11 @@ protected:
         return ok;
       };
 
+    bool parsePUBX_00( char chr );
+    bool parsePUBX_04( char chr );
+
     bool parseField( char chr );
+
     bool parseFix( char chr );
 } NEOGPS_PACKED;
 

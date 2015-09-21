@@ -86,14 +86,16 @@ public:
      * Most recent NMEA sentence type received.
      */
     enum nmea_msg_t nmeaMessage NEOGPS_BF(8);
-    
-#ifdef NMEAGPS_SAVE_TALKER_ID
-    char talker_id[2];
-#endif
 
-#ifdef NMEAGPS_SAVE_MFR_ID
-    char mfr_id[3];
-#endif
+    //  Storage for IDs, if configured
+
+    #ifdef NMEAGPS_SAVE_TALKER_ID
+      char talker_id[2];
+    #endif
+
+    #ifdef NMEAGPS_SAVE_MFR_ID
+      char mfr_id[3];
+    #endif
 
     //  Current fix accessor.
     //  /fix/ will be constantly changing as characters are received.
@@ -124,7 +126,7 @@ public:
     //  void loop()
     //  {
     //    while (uart.available()) {
-    //      if (gps.decode( uart.getchar() ) == DECODE_COMPLETED) {
+    //      if (gps.decode( uart.read() ) == DECODE_COMPLETED) {
     //        // Got something new!  Access only valid members here and/or...
     //
     //        // ...save a snapshot for later
@@ -134,16 +136,13 @@ public:
     //    // Access valid members of /safe_fix/ anywhere, any time.
     //  }
 
-#ifdef NMEAGPS_STATS
-    /**
-     * Statistics.
-     */
-    struct statistics_t {
-        uint32_t ok;         // count of successfully parsed sentences
-        uint32_t crc_errors; // count of CRC errors
-        uint32_t chars;
-    } statistics;
-#endif
+    #ifdef NMEAGPS_STATS
+      struct statistics_t {
+          uint32_t ok;         // count of successfully parsed sentences
+          uint32_t crc_errors; // count of CRC errors
+          uint32_t chars;
+      } statistics;
+    #endif
 
     /**
      * Request the specified NMEA sentence.  Not all devices will respond.
@@ -212,21 +211,40 @@ protected:
     NMEAGPS_VIRTUAL const msg_table_t *msg_table() const
       { return &nmea_msg_table; };
 
-#ifdef NMEAGPS_PARSE_TALKER_ID
-    NMEAGPS_VIRTUAL bool parseTalkerID( char chr ) { return true; };
-#endif
+    /*
+     *  These virtual methods can accept or reject the talker ID (for standard sentences) 
+     *    or the manufacturer ID (for proprietary sentences).
+     *  The default is to accept *all* IDs.
+     *  Override them if you want to reject certain IDs, or you want
+     *  to handle COMPLETED sentences from certain IDs differently.
+     */
+    #ifdef NMEAGPS_PARSE_TALKER_ID
+      NMEAGPS_VIRTUAL bool parseTalkerID( char chr ) { return true; };
+    #endif
 
-#ifdef NMEAGPS_PARSE_MFR_ID
-    NMEAGPS_VIRTUAL bool parseMfrID( char chr ) { return true; };
-#endif
+    #ifdef NMEAGPS_PARSE_MFR_ID
+      NMEAGPS_VIRTUAL bool parseMfrID( char chr ) { return true; };
+    #endif
 
     /*
-     * Use the list of tables to recognize an NMEA sentence type.
+     * Try to recognize an NMEA sentence type, after the IDs have been accepted.
      */
     decode_t parseCommand( char c );
 
     /*
-     * Depending on the NMEA sentence type, parse one field of the expected type.
+     * Parse various NMEA sentences
+     */
+    bool parseGGA( char chr );
+    bool parseGLL( char chr );
+    bool parseGSA( char chr );
+    bool parseGST( char chr );
+    bool parseGSV( char chr );
+    bool parseRMC( char chr );
+    bool parseVTG( char chr );
+    bool parseZDA( char chr );
+
+    /*
+     * Depending on the NMEA sentence type, parse one field of an expected type.
      */
     NMEAGPS_VIRTUAL bool parseField( char chr );
 
@@ -253,32 +271,33 @@ protected:
     bool parseSatellites( char chr );
 
     // Helper macro for parsing the 4 consecutive fields of a location
-#define PARSE_FIELD(i,f) case i: return parse##f( chr );
-#define PARSE_LOC(i) PARSE_FIELD(i,Lat) \
-PARSE_FIELD(i+1,NS); \
-PARSE_FIELD(i+2,Lon); \
-PARSE_FIELD(i+3,EW);
+    #define PARSE_FIELD(i,f) case i: return parse##f( chr );
+    #define PARSE_LOC(i) PARSE_FIELD(i,Lat) \
+    PARSE_FIELD(i+1,NS); \
+    PARSE_FIELD(i+2,Lon); \
+    PARSE_FIELD(i+3,EW);
 
-    // Optional SATELLITE VIEW array    -----------------------
-#ifdef NMEAGPS_PARSE_SATELLITES
 public:
-    struct satellite_view_t
-    {
-      uint8_t  id;
-#ifdef NMEAGPS_PARSE_SATELLITE_INFO
-      uint8_t  elevation; // 0..99 deg
-      uint16_t azimuth;   // 0..359 deg
-      uint8_t  snr     NEOGPS_BF(7); // 0..99 dBHz
-      bool     tracked NEOGPS_BF(1);
-#endif
-    } NEOGPS_PACKED;
+    // Optional SATELLITE VIEW array    -----------------------
+    #ifdef NMEAGPS_PARSE_SATELLITES
+      struct satellite_view_t
+      {
+        uint8_t    id;
+        #ifdef NMEAGPS_PARSE_SATELLITE_INFO
+          uint8_t  elevation; // 0..99 deg
+          uint16_t azimuth;   // 0..359 deg
+          uint8_t  snr     NEOGPS_BF(7); // 0..99 dBHz
+          bool     tracked NEOGPS_BF(1);
+        #endif
+      } NEOGPS_PACKED;
 
-    satellite_view_t satellites[ NMEAGPS_MAX_SATELLITES ];
-    uint8_t sat_count;
+      satellite_view_t satellites[ NMEAGPS_MAX_SATELLITES ];
+      uint8_t sat_count;
 
-    bool satellites_valid() const { return (sat_count >= m_fix.satellites); }
+      bool satellites_valid() const { return (sat_count >= m_fix.satellites); }
+    #endif
+
 protected:
-#endif
 
     /**
      * Parse floating-point numbers into a /whole_frac/

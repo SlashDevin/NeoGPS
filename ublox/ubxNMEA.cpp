@@ -4,49 +4,62 @@
 
 bool ubloxNMEA::parseField(char chr)
 {
-  bool ok = true;
-
   switch (nmeaMessage) {
 
-    case PUBX_00:
-      switch (fieldIndex) {
-          case 1:
-//trace << chr;
-            // The first field is actually a message subtype
-            if (chrCount == 0)
-              ok = (chr == '0');
-            else if (chrCount == 1)
-              nmeaMessage = (nmea_msg_t) (nmeaMessage + chr - '0');
-            break;
-#ifdef NMEAGPS_PARSE_PUBX_00
-          case  2: return parseTime( chr );
-          PARSE_LOC(3);
-          case  7: return parseAlt( chr );
-          case  8: return parseFix( chr ); break;
-          case 11: return parseSpeed( chr ); // kph!
-          case 12: return parseHeading( chr );
-          case 15: return parseHDOP( chr );
-          case 18: return parseSatellites( chr );
-#endif
-      }
-      break;
-
-    case PUBX_04:
-#ifdef NMEAGPS_PARSE_PUBX_04
-      switch (fieldIndex) {
-          case 2: return parseTime( chr );
-          case 3: return parseDDMMYY( chr );
-      }
-#endif
-      break;
-
+    case PUBX_00: return parsePUBX_00( chr );
+    case PUBX_04: return parsePUBX_04( chr );
     default:
       // Delegate
       return NMEAGPS::parseField(chr);
   }
 
-  return ok;
-}
+  return true;
+
+} // parseField
+
+//----------------------------
+
+bool ubloxNMEA::parsePUBX_00( char chr )
+{
+  switch (fieldIndex) {
+    case 1:
+      // The first field is actually a message subtype
+      if (chrCount == 0)
+        return (chr == '0');
+      else if (chrCount == 1)
+        nmeaMessage = (nmea_msg_t) (nmeaMessage + chr - '0');
+      break;
+
+    #ifdef NMEAGPS_PARSE_PUBX_00
+      case  2: return parseTime( chr );
+      PARSE_LOC(3);
+      case  7: return parseAlt( chr );
+      case  8: return parseFix( chr ); break;
+      case 11: return parseSpeed( chr ); // kph!
+      case 12: return parseHeading( chr );
+      case 15: return parseHDOP( chr );
+      case 18: return parseSatellites( chr );
+    #endif
+  }
+
+  return true;
+
+} // parsePUBX_00
+
+//---------------------------------------------
+
+bool ubloxNMEA::parsePUBX_04( char chr )
+{
+  #ifdef NMEAGPS_PARSE_PUBX_04
+    switch (fieldIndex) {
+        case 2: return parseTime( chr );
+        case 3: return parseDDMMYY( chr );
+    }
+  #endif
+
+  return true;
+
+} // parsePUBX_04
 
 //---------------------------------------------
 

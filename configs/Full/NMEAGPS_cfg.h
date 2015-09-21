@@ -113,20 +113,22 @@
 
 #ifdef NMEAGPS_ACCUMULATE_FIX
 
-// When accumulating, nothing is done to the fix at the beginning of every sentence
-#define NMEAGPS_INIT_FIX(m)
+  // When accumulating, nothing is done to the fix at the 
+  // beginning of every sentence
+  #define NMEAGPS_INIT_FIX(m)
 
-// ...but we invalidate one part when it starts to get parsed.  It *may* get
-// validated when the parsing is finished.
-#define NMEAGPS_INVALIDATE(m) m_fix.valid.m = false
+  // ...but we invalidate one part when it starts to get parsed.  It *may* get
+  // validated when the parsing is finished.
+  #define NMEAGPS_INVALIDATE(m) m_fix.valid.m = false
 
 #else
 
-// When NOT accumulating, invalidate the entire fix at the beginning of every sentence
-#define NMEAGPS_INIT_FIX(m) m.valid.init()
+  // When NOT accumulating, invalidate the entire fix at the 
+  // beginning of every sentence
+  #define NMEAGPS_INIT_FIX(m) m.valid.init()
 
-// ...so the individual parts do not need to be invalidated as they are parsed
-#define NMEAGPS_INVALIDATE(m)
+  // ...so the individual parts do not need to be invalidated as they are parsed
+  #define NMEAGPS_INVALIDATE(m)
 
 #endif
 
@@ -146,14 +148,16 @@
 //#define NMEAGPS_DERIVED_TYPES
 
 #ifdef NMEAGPS_DERIVED_TYPES
-#define NMEAGPS_VIRTUAL virtual
+  #define NMEAGPS_VIRTUAL virtual
 #else
-#define NMEAGPS_VIRTUAL
+  #define NMEAGPS_VIRTUAL
 #endif
 
+//-----------------------------------
+// See if DERIVED_TYPES is required
 #if (defined(NMEAGPS_PARSE_TALKER_ID) | defined(NMEAGPS_PARSE_MFR_ID)) &  \
            !defined(NMEAGPS_DERIVED_TYPES)
-#error You must define NMEAGPS_DERIVED_TYPES in NMEAGPS.h in order to parse Talker and/or Mfr IDs!
+  #error You must define NMEAGPS_DERIVED_TYPES in NMEAGPS.h in order to parse Talker and/or Mfr IDs!
 #endif
 
 #endif

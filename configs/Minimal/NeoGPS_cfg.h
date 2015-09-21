@@ -25,20 +25,20 @@
 
 #ifdef NEOGPS_PACKED_DATA
 
-// This is for specifying the number of bits to be used for a 
-// member of a struct.  Booleans are typically one bit.
-#define NEOGPS_BF(b) :b
+  // This is for specifying the number of bits to be used for a 
+  // member of a struct.  Booleans are typically one bit.
+  #define NEOGPS_BF(b) :b
 
-// This is for requesting the compiler to pack the struct or class members
-// "as closely as possible".  This is a compiler-dependent interpretation.
-#define NEOGPS_PACKED __attribute__((packed))
+  // This is for requesting the compiler to pack the struct or class members
+  // "as closely as possible".  This is a compiler-dependent interpretation.
+  #define NEOGPS_PACKED __attribute__((packed))
 
 #else
 
-// Let the compiler do whatever it wants.
+  // Let the compiler do whatever it wants.
 
-#define NEOGPS_PACKED
-#define NEOGPS_BF(b)
+  #define NEOGPS_PACKED
+  #define NEOGPS_BF(b)
 
 #endif
 

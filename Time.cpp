@@ -40,8 +40,7 @@ Stream& operator<<(Stream& outs, const NeoGPS::time_t& t)
 
 using NeoGPS::time_t;
 
-bool 
-time_t::parse(str_P s)
+bool time_t::parse(str_P s)
 {
   static size_t BUF_MAX = 32;
   char buf[BUF_MAX];
@@ -77,10 +76,10 @@ time_t::parse(str_P s)
 }
 
 #ifdef TIME_EPOCH_MODIFIABLE
-uint16_t time_t::s_epoch_year    = Y2K_EPOCH_YEAR;
-uint8_t  time_t::s_epoch_offset  = 0;
-uint8_t  time_t::s_epoch_weekday = Y2K_EPOCH_WEEKDAY;
-uint8_t  time_t::s_pivot_year    = 0;
+  uint16_t time_t::s_epoch_year    = Y2K_EPOCH_YEAR;
+  uint8_t  time_t::s_epoch_offset  = 0;
+  uint8_t  time_t::s_epoch_weekday = Y2K_EPOCH_WEEKDAY;
+  uint8_t  time_t::s_pivot_year    = 0;
 #endif
 
 const uint8_t time_t::days_in[] __PROGMEM = {
@@ -177,27 +176,27 @@ uint16_t time_t::day_of_year() const
 }
 
 #ifdef TIME_EPOCH_MODIFIABLE
-void time_t::use_fastest_epoch()
-{
-  // Figure out when we were compiled and use the year for a really
-  // fast epoch_year. Format "MMM DD YYYY"
-  const char* compile_date = (const char *) PSTR(__DATE__);
-  uint16_t    compile_year = 0;
-  for (uint8_t i = 7; i < 11; i++)
-    compile_year = compile_year*10 + (pgm_read_byte(&compile_date[i]) - '0');
+  void time_t::use_fastest_epoch()
+  {
+    // Figure out when we were compiled and use the year for a really
+    // fast epoch_year. Format "MMM DD YYYY"
+    const char* compile_date = (const char *) PSTR(__DATE__);
+    uint16_t    compile_year = 0;
+    for (uint8_t i = 7; i < 11; i++)
+      compile_year = compile_year*10 + (pgm_read_byte(&compile_date[i]) - '0');
 
-  // Temporarily set a Y2K epoch so we can figure out the day for
-  // January 1 of this year
-  epoch_year      ( Y2K_EPOCH_YEAR );
-  epoch_weekday   ( Y2K_EPOCH_WEEKDAY );
+    // Temporarily set a Y2K epoch so we can figure out the day for
+    // January 1 of this year
+    epoch_year      ( Y2K_EPOCH_YEAR );
+    epoch_weekday   ( Y2K_EPOCH_WEEKDAY );
 
-  time_t this_year(0);
-  this_year.year = compile_year % 100;
-  this_year.set_day();
-  uint8_t compile_weekday = this_year.day;
+    time_t this_year(0);
+    this_year.year = compile_year % 100;
+    this_year.set_day();
+    uint8_t compile_weekday = this_year.day;
 
-  epoch_year   ( compile_year );
-  epoch_weekday( compile_weekday );
-  pivot_year   ( this_year.year );
-}
+    epoch_year   ( compile_year );
+    epoch_weekday( compile_weekday );
+    pivot_year   ( this_year.year );
+  }
 #endif

@@ -21,7 +21,7 @@
 #if defined(UBRR1H)
 
   // The current Board (a Mega?) has an extra hardware serial port
-  //   on pins 18 (TX1) and 19 (RX1)
+  //   on pins 18 (TX1) and 19 (RX1) (probably).
   HardwareSerial & gps_port = Serial1;
 
   #define USING_GPS_PORT "Serial1"
@@ -60,7 +60,8 @@ static NMEAGPS gps;
 void setup()
 {
   // Start the normal trace output
-  Serial.begin(9600);
+  Serial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
+
   trace.print( F("NMEA test: started\n") );
   trace.print( F("fix object size = ") );
   trace.println( sizeof(gps.fix()) );
@@ -116,7 +117,7 @@ void loop()
     last_time_seconds_changed = millis();
   }
 
-  // Print things out once per second, after the serial input has died down.
+  // Print things out after the serial input has died down.
   // This prevents input buffer overflow during printing.
 
   static uint32_t last_trace = 0UL;

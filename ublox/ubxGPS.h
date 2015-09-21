@@ -152,19 +152,19 @@ public:
 
 protected:
 
-#if defined( GPS_FIX_LAT_ERR ) | defined( GPS_FIX_LON_ERR ) | \
-    defined( GPS_FIX_ALT_ERR )
-    // Well, crud.  The NAV_POSLLH message has 4-byte received errors in mm.
-    // These must be converted to the 2-byte gps_fix errors in cm.
-    // There's no easy way to perform this conversion as the bytes are
-    // being received, especially when the LSB is received first.
-    // Hold them here, then divide.
-    union {
-      uint32_t U4;
-      uint16_t U2[2];
-      uint8_t  U1[4];
-    };
-#endif
+    #if defined( GPS_FIX_LAT_ERR ) | defined( GPS_FIX_LON_ERR ) | \
+        defined( GPS_FIX_ALT_ERR )
+      // Well, crud.  The NAV_POSLLH message has 4-byte received errors in mm.
+      // These must be converted to the 2-byte gps_fix errors in cm.
+      // There's no easy way to perform this conversion as the bytes are
+      // being received, especially when the LSB is received first.
+      // Hold them here, then divide.
+      union {
+        uint32_t U4;
+        uint16_t U2[2];
+        uint8_t  U1[4];
+      };
+    #endif
 
     /*
      * Some UBX messages can be larger than 256 bytes, so
@@ -282,25 +282,28 @@ private:
 
     bool parseTOW( uint8_t chr )
     {
-#if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
-      if (chrCount == 0) {
-        m_fix.valid.date =
-        m_fix.valid.time = false;
-      }
-      ((uint8_t *) &m_fix.dateTime)[ chrCount ] = chr;
-      if (chrCount == 3) {
-        uint32_t tow = *((uint32_t *) &m_fix.dateTime);
-//trace << PSTR("@ ") << tow;
-        uint16_t ms;
-        if (GPSTime::from_TOWms( tow, m_fix.dateTime, ms )) {
-          m_fix.dateTime_cs = ms / 10;
-          m_fix.valid.time = true;
-          m_fix.valid.date = true;
-        } else
-          m_fix.dateTime.init();
-//trace << PSTR(".") << m_fix.dateTime_cs;
-      }
-#endif
+      #if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
+        if (chrCount == 0) {
+          m_fix.valid.date =
+          m_fix.valid.time = false;
+        }
+
+        ((uint8_t *) &m_fix.dateTime)[ chrCount ] = chr;
+
+        if (chrCount == 3) {
+          uint32_t tow = *((uint32_t *) &m_fix.dateTime);
+          //trace << PSTR("@ ") << tow;
+
+          uint16_t ms;
+          if (GPSTime::from_TOWms( tow, m_fix.dateTime, ms )) {
+            m_fix.dateTime_cs = ms / 10;
+            m_fix.valid.time = true;
+            m_fix.valid.date = true;
+          } else
+            m_fix.dateTime.init();
+          //trace << PSTR(".") << m_fix.dateTime_cs;
+        }
+      #endif
 
       return true;
     }
