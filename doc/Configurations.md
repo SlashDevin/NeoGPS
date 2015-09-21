@@ -159,6 +159,8 @@ satellites, HDOP, GPRMC and GPGGA messages.
 
 **Full**: Nominal plus talker ID, VDOP, PDOP, lat/lon/alt errors, satellite array with satellite info, all messages, and parser statistics.
 
+**PUBX**: Nominal fix items, standard sentences _disabled_, proprietary sentences PUBX 00 and 04 enabled, and required PARSE_MFR_ID and DERIVED_TYPES
+
 These configurations are available in the [configs](/configs) subdirectory.
 
 ========================
