@@ -2,8 +2,8 @@ Troubleshooting
 ===============
 Many problems are caused by these three kinds of errors:
    1. [Configuration](#configuration-errors)
-   2. [Device connection](#GPS-device-connection-problems)
-   3. [Trying to do too many things](#Trying-to-do-too-many-things) at the same time
+   2. [Device connection](#gps-device-connection-problems)
+   3. [Trying to do too many things](#trying-to-do-too-many-things) at the same time
 
 ##Configuration errors
 Because there are so many configurable items, it is possible that your configuration prevents acquiring the desired GPS information.
