@@ -7,16 +7,22 @@ requiring as few as _**10 bytes of RAM**_, **866 bytes of PROGMEM**, and **less 
 It supports the following protocols and messages:
 
 ####NMEA 0183
-* GPGGA - GPS system fix data
+* GPGGA - System fix data
 * GPGLL - Geographic Latitude and Longitude
-* GPGSA - GPS/GNSS DOP and active satellites
-* GPGST - GNSS Pseudo Range Error Statistics
-* GPGSV - GPS/GNSS Satellites in View
+* GPGSA - DOP and active satellites
+* GPGST - Pseudo Range Error Statistics
+* GPGSV - Satellites in View
 * GPRMC - Recommended Minimum specific GPS/Transit data
 * GPVTG - Course over ground and Ground speed
 * GPZDA - UTC Time and Date
 
-GNRMC, GLRMC, etc. will also be correctly parsed.  See discussion of Talker 
+The "GP" prefix usually indicates an original [GPS](https://en.wikipedia.org/wiki/Satellite_navigation#GPS) source.  NeoGPS parses *all* Talker IDs, including
+  * "GL" ([GLONASS](https://en.wikipedia.org/wiki/Satellite_navigation#GLONASS),
+  * "BD" or "GB" ([BeiDou](https://en.wikipedia.org/wiki/Satellite_navigation#BeiDou)),
+  * "GA" ([Galileo](https://en.wikipedia.org/wiki/Satellite_navigation#Galileo)), and
+  * "GN" (mixed)
+
+This means that GLRMC, GBRMC or BDRMC, GARMC and GNRMC will also be correctly parsed.  See discussion of Talker 
 IDs in [Configurations](doc/Configurations.md).
 
 Most applications can be fully implemented with the standard NMEA messages above.  They are supported by almost all GPS manufacturers.
@@ -52,9 +58,9 @@ Section  |  Description
 [Performance](doc/Performance.md) | 37% to 72% faster!  Really!
 [RAM requirements](doc/RAM.md) | Doing it without buffers!
 [Program Space requirements](doc/Program.md) | Making it fit
-[Extending NeoGPS](doc/Extending.md) | Using specific devices
-[Tradeoffs](doc/Tradeoffs.md) | Comparing to other libraries
 [Examples](doc/Examples.md) | Programming styles
-[ublox](doc/ublox.md) | ublox-specific code
 [Troubleshooting](doc/Troubleshooting.md) | Troubleshooting
+[Extending NeoGPS](doc/Extending.md) | Using specific devices
+[ublox](doc/ublox.md) | ublox-specific code
+[Tradeoffs](doc/Tradeoffs.md) | Comparing to other libraries
 [Acknowledgements](doc/Acknowledgements.md) | Thanks!
