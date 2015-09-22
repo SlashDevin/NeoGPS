@@ -51,6 +51,17 @@ static char formatHex( uint8_t val )
   return (val >= 10) ? ((val - 10) + 'A') : (val + '0');
 }
 
+//---------------------------------
+
+inline uint8_t to_binary(uint8_t value)
+{
+  uint8_t high = (value >> 4);
+  uint8_t low = (value & 0x0f);
+  return ((high << 3) + (high << 1) + low);
+}
+
+//---------------------------------
+
 NMEAGPS::NMEAGPS()
 {
   #ifdef NMEAGPS_STATS
@@ -657,10 +668,18 @@ bool NMEAGPS::parseZDA( char chr )
           break;
         case 3: parseInt( m_fix.dateTime.month, chr ); break;
         case 4:
-          if (chr != ',')
-            parseInt( m_fix.dateTime.year, chr );
-          else
+          if (chr != ',') {
+            // year is BCD until terminating comma.
+            //   This essentially keeps the last two digits
+            if (chrCount == 0) {
+              comma_needed = true;
+              m_fix.dateTime.year = (chr - '0');
+            } else
+              m_fix.dateTime.year = (m_fix.dateTime.year << 4) + (chr - '0');
+          } else {
+            m_fix.dateTime.year = to_binary( m_fix.dateTime.year );
             m_fix.valid.date = true;
+          }
           break;
       #endif
     }
@@ -812,15 +831,6 @@ bool NMEAGPS::parseFloat( uint16_t & val, char chr, uint8_t max_decimal )
   return done;
 
 } // parseFloat
-
-//---------------------------------
-
-inline uint8_t to_binary(uint8_t value)
-{
-  uint8_t high = (value >> 4);
-  uint8_t low = (value & 0x0f);
-  return ((high << 3) + (high << 1) + low);
-}
 
 /**
  * Parse lat/lon dddmm.mmmm fields
