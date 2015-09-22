@@ -23,7 +23,7 @@ The "GP" prefix usually indicates an original [GPS](https://en.wikipedia.org/wik
   * "GN" (mixed)
 
 This means that GLRMC, GBRMC or BDRMC, GARMC and GNRMC will also be correctly parsed.  See discussion of Talker 
-IDs in [Configurations](doc/Configurations.md).
+IDs in [Configurations](doc/Configurations.md#enabledisable-the-talker-id-and-manufacturer-id-processing).
 
 Most applications can be fully implemented with the standard NMEA messages above.  They are supported by almost all GPS manufacturers.
 
