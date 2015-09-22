@@ -10,11 +10,11 @@ conditional compilation is ugly.
 
 ####Accumulating parts means knowing which parts are valid.
 
-Before accessing a part, you must check its `valid` flag.  Fortunately, this adds only one bit per member.  See GPSfix.cpp for an example of accessing every data member.
+Before accessing a part, you must check its `valid` flag.  Fortunately, this adds only one bit per member.  See [Streamers.cpp](/Streamers.cpp#L100) for an example of accessing every data member.  That file also shows how to accommodate different builds: all references to 'gps_fix' members are wrapped with conditional compilation `#ifdef`/`#endif` statements.  If you do not plan to support multiple configurations, you do not need to use `#ifdef`/`#endif` statements.
 
 ####Parsing without buffers, or *in place*, means that you must be more careful about when you access data items.
 
-In general, you should wait to access the fix until after the entire sentence has been parsed.  Most of the examples simply `decode` until a sentence is COMPLETED, then do all their work with `fix`.  See `loop()` in [NMEA.ino](examples/NMEA.ino). 
+In general, you should wait to access the fix until after the entire sentence has been parsed.  Most of the examples simply `decode` until a sentence is COMPLETED, then do all their work with `fix`.  See `loop()` in [NMEA.ino](/examples/NMEA/NMEA.ino). 
 Member function `is_safe()` can also be used to determine when it is safe.
 
 If you need to access the fix at any time, you will have to double-buffer the fix: simply copy the `fix` when it is safe to do so.  (See NMEAGPS.h comments regarding a
