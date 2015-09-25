@@ -3,7 +3,7 @@ Configuration
 All configuration items are conditional compilations: a `#define` controls an `#if`/`#endif` section.
 Comment out any items to be disabled or excluded from your build.
 Where possible, checks are performed to verify that you have chosen a "valid" 
-configuration: you may see `#error` messages in the build log.  See also [Troubleshooting](Troubleshooting.md).
+configuration: you may see `#error` messages in the build log.  See also [Choosing Your Configuration](Choosing.md) and [Troubleshooting](Troubleshooting.md).
 
 #class gps_fix
 The following configuration items are near the top of GPSfix_cfg.h:
