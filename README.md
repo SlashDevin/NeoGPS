@@ -17,7 +17,7 @@ It supports the following protocols and messages:
 * GPZDA - UTC Time and Date
 
 The "GP" prefix usually indicates an original [GPS](https://en.wikipedia.org/wiki/Satellite_navigation#GPS) source.  NeoGPS parses *all* Talker IDs, including
-  * "GL" ([GLONASS](https://en.wikipedia.org/wiki/Satellite_navigation#GLONASS),
+  * "GL" ([GLONASS](https://en.wikipedia.org/wiki/Satellite_navigation#GLONASS)),
   * "BD" or "GB" ([BeiDou](https://en.wikipedia.org/wiki/Satellite_navigation#BeiDou)),
   * "GA" ([Galileo](https://en.wikipedia.org/wiki/Satellite_navigation#Galileo)), and
   * "GN" (mixed)
