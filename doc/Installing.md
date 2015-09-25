@@ -61,6 +61,6 @@ This output can be copy & pasted into a spreadsheet for graphing or analysis, or
 Please see the [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section if you do not see this output.
 
 #The examples work!
-Once you have verified the GPS device connection and build process with the generic NMEA examples, you may want to try other configurations.  Simply edit `GPSfix_cfg.h` or `NMEAGPS_cfg.h`.
+Once you have verified the GPS device connection and build process with the generic NMEA examples, you may want to try other configurations.  Please see [Choosing Your Configuration](Choosing.md) for more information, and then simply edit `GPSfix_cfg.h` and/or `NMEAGPS_cfg.h`, 
 
 If you have a ublox GPS device and want to try the ublox-specific capabilities of NeoGPS, please see the [ublox](ublox.md) section.
