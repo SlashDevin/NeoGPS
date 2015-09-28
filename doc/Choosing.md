@@ -138,33 +138,6 @@ Next, figure out what messages can fill out those members, because those message
     <td>*</td>
     <td> </td>
   </tr>
-  <tr><td><p><b>class NMEAGPS</b></p></td></tr>
-  <tr>
-    <td><p align="right">satellite IDs</p></td>
-    <td> </td>
-    <td> </td>
-    <td>*</td>
-    <td> </td>
-    <td>*</td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-  </tr>
-  <tr>
-    <td><p align="right">satellite azimuth,<br>&nbsp;&nbsp;elevation and<br>&nbsp;&nbsp;signal strength</p></td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td>*</td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-    <td> </td>
-  </tr>
   <tr>
     <td><p align="right">HDOP</p></td>
     <td>*</td>
@@ -202,6 +175,33 @@ Next, figure out what messages can fill out those members, because those message
     <td> </td>
     <td> </td>
     <td>*</td>
+    <td> </td>
+  </tr>
+  <tr><td><p><b>class NMEAGPS</b></p></td></tr>
+  <tr>
+    <td><p align="right">satellite IDs</p></td>
+    <td> </td>
+    <td> </td>
+    <td>*</td>
+    <td> </td>
+    <td>*</td>
+    <td> </td>
+    <td> </td>
+    <td> </td>
+    <td> </td>
+    <td> </td>
+  </tr>
+  <tr>
+    <td><p align="right">satellite azimuth,<br>&nbsp;&nbsp;elevation and<br>&nbsp;&nbsp;signal strength</p></td>
+    <td> </td>
+    <td> </td>
+    <td> </td>
+    <td> </td>
+    <td>*</td>
+    <td> </td>
+    <td> </td>
+    <td> </td>
+    <td> </td>
     <td> </td>
   </tr>
 </table>
