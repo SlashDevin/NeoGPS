@@ -141,6 +141,12 @@ public:
           uint32_t ok;         // count of successfully parsed sentences
           uint32_t crc_errors; // count of CRC errors
           uint32_t chars;
+          void init()
+            {
+              ok         = 0L;
+              crc_errors = 0L;
+              chars      = 0L;
+            }
       } statistics;
     #endif
 

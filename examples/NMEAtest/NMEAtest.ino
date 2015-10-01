@@ -24,40 +24,48 @@ Stream & trace = Serial;
  * Make sure gpsfix.h and NMEAGPS.h are configured properly.
  */
 
-#ifndef NMEAGPS_PARSE_GGA
-#error NMEAGPS_PARSE_GGA must be defined in NMEAGPS.h!
+#if !defined(NMEAGPS_PARSE_GGA) | \
+    !defined(NMEAGPS_PARSE_GLL) | \
+    !defined(NMEAGPS_PARSE_GSA) | \
+    !defined(NMEAGPS_PARSE_GST) | \
+    !defined(NMEAGPS_PARSE_GSV) | \
+    !defined(NMEAGPS_PARSE_RMC) | \
+    !defined(NMEAGPS_PARSE_VTG) | \
+    !defined(NMEAGPS_PARSE_ZDA)
+
+#error NMEAGPS_PARSE_GGA, GLL, GSA, GSV, RMC, VTG and ZDA must be defined in NMEAGPS_cfg.h!
 #endif
 
 #ifndef GPS_FIX_DATE
-#error GPS_FIX_DATE must be defined in gpsfix.h!
+#error GPS_FIX_DATE must be defined in GPSfix_cfg.h!
 #endif
 
 #ifndef GPS_FIX_TIME
-#error GPS_FIX_TIME must be defined in gpsfix.h!
+#error GPS_FIX_TIME must be defined in GPSfix_cfg.h!
 #endif
 
 #ifndef GPS_FIX_LOCATION
-#error GPS_FIX_LOCATION must be defined in gpsfix.h!
+#error GPS_FIX_LOCATION must be defined in GPSfix_cfg.h!
 #endif
 
 #ifndef GPS_FIX_ALTITUDE
-#error GPS_FIX_ALTITUDE must be defined in gpsfix.h!
+#error GPS_FIX_ALTITUDE must be defined in GPSfix_cfg.h!
 #endif
 
 #ifndef GPS_FIX_SPEED
-#error GPS_FIX_SPEED must be defined in gpsfix.h!
+#error GPS_FIX_SPEED must be defined in GPSfix_cfg.h!
 #endif
 
 #ifndef GPS_FIX_HEADING
-#error GPS_FIX_HEADING must be defined in gpsfix.h!
+#error GPS_FIX_HEADING must be defined in GPSfix_cfg.h!
 #endif
 
 #ifndef GPS_FIX_SATELLITES
-#error GPS_FIX_SATELLITES must be defined in gpsfix.h!
+#error GPS_FIX_SATELLITES must be defined in GPSfix_cfg.h!
 #endif
 
 #ifndef GPS_FIX_HDOP
-#error GPS_FIX_HDOP must be defined in gpsfix.h!
+#error GPS_FIX_HDOP must be defined in GPSfix_cfg.h!
 #endif
 
 static NMEAGPS gps;
@@ -93,6 +101,10 @@ const char validGGA2[] __PROGMEM =
 const char validRMC2[] __PROGMEM =
   "$GPRMC,162254.00,A,3647.6643,N,8957.5193,W,0.820,188.36,110706,,,A*49\r\n";
 
+// Some place in Kenya
+const char validGLL[] __PROGMEM =
+"$GNGLL,0105.60764,S,03701.70233,E,225627.00,A,A*6B\r\n";
+
 const char mtk1[] __PROGMEM =
 "$GPGGA,064951.000,2307.1256,N,12016.4438,E,1,8,0.95,39.9,M,17.8,M,,*63\r\n";
 const char mtk2[] __PROGMEM =
@@ -113,6 +125,8 @@ const char mtk9[] __PROGMEM =
 "$GNRMC,083559.00,A,4717.11437,N,00833.91522,E,0.004,77.52,091202,,,A,V*33\r\n";
 const char mtk10[] __PROGMEM =
 "$GNGGA,092725.00,4717.11399,N,00833.91590,E,1,08,1.01,499.6,M,48.0,M,,*45\r\n";
+const char mtk11[] __PROGMEM =
+  "$GLZDA,225627.00,21,09,2015,00,00*70\r\n";
 
 const char fpGGA1[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8169,W,"
   "1,8,1.01,499.6,M,48.0,M,,0*49\r\n";
@@ -404,6 +418,7 @@ void setup()
   checkLatLon( validRMC , NMEAGPS::NMEA_RMC, -253448688L, 1310324913L );
   checkLatLon( validGGA2, NMEAGPS::NMEA_GGA, -131628050L, -725455083L );
   checkLatLon( validRMC2, NMEAGPS::NMEA_RMC,  367944050L, -899586550L );
+  checkLatLon( validGLL , NMEAGPS::NMEA_GLL,  -10934607L,  370283722L );
 }
 
 //--------------------------
@@ -424,12 +439,12 @@ void loop()
     trace << '\n';
 
 #ifdef NMEAGPS_STATS
-    gps.statistics.ok         = 0L;
-    gps.statistics.crc_errors = 0L;
+    gps.statistics.init();
 #endif
 
     traceSample( validGGA );
     traceSample( validRMC );
+    traceSample( validGLL );
     traceSample( mtk1 );
     traceSample( mtk2 );
     traceSample( mtk3 );
@@ -440,6 +455,16 @@ void loop()
     traceSample( mtk8 );
     traceSample( mtk9 );
     traceSample( mtk10 );
+    traceSample( mtk11 );
+    if (!gps.fix().valid.date              ||
+        (gps.fix().dateTime.date    != 21) ||
+        (gps.fix().dateTime.month   != 9)  ||
+        (gps.fix().dateTime.year    != 15) ||
+        !gps.fix().valid.time              ||
+        (gps.fix().dateTime.hours   != 22) ||
+        (gps.fix().dateTime.minutes != 56) ||
+        (gps.fix().dateTime.seconds != 27))
+      trace << F("********  ZDA not parsed correctly **********\n");
 
     /**
      * This next section displays incremental longitudes.
