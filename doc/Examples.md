@@ -2,12 +2,12 @@ Examples
 ======
 Several programs are provided to demonstrate how to use the classes in these different styles:
 
-* [NMEA](examples/NMEA/NMEA.ino) - sync, polled, single, standard NMEA only
-* [NMEAblink](examples/NMEAblink/NMEAblink.ino) - sync, polled, single, standard NMEA only, minimal example, only blinks LED
-* [NMEAfused](examples/NMEAfused/NMEAfused.ino) - sync, polled, fused, standard NMEA only
-* [NMEAcoherent](examples/NMEAcoherent/NMEAcoherent.ino) - sync, polled, coherent, standard NMEA only
-* [PUBX](examples/PUBX/PUBX.ino) - sync, polled, coherent, standard NMEA + ublox proprietary NMEA
-* [ublox](examples/ublox/ublox.ino) - sync, polled, coherent, ublox protocol
+* [NMEA](/examples/NMEA/NMEA.ino) - sync, polled, single, standard NMEA only
+* [NMEAblink](/examples/NMEAblink/NMEAblink.ino) - sync, polled, single, standard NMEA only, minimal example, only blinks LED
+* [NMEAfused](/examples/NMEAfused/NMEAfused.ino) - sync, polled, fused, standard NMEA only
+* [NMEAcoherent](/examples/NMEAcoherent/NMEAcoherent.ino) - sync, polled, coherent, standard NMEA only
+* [PUBX](/examples/PUBX/PUBX.ino) - sync, polled, coherent, standard NMEA + ublox proprietary NMEA
+* [ublox](/examples/ublox/ublox.ino) - sync, polled, coherent, ublox protocol
 
 Preprocessor symbol `USE_FLOAT` can be used in [Streamers.cpp](Streamers.cpp) to select integer or floating-point output.
 
@@ -15,7 +15,7 @@ See also the [Installing](Installing.md) and [Configurations](Configurations.md)
 
 ##Self-test Program
 
-* [NMEAtest.ino](examples/NMEAtest/NMEAtest.ino) - sync, polled, not fused, standard NMEA only
+* [NMEAtest.ino](/examples/NMEAtest/NMEAtest.ino) - sync, polled, not fused, standard NMEA only
 
 For this example, **No GPS device is required**.  Test bytes are streamed from PROGMEM character arrays.  Various strings are passed to `decode` and the expected pass or fail results are displayed.  If **NeoGPS** is correctly configured, you should see this on your SerialMonitor:
 
