@@ -1,29 +1,66 @@
 Data Model
 ==========
 Rather than holding onto individual fields, the concept of a **fix** is used to group data members of the GPS acquisition.
-This also facilitates the merging of separately received packets into a fused or coherent position.
+This also facilitates the merging of separately received packets into a fused or coherent position.  Satellite-specific information, the latest received message type, talker IDs and manufacturer IDs are not part of a `fix`; they are stored in the main GPS object.
 
-##Members
-The members of `gps_fix` include 
+The nested structures that your program can access are:
+* the main `NMEAGPS gps` variable you declare in your sketch (see [Usage](Data%20Model.md#usage) below), which contains
+    * a gps_fix member called `gps.fix()`, which contains
+        * a status
+        * a latitude and longitude
+        * an altitude
+        * a speed and heading
+        * HDOP, VDOP and PDOP
+        * latitude, longitude and altitude error in centimeters
+        * a satellite count
+        * a `NeoGPS::time_t` structure called `dateTime`, which contains
+            *  year, month, day-of-month, hours, minutes, and seconds
+        * centiseconds
+        * a collection of `valid` flags for each of the above members
+    * message type
+    * talker ID
+    * manufacturer ID
+    * a satellite array, where each element contains
+        * ID
+        * azimuth
+        * elevation
+        * signal strength
+        * tracking flag
 
-* fix status
-* date
-* time
-* latitude and longitude
-* altitude
-* speed
-* heading
-* number of satellites
-* horizontal, vertical and position dilutions of precision (HDOP, VDOP and PDOP)
-* latitude, longitude and altitude error in centimeters
+Some examples of accessing these values:
+```
+fix_copy = gps.fix(); // copies all current fix data
 
-The members of `NMEAGPS` include
-* Talker ID (usually GP)
-* Manufacturer ID (from proprietary sentences)
-* Satellite Constellation (ID, azimuth, elevation, SNR and tracking)
+int32_t lat_10e7 = gps.fix().lat; // scaled integer value of latitude
+float lat = fix_copy.latitude(); // float value of latitude
 
-Except for `status`, each of these members is conditionally compiled; any, all, or *no* members can be selected for parsing, storing and fusing.  This allows configuring an application to use the minimum amount of RAM for the particular `fix` members of interest.  See [GPSfix_cfg.h](/GPSfix_cfg.h) and [NMEAGPS_cfg.h](/NMEAGPS_cfg.h#L67), respectively.
+if (gps.fix().dateTime.month == 4) // test for the cruelest month
+  cry();
 
+for (uint8_t i=0; i < gps.sat_count; i++) {
+  if (gps.satellites[i].tracked) {
+    if (gps.satellites[i] . id <= 32)
+      GPS_satellites++;
+    if (gps.satellites[i] . id <= 64)
+      SBAS_satellites++;
+    if (gps.satellites[i] . id <= 96)
+      GLONASS_satellites++;
+  }
+}
+```
+
+And some examples of accessing valid flags in a `fix` structure:
+```
+if (gps.fix().valid.location)
+  // we have a lat/long!
+if (fix_copy.valid.time)
+  // the copy has hours, minutes and seconds
+```
+
+##Options
+Except for `status`, each of these members is conditionally compiled; any, all, or *no* members can be selected for parsing, storing and fusing.  This allows configuring an application to use the minimum amount of RAM for the particular `fix` members of interest.  See [Configurations](Configurations.md) for how to edit [GPSfix_cfg.h](/GPSfix_cfg.h) and [NMEAGPS_cfg.h](/NMEAGPS_cfg.h#L67), respectively.
+
+##Precision
 Integers are used for all members, retaining full precision of the original data.
 ```
     if (gps.fix().valid.location) {
