@@ -164,6 +164,15 @@ public:
     static void send( Stream *device, const char *msg );
     static void send_P( Stream *device, str_P msg );
 
+    // Set all parsed data (fix(), satellite info, etc.) to initial values.
+    void data_init();
+
+    // Reset the parsing process.
+    //   This is used internally after a CS error, or could be used 
+    //   externally to abort processing if it has been too long 
+    //   since any data was received.
+    void reset();
+
 protected:
     //  Current fix
     gps_fix m_fix;

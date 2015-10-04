@@ -65,14 +65,33 @@ inline uint8_t to_binary(uint8_t value)
 NMEAGPS::NMEAGPS()
 {
   #ifdef NMEAGPS_STATS
-    statistics.ok         = 0;
-    statistics.crc_errors = 0;
-    statistics.chars      = 0;
+    statistics.init();
   #endif
 
-  rxState               = NMEA_IDLE;
-  safe                  = true;
-};
+  data_init();
+
+  reset();
+}
+
+//---------------------------------
+
+void NMEAGPS::reset()
+{
+  rxState = NMEA_IDLE;
+  safe    = true;
+}
+
+//---------------------------------
+
+void NMEAGPS::data_init()
+{
+  fix().init();
+
+  #ifdef NMEAGPS_PARSE_SATELLITES
+    sat_count = 0;
+  #endif
+
+} // init
 
 /*
  * Prepare internal members to receive data from sentence fields.
@@ -105,8 +124,6 @@ void NMEAGPS::sentenceBegin()
 
 void NMEAGPS::sentenceOk()
 {
-  rxState = NMEA_IDLE;
-
   // Terminate the last field with a comma if the parser needs it.
   if (comma_needed) {
     comma_needed = false;
@@ -114,11 +131,11 @@ void NMEAGPS::sentenceOk()
     parseField(',');
   }
 
-  safe = true;
-
   #ifdef NMEAGPS_STATS
     statistics.ok++;
   #endif
+
+  reset();
 }
 
 /**
@@ -126,11 +143,11 @@ void NMEAGPS::sentenceOk()
  */
 void NMEAGPS::sentenceInvalid()
 {
-  rxState = NMEA_IDLE;
-
   // All the values are suspect.  Start over.
   m_fix.valid.init();
   nmeaMessage = NMEA_UNKNOWN;
+
+  reset();
 }
 
 /**
@@ -139,8 +156,9 @@ void NMEAGPS::sentenceInvalid()
 
 void NMEAGPS::sentenceUnrecognized()
 {
-  rxState     = NMEA_IDLE;
   nmeaMessage = NMEA_UNKNOWN;
+
+  reset();
 }
 
 void NMEAGPS::headerReceived()

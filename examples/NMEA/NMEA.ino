@@ -1,59 +1,183 @@
-/*
-  Serial is for trace output to the Serial Monitor window.
-
-  For Mega Boards, Serial1 should be connected to the GPS device:
-    pin 18 to the GPS RX pin, and pin 19 to the GPS TX pin.  You can
-    change this to Serial2 or Serial3 (see line 25).
-
-  For all other Boards, pin 3 should be connected to the GPS TX pin, and
-    pin 4 should be connected to the GPS RX pin.  You can change these
-    pin numbers below (see lines 38 and 41).
-*/
-
 #include <Arduino.h>
 
+//  Serial is for trace output to the Serial Monitor window.
+
+//-------------------------------------------------------------------------
+//  This include file will choose a default serial port for the GPS device.
+#include "GPSport.h"
+
+/*
+  For Mega Boards, "GPSport.h" will choose Serial1.
+    pin 18 should be connected to the GPS RX pin, and
+    pin 19 should be connected to the GPS TX pin.
+
+  For all other Boards, "GPSport.h" will choose SoftwareSerial:
+    pin 3 should be connected to the GPS TX pin, and
+    pin 4 should be connected to the GPS RX pin.
+
+  If you know which serial port you want to use, delete the above
+    include and  simply declare
+
+    SomeKindOfSerial gps_port( args );
+          or
+    HardwareSerial & gps_port = Serialx; // an alias
+          or
+    Search and replace all occurrences of "gps_port" with your port's name.
+*/
+
 #include "NMEAGPS.h"
-#include "Streamers.h"
-
-//-----------------------------------------------------------
-// Pick the serial port to which the GPS device is connected.
-
-#if defined(UBRR1H)
-
-  // The current Board (a Mega?) has an extra hardware serial port
-  //   on pins 18 (TX1) and 19 (RX1) (probably).
-  HardwareSerial & gps_port = Serial1;
-
-  #define USING_GPS_PORT "Serial1"
-
-#else
-
-  // The current Board (an Uno?) does not have an extra serial port.
-  // Use SoftwareSerial to listen to the GPS device.
-  //   You should expect to get some RX errors, which may
-  //   prevent getting fix data every second.  YMMV.
-  #include "SoftwareSerial.h"
-
-  // Arduino RX pin number that is connected to the GPS TX pin
-  #define RX_PIN 3
-
-  // Arduino TX pin number that is connected to the GPS RX pin
-  #define TX_PIN 4
-
-  SoftwareSerial gps_port( RX_PIN, TX_PIN );
-
-  //  Here's a little preprocessor magic to get a nice string for /setup/
-  #define f(x) #x
-  #define STRINGIZE(f,x) f(x)
-  #define USING_GPS_PORT "SoftwareSerial( RX pin " STRINGIZE(f,RX_PIN) ", TX pin " STRINGIZE(f,TX_PIN) " )"
-
-#endif
 
 //------------------------------------------------------------
-// Set this to your debug output device, if it's not "Serial".
+
+static NMEAGPS  gps         ; // This parses received characters
+static uint32_t last_rx = 0L; // The last millis() time a character was
+                              // received from GPS.  This is used to
+                              // determine when the GPS quiet time begins.
+
+//------------------------------------------------------------
+//  Define an extra set of GPS fix information.  It will
+//  hold on to the various pieces as they are received from
+//  an RMC sentence.
+
+static gps_fix  fix_data;
+
+//------------------------------------------------------------
+// For the NeoGPS example programs, "Streamers" is common set 
+//   of printing and formatting routines for GPS data, in a
+//   Comma-Separated Values text format (aka CSV).  The CSV
+//   data will be printed to the "debug output device", called
+//   "trace".  It's just an alias for the debug Stream.
+//   Set "trace" to your debug output device, if it's not "Serial".
+// If you don't need these formatters, simply delete this section.
+
+#include "Streamers.h"
 Stream & trace = Serial;
 
-static NMEAGPS gps;
+//------------------------------------
+//  This is the main GPS parsing loop.
+
+static void GPSloop()
+{  
+  while (gps_port.available()) {
+    last_rx = millis();
+
+    if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
+
+      if (gps.nmeaMessage == NMEAGPS::NMEA_RMC) {
+
+        // An RMC was received.
+        
+        // If you have something quick to do, you can safely use gps.fix()
+        //   members now.  For example, comparing the current speed
+        //   against some limits and setting a flag would be ok.  Declare
+        //   a global flag at the top of the file somewhere...
+        //
+        //     bool tooFast = false;
+        //
+        //   ...and set it right here, if a valid speed has been received:
+        //
+        //     if (gps.fix().valid.speed)
+        //       tooFast = (gps.fix().speed() > 15.0); // nautical mph
+        //
+        // DO NOT do any printing or writing to an SD card *here*.
+        //   Those operations can take a long time and may cause data loss.  
+        //   Instead, do those things in 'doSomeWork'.
+        //
+        // If you just need one piece of fix data, like the current second,
+        //    you could copy one value like this:
+        //
+        //      if (gps.fix().valid.time)
+        //        seconds = gps.fix().dateTime.seconds;
+        //
+        // If you need to use several pieces of the latest GPS data anywhere
+        //   in your program, at any time, you can save a a complete copy of
+        //   the entire GPS fix data collection, but you must do it *now*.  
+
+        // These example programs print out the all fix data in 'doSomeWork',
+        //   so a complete copy is saved now.
+
+        fix_data = gps.fix();
+
+      }
+    }
+  }
+} // GPSloop
+  
+//----------------------------------------------------------------
+//  Determine whether the GPS quiet time has started, using the
+//    current time, the last time a character was received,
+//    and the last time a GPS quiet time started.
+
+static bool quietTimeStarted()
+{
+  uint32_t current_ms       = millis();
+  uint32_t ms_since_last_rx = current_ms - last_rx;
+
+  if (ms_since_last_rx > 5) {
+
+    // The GPS device has not sent any characters for at least 5ms.
+    //   See if we've been getting chars sometime during the last second.
+    //   If not, the GPS may not be working or connected properly.
+
+    bool getting_chars = (ms_since_last_rx < 1000UL);
+
+    static uint32_t last_quiet_time = 0UL;
+
+    bool just_went_quiet = (((int32_t) (last_rx - last_quiet_time)) > 0L);
+    bool next_quiet_time = ((current_ms - last_quiet_time) >= 1000UL);
+
+    if ((getting_chars && just_went_quiet)
+          ||
+        (!getting_chars && next_quiet_time)) {
+
+      if (!getting_chars) {
+        trace.println( F("Check GPS device and/or connections.  No data received.\n") );
+      }
+
+      last_quiet_time = current_ms;  // Remember for next loop
+
+      return true;
+    }
+  }
+
+  return false;
+
+} // quietTimeStarted
+
+//----------------------------------------------------------------
+//  This function gets called about once per second, at the beginning
+//  of the GPS quiet time.  It's the best place to do anything that
+//  might take a while: print a bunch of things, write to SD, send
+//  an SMS, etc.
+//
+//  By doing the "hard" work during the quiet time, the CPU can get back to
+//  reading the GPS chars as they come in, so that no chars are lost.
+
+static void doSomeWork()
+{
+  #if defined(GPS_FIX_TIME)
+    // Display the local time
+    if (fix_data.valid.time) {
+      static const int32_t         zone_hours   = -4L; // EST
+      static const int32_t         zone_minutes =  0L;
+      static const NeoGPS::clock_t zone_offset  =
+                        zone_hours   * NeoGPS::SECONDS_PER_HOUR +
+                        zone_minutes * NeoGPS::SECONDS_PER_MINUTE;
+
+      trace << NeoGPS::time_t( fix_data.dateTime + zone_offset );
+    }
+    trace << ',';
+  #endif
+
+  // Print all the things!
+  trace_all( gps, fix_data );
+
+  // Clear out what we just printed.  If you need this data elsewhere,
+  //   don't do this.
+  gps.data_init();
+  fix_data.init();
+
+} // doSomeWork
 
 //--------------------------
 
@@ -62,11 +186,11 @@ void setup()
   // Start the normal trace output
   Serial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
 
-  trace.print( F("NMEA test: started\n") );
+  trace.print( F("NMEA.INO: started\n") );
   trace.print( F("fix object size = ") );
   trace.println( sizeof(gps.fix()) );
   trace.print( F("NMEAGPS object size = ") );
-  trace.println( sizeof(NMEAGPS) );
+  trace.println( sizeof(gps) );
   trace.println( F("Looking for GPS device on " USING_GPS_PORT) );
 
   #if defined(GPS_FIX_TIME)
@@ -84,63 +208,8 @@ void setup()
 
 void loop()
 {
-  static uint32_t last_rx = 0L;
-  static gps_fix  rmc_data;
+  GPSloop();
 
-  while (gps_port.available()) {
-    last_rx = millis();
-
-    if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
-
-      if (gps.nmeaMessage == NMEAGPS::NMEA_RMC) {
-        rmc_data = gps.fix(); // copied for printing later...
-
-        //  Use received GPRMC sentence as a pulse
-        seconds++;
-      }
-    }
-  }
-
-  static uint32_t last_seconds = 0UL; // Remember the last time we printed
-
-  //  Make sure we print *something* every two seconds, even if we
-  //    haven't gotten any valid data.  
-  //  This will show whether we have been getting *any* characters.
-
-  static uint32_t last_time_seconds_changed = 0UL;
-
-  if (millis() - last_time_seconds_changed > 2000UL)
-    seconds += 2;
-
-  if (last_seconds != seconds) {
-    last_seconds = seconds;
-    last_time_seconds_changed = millis();
-  }
-
-  // Print things out after the serial input has died down.
-  // This prevents input buffer overflow during printing.
-
-  static uint32_t last_trace = 0UL;
-
-  if ((last_trace != seconds) && (millis() - last_rx > 5)) {
-    last_trace = seconds;
-
-    // It's been 5ms since we received anything, log what we have so far...
-
-    #if defined(GPS_FIX_TIME)
-      // Display the local time
-      if (rmc_data.valid.time) {
-        static const int32_t         zone_hours   = -4L; // EST
-        static const int32_t         zone_minutes =  0L;
-        static const NeoGPS::clock_t zone_offset  =
-                          zone_hours   * NeoGPS::SECONDS_PER_HOUR +
-                          zone_minutes * NeoGPS::SECONDS_PER_MINUTE;
-
-        trace << NeoGPS::time_t( rmc_data.dateTime + zone_offset );
-      }
-      trace << ',';
-    #endif
-
-    trace_all( gps, rmc_data );
-  }
+  if (quietTimeStarted())
+    doSomeWork();
 }

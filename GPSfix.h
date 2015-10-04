@@ -36,20 +36,33 @@
  *
  */
 
-class gps_fix {
+class gps_fix
+{
 public:
 
+  // Default Constructor
   gps_fix() { init(); };
 
-  /**
-   * A structure for holding the two parts of a floating-point number.
-   * This is used for Altitude, Heading and Speed, which require more
-   * significant digits than a 16-bit number.  The decimal point is
-   * used as a field separator for these two parts.  This is more efficient
-   * than calling the 32-bit math subroutines on a single scaled long integer.
-   * This requires knowing the exponent on the fraction when a simple type
-   * (e.g., float or int) is needed.
-   */
+  //------------------------------------------------------------------
+  // 'whole_frac' is a utility structure that holds the two parts 
+  //    of a floating-point number.
+  //
+  // This is used for Altitude, Heading and Speed, which require more
+  //   significant digits than a 16-bit number.
+  //
+  // When parsing floating-point fields, the decimal point is used as
+  //   a separator for these two parts.  This is much more efficient
+  //   than calling 'long' or 'floating-point' math subroutines.
+  //
+  // This requires knowing the exponent on the fraction when a simple type
+  //   (e.g., float or int) is needed.  For example, 'altitude()' knows that
+  //   the whole part was stored as integer meters, and the fractional part
+  //   was stored as integer centimeters.
+  //
+  // Unless you want the speed and precision of the two integer parts, you 
+  //   shouldn't have to use 'whole_frac'.  Instead, use the
+  //   accessor functions for each of the specific fields for
+  //   Altitude, Heading and Speed.
 
   struct whole_frac {
     int16_t whole;
@@ -62,7 +75,25 @@ public:
     float float_000() const { return ((float)whole) + ((float)frac)*0.001; };
   } NEOGPS_PACKED;
 
-#ifdef GPS_FIX_LOCATION
+  //--------------------------------------------------------------
+  // Members of a GPS fix
+  //
+  // Each member is separately enabled or disabled by the CFG file
+  //   by #ifdef/#endif wrappers.
+  // Each member has a storage declaration that depends on the
+  //   precision and type of data available from GPS devices.
+  // Some members have a separate accessor function that converts the
+  //   internal storage type to a more common or convenient type
+  //   for use by an application.
+  // For example, latitude data is internally stored as a 32-bit integer,
+  //   where the reported degrees have been multiplied by 10^7.  Many
+  //   applications expect a floating-point value, so a floating-point
+  //   accessor is provided: 'latitude()'.  This function converts the
+  //   internal 32-bit integer to a floating-point value, and then
+  //   divides it by 10^7.  The returned value is now a floating-point
+  //   degrees value.
+
+  #ifdef GPS_FIX_LOCATION
     int32_t       lat;  // degrees * 1e7, negative is South
     int32_t       lon;  // degrees * 1e7, negative is West
 
@@ -71,79 +102,89 @@ public:
 
     int32_t longitudeL() const { return lon; };
     float   longitude () const { return ((float) lon) * 1.0e-7; }; // accuracy loss
-#endif
+  #endif
 
-#ifdef GPS_FIX_ALTITUDE
+  #ifdef GPS_FIX_ALTITUDE
     whole_frac    alt; // .01 meters
 
     int32_t altitude_cm() const { return alt.int32_00(); };
     float   altitude   () const { return alt.float_00(); };
-#endif
+  #endif
 
-#ifdef GPS_FIX_SPEED
+  #ifdef GPS_FIX_SPEED
     whole_frac    spd; // .001 nautical miles per hour
 
     uint32_t speed_mkn() const { return spd.int32_000(); };
     float    speed    () const { return spd.float_000(); };
-#endif
+  #endif
 
-#ifdef GPS_FIX_HEADING
+  #ifdef GPS_FIX_HEADING
     whole_frac    hdg; //  .01 degrees
 
     uint16_t heading_cd() const { return hdg.int16_00(); };
     float    heading   () const { return hdg.float_00(); };
-#endif
+  #endif
 
- /**
-   * Dilution of Precision is a measure of the current satellite
-   * constellation geometry WRT how 'good' it is for determining a position.  This
-   * is _independent_ of signal strength and many other factors that may be
-   * internal to the receiver.  It _cannot_ be used to determine position accuracy
-   * in meters.
-   */
-#ifdef GPS_FIX_HDOP
-  uint16_t           hdop; // Horizontal Dilution of Precision x 1000
-#endif
-#ifdef GPS_FIX_VDOP
-  uint16_t           vdop; // Horizontal Dilution of Precision x 1000
-#endif
-#ifdef GPS_FIX_PDOP
-  uint16_t           pdop; // Horizontal Dilution of Precision x 1000
-#endif
+  //--------------------------------------------------------
+  // Dilution of Precision is a measure of the current satellite
+  // constellation geometry WRT how 'good' it is for determining a 
+  // position.  This is _independent_ of signal strength and many 
+  // other factors that may be internal to the receiver.
+  // It _cannot_ be used to determine position accuracy in meters.
+  // Instead, use the LAT/LON/ALT error in cm members, which are 
+  //   populated by GST sentences.
 
-#ifdef GPS_FIX_LAT_ERR
-  uint16_t lat_err_cm;
-  float lat_err() const { return lat_err_cm / 100.0; }
-#endif
+  #ifdef GPS_FIX_HDOP
+    uint16_t           hdop; // Horizontal Dilution of Precision x 1000
+  #endif
+  #ifdef GPS_FIX_VDOP
+    uint16_t           vdop; // Horizontal Dilution of Precision x 1000
+  #endif
+  #ifdef GPS_FIX_PDOP
+    uint16_t           pdop; // Horizontal Dilution of Precision x 1000
+  #endif
 
-#ifdef GPS_FIX_LON_ERR
-  uint16_t lon_err_cm;
-  float lon_err() const { return lon_err_cm / 100.0; }
-#endif
+  //--------------------------------------------------------
+  //  Error estimates for latitude, longitude and altitude, in centimeters.
 
-#ifdef GPS_FIX_ALT_ERR
-  uint16_t alt_err_cm;
-  float alt_err() const { return alt_err_cm / 100.0; }
-#endif
+  #ifdef GPS_FIX_LAT_ERR
+    uint16_t lat_err_cm;
+    float lat_err() const { return lat_err_cm / 100.0; }
+  #endif
 
-#ifdef GPS_FIX_SATELLITES
-  uint8_t   satellites;
-#endif
+  #ifdef GPS_FIX_LON_ERR
+    uint16_t lon_err_cm;
+    float lon_err() const { return lon_err_cm / 100.0; }
+  #endif
 
-#if defined(GPS_FIX_DATE) | defined(GPS_FIX_TIME)
-  NeoGPS::time_t  dateTime;
-  uint8_t dateTime_cs; // hundredths of a second
-#endif
+  #ifdef GPS_FIX_ALT_ERR
+    uint16_t alt_err_cm;
+    float alt_err() const { return alt_err_cm / 100.0; }
+  #endif
 
-  /**
-   * The current fix status or mode of the GPS device.  Unfortunately, the NMEA
-   * sentences are a little inconsistent in their use of "status" and "mode".
-   * Both fields are mapped onto this enumerated type.  Be aware that
-   * different manufacturers interpret them differently.  This can cause 
-   * problems in sentences which include both types (e.g., GPGLL).
-   *
-   * Note: Sorted by increasing accuracy.  See also /operator |=/.
-   */
+  //--------------------------------------------------------
+  // Number of satellites used to calculate a fix.
+  #ifdef GPS_FIX_SATELLITES
+    uint8_t   satellites;
+  #endif
+
+  //--------------------------------------------------------
+  //  Date and Time for the fix
+  #if defined(GPS_FIX_DATE) | defined(GPS_FIX_TIME)
+    NeoGPS::time_t  dateTime   ; // Date and Time in one structure
+    uint8_t         dateTime_cs; // hundredths of a second
+  #endif
+
+  //--------------------------------------------------------
+  // The current fix status or mode of the GPS device.
+  //
+  // Unfortunately, the NMEA sentences are a little inconsistent 
+  //   in their use of "status" and "mode". Both fields are mapped 
+  //   onto this enumerated type.  Be aware that different 
+  //   manufacturers interpret them differently.  This can cause 
+  //   problems in sentences which include both types (e.g., GPGLL).
+  //
+  // Note: Sorted by increasing accuracy.  See also /operator |=/.
    
   enum status_t {
     STATUS_NONE,
@@ -155,7 +196,13 @@ public:
 
   status_t  status NEOGPS_BF(8);
 
+  //--------------------------------------------------------
   //  Flags to indicate which members of this fix are valid.
+  //
+  //  Because different sentences contain different pieces of a fix,
+  //    each piece can be valid or NOT valid.  If the GPS device does not
+  //    have good reception, some fields may not contain any value.
+  //    Those empty fields will be marked as NOT valid.
 
   struct valid_t {
     bool status NEOGPS_BF(1);
@@ -210,6 +257,7 @@ public:
       bool alt_err NEOGPS_BF(1);
     #endif
 
+    // Initialize all flags to false
     void init()
       {
         uint8_t *all = (uint8_t *) this;
@@ -217,6 +265,7 @@ public:
           *all++ = 0;
       }
 
+    // Merge these valid flags with another set of valid flags
     void operator |=( const valid_t & r )
       {
         uint8_t *all = (uint8_t *) this;
@@ -225,11 +274,11 @@ public:
           *all++ |= *r_all++;
       }
   } NEOGPS_PACKED
-      valid;
+      valid;        // This is the name of the collection of valid flags
 
-  /*
-   *  Initialize a fix.  All configured members are set to zero.
-   */
+  //--------------------------------------------------------
+  //  Initialize a fix.  All configured members are set to zero.
+
   void init()
   {
     #ifdef GPS_FIX_LOCATION
@@ -282,98 +331,102 @@ public:
     status = STATUS_NONE;
 
     valid.init();
-  };
+  
+  } // init
 
-    /**
-     * Merge valid fields from the right fix into a "fused" fix 
-     * on the left (i.e., /this/).
-     */
+  //-------------------------------------------------------------
+  // Merge valid fields from the right fix into a "fused" fix 
+  //   on the left (i.e., /this/).
+  //
+  // Usage:  gps_fix left, right;
+  //         left |= right;  // explict merge
 
-    gps_fix & operator |=( const gps_fix & r )
-    {
-      // Replace /status/  only if the right is more "accurate".
-      if (r.valid.status && (!valid.status || (status < r.status)))
-        status = r.status;
+  gps_fix & operator |=( const gps_fix & r )
+  {
+    // Replace /status/  only if the right is more "accurate".
+    if (r.valid.status && (!valid.status || (status < r.status)))
+      status = r.status;
 
-      #ifdef GPS_FIX_DATE
-        if (r.valid.date) {
-          dateTime.date  = r.dateTime.date;
-          dateTime.month = r.dateTime.month;
-          dateTime.year  = r.dateTime.year;
-        }
-      #endif
+    #ifdef GPS_FIX_DATE
+      if (r.valid.date) {
+        dateTime.date  = r.dateTime.date;
+        dateTime.month = r.dateTime.month;
+        dateTime.year  = r.dateTime.year;
+      }
+    #endif
 
-      #ifdef GPS_FIX_TIME
-        if (r.valid.time) {
-          dateTime.hours   = r.dateTime.hours;
-          dateTime.minutes = r.dateTime.minutes;
-          dateTime.seconds = r.dateTime.seconds;
-          dateTime_cs      = r.dateTime_cs;
-        }
-      #endif
+    #ifdef GPS_FIX_TIME
+      if (r.valid.time) {
+        dateTime.hours   = r.dateTime.hours;
+        dateTime.minutes = r.dateTime.minutes;
+        dateTime.seconds = r.dateTime.seconds;
+        dateTime_cs      = r.dateTime_cs;
+      }
+    #endif
 
-      #ifdef GPS_FIX_LOCATION
-        if (r.valid.location) {
-          lat = r.lat;
-          lon = r.lon;
-        }
-      #endif
+    #ifdef GPS_FIX_LOCATION
+      if (r.valid.location) {
+        lat = r.lat;
+        lon = r.lon;
+      }
+    #endif
 
-      #ifdef GPS_FIX_ALTITUDE
-        if (r.valid.altitude)
-          alt = r.alt;
-      #endif
+    #ifdef GPS_FIX_ALTITUDE
+      if (r.valid.altitude)
+        alt = r.alt;
+    #endif
 
-      #ifdef GPS_FIX_HEADING
-        if (r.valid.heading)
-          hdg = r.hdg;
-      #endif
+    #ifdef GPS_FIX_HEADING
+      if (r.valid.heading)
+        hdg = r.hdg;
+    #endif
 
-      #ifdef GPS_FIX_SPEED
-        if (r.valid.speed)
-          spd = r.spd;
-      #endif
+    #ifdef GPS_FIX_SPEED
+      if (r.valid.speed)
+        spd = r.spd;
+    #endif
 
-      #ifdef GPS_FIX_SATELLITES
-        if (r.valid.satellites)
-          satellites = r.satellites;
-      #endif
+    #ifdef GPS_FIX_SATELLITES
+      if (r.valid.satellites)
+        satellites = r.satellites;
+    #endif
 
-      #ifdef GPS_FIX_HDOP
-        if (r.valid.hdop)
-          hdop = r.hdop;
-      #endif
+    #ifdef GPS_FIX_HDOP
+      if (r.valid.hdop)
+        hdop = r.hdop;
+    #endif
 
-      #ifdef GPS_FIX_VDOP
-        if (r.valid.vdop)
-          vdop = r.vdop;
-      #endif
+    #ifdef GPS_FIX_VDOP
+      if (r.valid.vdop)
+        vdop = r.vdop;
+    #endif
 
-      #ifdef GPS_FIX_PDOP
-        if (r.valid.pdop)
-          pdop = r.pdop;
-      #endif
+    #ifdef GPS_FIX_PDOP
+      if (r.valid.pdop)
+        pdop = r.pdop;
+    #endif
 
-      #ifdef GPS_FIX_LAT_ERR
-        if (r.valid.lat_err)
-          lat_err_cm = r.lat_err_cm;
-      #endif
+    #ifdef GPS_FIX_LAT_ERR
+      if (r.valid.lat_err)
+        lat_err_cm = r.lat_err_cm;
+    #endif
 
-      #ifdef GPS_FIX_LON_ERR
-        if (r.valid.lon_err)
-          lon_err_cm = r.lon_err_cm;
-      #endif
+    #ifdef GPS_FIX_LON_ERR
+      if (r.valid.lon_err)
+        lon_err_cm = r.lon_err_cm;
+    #endif
 
-      #ifdef GPS_FIX_ALT_ERR
-        if (r.valid.alt_err)
-          alt_err_cm = r.alt_err_cm;
-      #endif
+    #ifdef GPS_FIX_ALT_ERR
+      if (r.valid.alt_err)
+        alt_err_cm = r.alt_err_cm;
+    #endif
 
-      // Update all the valid flags
-      valid |= r.valid;
+    // Update all the valid flags
+    valid |= r.valid;
 
-      return *this;
-    }
+    return *this;
+
+  } // operator |=
 
 } NEOGPS_PACKED;
 

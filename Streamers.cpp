@@ -2,8 +2,6 @@
 
 #include "NMEAGPS.h"
 
-uint32_t seconds = 0L;
-
 //#define USE_FLOAT
 
 Stream& operator <<( Stream &outs, const bool b )
@@ -123,7 +121,8 @@ Stream & operator <<( Stream &outs, const gps_fix &fix )
   #else
 
     //  Date/Time not enabled, just output the interval number
-    trace << seconds << ',';
+    static uint32_t sequence = 0L;
+    trace << sequence++ << ',';
 
   #endif
 

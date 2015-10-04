@@ -230,11 +230,12 @@ void setup()
 {
   // Start the normal trace output
   Serial.begin(9600);
+
   trace.print( F("NMEA test: started\n") );
   trace.print( F("fix object size = ") );
   trace.println( sizeof(gps.fix()) );
   trace.print( F("NMEAGPS object size = ") );
-  trace.println( sizeof(NMEAGPS) );
+  trace.println( sizeof(gps) );
   trace.flush();
 
 

@@ -39,8 +39,6 @@ extern Stream & operator <<( Stream &outs, const gps_fix &fix );
 
 class NMEAGPS;
 
-extern uint32_t seconds;
-
 extern void trace_header();
 extern void trace_all( const NMEAGPS &gps, const gps_fix &fix );
 
