@@ -58,7 +58,7 @@ The default NeoGPS configuration is **Nominal**, as described [here](Configurati
 If you do not see this output, please see the [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section.
 
 #The NMEA.ino example works!
-Once you have verified the GPS device connection and build process with this first example, you should also verify your device's behavior with `NMEAorder.ino` (see [this section](Troubleshooting#quiet-time-interval)).  This can avoid problems later on, when you start adding/merging other functions to do your "work".
+Once you have verified the GPS device connection and build process with this first example, you should also verify your device's behavior with `NMEAorder.ino` (see [this section](Troubleshooting.md#quiet-time-interval)).  This can avoid problems later on, when you start adding/merging other functions to do your "work".
 
 Next, you should try `NMEAfused.ino`.
 
