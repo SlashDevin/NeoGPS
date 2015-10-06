@@ -1,31 +1,31 @@
 #include <Arduino.h>
-
-//  Serial is for trace output to the Serial Monitor window.
-
-//-------------------------------------------------------------------------
-//  This include file will choose a default serial port for the GPS device.
-#include "GPSport.h"
-
-/*
-  For Mega Boards, "GPSport.h" will choose Serial1.
-    pin 18 should be connected to the GPS RX pin, and
-    pin 19 should be connected to the GPS TX pin.
-
-  For all other Boards, "GPSport.h" will choose SoftwareSerial:
-    pin 3 should be connected to the GPS TX pin, and
-    pin 4 should be connected to the GPS RX pin.
-
-  If you know which serial port you want to use, delete the above
-    include and  simply declare
-
-    SomeKindOfSerial gps_port( args );
-          or
-    HardwareSerial & gps_port = Serialx; // an alias
-          or
-    Search and replace all occurrences of "gps_port" with your port's name.
-*/
-
 #include "NMEAGPS.h"
+
+//======================================================================
+//  Program: NMEAcoherent.ino
+//
+//  Prerequisites:
+//     1) NMEAfused.ino works with your device
+//     3) At least one NMEA sentence has been enabled.
+//     4) Implicit Merging is disabled.
+//
+//  Description:  This program guarantees coherency in the fix data.  
+//     When a sentence is received with a new time interval, 
+//     the 'coherent' fix will start with just that new data.  
+//     All data from the previous interval is replaced or deleted.  
+//     As new sentences are received, data from this new interval 
+//     are Explicitly Merged into the 'coherent' fix.
+//     
+//     This program also shows how to 'poll' for a specific message 
+//     if it is not sent by default.
+//
+//  Serial is for trace output to the Serial Monitor window.
+//
+//======================================================================
+
+#include "GPSport.h"
+#include "Streamers.h"
+Stream & trace = Serial;
 
 //------------------------------------------------------------
 // Check that the config files are set up properly
@@ -35,18 +35,16 @@
     !defined( NMEAGPS_PARSE_RMC ) & !defined( NMEAGPS_PARSE_VTG ) & \
     !defined( NMEAGPS_PARSE_ZDA ) & !defined( NMEAGPS_PARSE_GST )
 
-#if defined(GPS_FIX_DATE)| defined(GPS_FIX_TIME)
   #error No NMEA sentences enabled: no fix data available for fusing.
-#else
-  #warning No NMEA sentences enabled: no fix data available for fusing,\n\
- only pulse-per-second is available.
-#endif
 
 #endif
 
-#if defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
-  // uncomment this to display just one pulse-per-day.
-  //#define PULSE_PER_DAY
+#ifdef NMEAGPS_ACCUMULATE_FIX
+  #error NMEAGPS_ACCUMULATE_FIX should not be enabled when explicit merging is used.
+  // This is an Explicit Merge: "coherent |= gps.fix()"
+  //
+  // If you don't want or need the safe copy 'coherent', you could
+  //   use NMEA.ino with NMEAGPS_ACCUMULATE_FIX enabled instead.
 #endif
 
 //------------------------------------------------------------
@@ -55,32 +53,35 @@ static NMEAGPS  gps         ; // This parses received characters
 static uint32_t last_rx = 0L; // The last millis() time a character was
                               // received from GPS.  This is used to
                               // determine when the GPS quiet time begins.
-
-//------------------------------------------------------------
-//  Define an extra set of GPS fix information.  It will
-//  hold on to the various pieces as they are received from
-//  different kinds of sentences.
-
 static gps_fix coherent;
 
-#ifdef NMEAGPS_ACCUMULATE_FIX
-  #error NMEAGPS_ACCUMULATE_FIX should not be enabled when explicit merging is used.
-  // This is an Explicit Merge: "coherent |= gps.fix()"
+static const NMEAGPS::nmea_msg_t LAST_SENTENCE_IN_INTERVAL = NMEAGPS::NMEA_GLL;
+
+//----------------------------------------------------------------
+
+static void doSomeWork()
+{
+  // Print all the things!
+  trace_all( gps, coherent );
+
+  #ifdef NMEAGPS_PARSE_GST
+    // Now is a good time to ask for a GST.  Most GPS devices
+    //   do not send GST, and some GPS devices may not even
+    //   respond to this poll.  Other may let you request
+    //   these messages once per second by sending a 
+    //   configuration command.
+    gps.poll( &Serial1, NMEAGPS::NMEA_GST );
+
+  #endif
+
+} // doSomeWork
+
+//----------------------------------------------------------------
+
+#if defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
+  // uncomment this to display just one pulse-per-day.
+  //#define PULSE_PER_DAY
 #endif
-
-//------------------------------------------------------------
-// For the NeoGPS example programs, "Streamers" is common set 
-//   of printing and formatting routines for GPS data, in a
-//   Comma-Separated Values text format (aka CSV).  The CSV
-//   data will be printed to the "debug output device", called
-//   "trace".  It's just an alias for the debug Stream.
-//   Set "trace" to your debug output device, if it's not "Serial".
-// If you don't need these formatters, simply delete this section.
-
-#include "Streamers.h"
-Stream & trace = Serial;
-
-//--------------------------
 
 static bool isNewInterval()
 {
@@ -107,14 +108,15 @@ static bool isNewInterval()
     //  Time is not configured, so let's assume it's a new interval
     //    if we just received a particular sentence.
     //  Different GPS devices will send sentences in different orders.
+    //  This should be the *first* sentence sent by your device in
+    //    each 1-second interval, not the last.
 
-    newInterval = (gps.nmeaMessage == NMEAGPS::NMEA_GGA);
+    newInterval = (gps.nmeaMessage == NMEAGPS::NMEA_RMC);
   #endif
 
 } // isNewInterval
 
 //------------------------------------
-//  This is the main GPS parsing loop.
 
 static void GPSloop()
 {  
@@ -123,91 +125,19 @@ static void GPSloop()
 
     if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
 
-      // All enabled sentence types will be merged into one fix.
-      //   This 'coherent' data can be safely used anywhere in your program.
-
-      if (isNewInterval()) {
-
-        //  If we're into the next time interval,
-        //     *replace* the previous fix and start with what we
-        //     just received.
+      if (isNewInterval())
+        // Start with fresh data ONLY
         coherent = gps.fix();
-
-        gps.poll( &Serial1, NMEAGPS::NMEA_GST );
-
-      } else {
-
-        // We're in the same time interval as previous sentences,
-        //   *Explicitly Merge* the new data.
+      else
+        // Explicitly Merge all subsequent data
         coherent |= gps.fix();
 
-      }
+      if (gps.nmeaMessage == LAST_SENTENCE_IN_INTERVAL)
+        doSomeWork();
     }
   }
 } // GPSloop
   
-//----------------------------------------------------------------
-//  Determine whether the GPS quiet time has started, using the
-//    current time, the last time a character was received,
-//    and the last time a GPS quiet time started.
-
-static bool quietTimeStarted()
-{
-  uint32_t current_ms       = millis();
-  uint32_t ms_since_last_rx = current_ms - last_rx;
-
-  if (ms_since_last_rx > 5) {
-
-    // The GPS device has not sent any characters for at least 5ms.
-    //   See if we've been getting chars sometime during the last second.
-    //   If not, the GPS may not be working or connected properly.
-
-    bool getting_chars = (ms_since_last_rx < 1000UL);
-
-    static uint32_t last_quiet_time = 0UL;
-
-    bool just_went_quiet = (((int32_t) (last_rx - last_quiet_time)) > 0L);
-    bool next_quiet_time = ((current_ms - last_quiet_time) >= 1000UL);
-
-    if ((getting_chars && just_went_quiet)
-          ||
-        (!getting_chars && next_quiet_time)) {
-
-      if (!getting_chars) {
-        trace.println( F("Check GPS device and/or connections.  No data received.\n") );
-      }
-
-      last_quiet_time = current_ms;  // Remember for next loop
-
-      return true;
-    }
-  }
-
-  return false;
-
-} // quietTimeStarted
-
-//----------------------------------------------------------------
-//  This function gets called about once per second, at the beginning
-//  of the GPS quiet time.  It's the best place to do anything that
-//  might take a while: print a bunch of things, write to SD, send
-//  an SMS, etc.
-//
-//  By doing the "hard" work during the quiet time, the CPU can get back to
-//  reading the GPS chars as they come in, so that no chars are lost.
-
-static void doSomeWork()
-{
-  // Print all the things!
-  trace_all( gps, coherent );
-
-  // Clear out what we just printed.  If you need this data elsewhere,
-  //   don't do this.
-  gps.data_init();
-  coherent.init();
-
-} // doSomeWork
-
 //--------------------------
 
 void setup()
@@ -235,7 +165,4 @@ void setup()
 void loop()
 {
   GPSloop();
-
-  if (quietTimeStarted())
-    doSomeWork();
 }

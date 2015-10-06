@@ -77,17 +77,19 @@
 
 //#define NMEAGPS_PARSE_SATELLITES
 //#define NMEAGPS_PARSE_SATELLITE_INFO
-//#define NMEAGPS_MAX_SATELLITES (20)
 
 #ifdef NMEAGPS_PARSE_SATELLITES
-#ifndef GPS_FIX_SATELLITES
-#error GPS_FIX_SATELLITES must be defined in GPSfix.h!
-#endif
+  #define NMEAGPS_MAX_SATELLITES (20)
+
+  #ifndef GPS_FIX_SATELLITES
+    #error GPS_FIX_SATELLITES must be defined in GPSfix.h!
+  #endif
+
 #endif
 
 #if defined(NMEAGPS_PARSE_SATELLITE_INFO) & \
     !defined(NMEAGPS_PARSE_SATELLITES)
-#error NMEAGPS_PARSE_SATELLITES must be defined!
+  #error NMEAGPS_PARSE_SATELLITES must be defined!
 #endif
 
 //------------------------------------------------------
@@ -159,5 +161,19 @@
            !defined(NMEAGPS_DERIVED_TYPES)
   #error You must define NMEAGPS_DERIVED_TYPES in NMEAGPS.h in order to parse Talker and/or Mfr IDs!
 #endif
+
+//------------------------------------------------------
+// Some devices may omit trailing commas at the end of some 
+// sentences.  This may prevent the last field from being 
+// parsed correctly, because the parser for some types keep 
+// the value in an intermediate state until the complete 
+// field is received (e.g., parseDDDMM, parseFloat and 
+// parseZDA).
+//
+// Enabling this will inject a simulated comma when the end 
+// of a sentence is received and the last field parser 
+// indicated that it still needs one.
+
+//#define NMEAGPS_COMMA_NEEDED
 
 #endif

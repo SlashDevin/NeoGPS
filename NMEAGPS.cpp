@@ -73,26 +73,6 @@ NMEAGPS::NMEAGPS()
   reset();
 }
 
-//---------------------------------
-
-void NMEAGPS::reset()
-{
-  rxState = NMEA_IDLE;
-  safe    = true;
-}
-
-//---------------------------------
-
-void NMEAGPS::data_init()
-{
-  fix().init();
-
-  #ifdef NMEAGPS_PARSE_SATELLITES
-    sat_count = 0;
-  #endif
-
-} // init
-
 /*
  * Prepare internal members to receive data from sentence fields.
  */
@@ -102,7 +82,7 @@ void NMEAGPS::sentenceBegin()
   nmeaMessage  = NMEA_UNKNOWN;
   rxState      = NMEA_RECEIVING_HEADER;
   chrCount     = 0;
-  comma_needed = false;
+  comma_needed( false );
   proprietary  = false;
 
   #ifdef NMEAGPS_SAVE_TALKER_ID
@@ -125,8 +105,8 @@ void NMEAGPS::sentenceBegin()
 void NMEAGPS::sentenceOk()
 {
   // Terminate the last field with a comma if the parser needs it.
-  if (comma_needed) {
-    comma_needed = false;
+  if (comma_needed()) {
+    comma_needed( false );
     chrCount++;
     parseField(',');
   }
@@ -200,7 +180,7 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
           sentenceInvalid();
         else if (c == ',') {
           // Start the next field
-          comma_needed = false;
+          comma_needed( false );
           fieldIndex++;
           chrCount     = 0;
         } else
@@ -437,6 +417,39 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
   }
 
 } // parseCommand
+
+//---------------------------------------------
+
+const char *NMEAGPS::string_for( nmea_msg_t msg ) const
+{
+  if (msg == NMEA_UNKNOWN)
+    return (const char *) NULL;
+
+  const msg_table_t *msgs = msg_table();
+
+  for (;;) {
+    uint8_t  table_size       = pgm_read_byte( &msgs->size );
+    uint8_t  msg_offset       = pgm_read_byte( &msgs->offset );
+
+    if ((msg_offset <= msg) && (msg < msg_offset+table_size)) {
+      // In range of this table
+      const char * const *table   = (const char * const *) pgm_read_word( &msgs->table );
+      return
+        (const char *)
+          pgm_read_word( &table[ ((uint8_t)msg) - msg_offset ] );
+    }
+ 
+    #ifdef NMEAGPS_DERIVED_TYPES
+      // Try the previous table
+      msgs = (const msg_table_t *) pgm_read_word( &msgs->previous );
+      if (msgs)
+        continue;
+    #endif
+
+    return (const char *) NULL;
+  }
+
+} // string_for
 
 //---------------------------------------------
 
@@ -690,7 +703,7 @@ bool NMEAGPS::parseZDA( char chr )
             // year is BCD until terminating comma.
             //   This essentially keeps the last two digits
             if (chrCount == 0) {
-              comma_needed = true;
+              comma_needed( true );
               m_fix.dateTime.year = (chr - '0');
             } else
               m_fix.dateTime.year = (m_fix.dateTime.year << 4) + (chr - '0');
@@ -787,15 +800,13 @@ bool NMEAGPS::parseFloat
   
   if (chrCount == 0) {
     val.init();
-    comma_needed = true;
+    comma_needed( true );
     decimal      = 0;
     negative     = (chr == '-');
     if (negative) return done;
   }
 
   if (chr == ',') {
-    comma_needed = false;
-
     // End of field, make sure it's scaled up
     if (!decimal)
       decimal = 1;
@@ -827,14 +838,13 @@ bool NMEAGPS::parseFloat( uint16_t & val, char chr, uint8_t max_decimal )
 
   if (chrCount == 0) {
     val          = 0;
-    comma_needed = true;
+    comma_needed( true );
     decimal      = 0;
     negative     = (chr == '-');
     if (negative) return done;
   }
 
   if (chr == ',') {
-    comma_needed = false;
     if (val)
       while (decimal++ <= max_decimal)
         val *= 10;
@@ -861,7 +871,7 @@ bool NMEAGPS::parseDDDMM( int32_t & val, char chr )
     if (chrCount == 0) {
       val          = 0;
       decimal      = 0;
-      comma_needed = true;
+      comma_needed( true );
     }
     
     if ((chr == '.') || ((chr == ',') && !decimal)) {

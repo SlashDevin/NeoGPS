@@ -1,43 +1,37 @@
 #include <Arduino.h>
-
-//  Serial is for trace output to the Serial Monitor window.
-
-//-------------------------------------------------------------------------
-//  This include file will choose a default serial port for the GPS device.
-#include "GPSport.h"
-
-/*
-  For Mega Boards, "GPSport.h" will choose Serial1.
-    pin 18 should be connected to the GPS RX pin, and
-    pin 19 should be connected to the GPS TX pin.
-
-  For all other Boards, "GPSport.h" will choose SoftwareSerial:
-    pin 3 should be connected to the GPS TX pin, and
-    pin 4 should be connected to the GPS RX pin.
-
-  If you know which serial port you want to use, delete the above
-    include and  simply declare
-
-    SomeKindOfSerial gps_port( args );
-          or
-    HardwareSerial & gps_port = Serialx; // an alias
-          or
-    Search and replace all occurrences of "gps_port" with your port's name.
-*/
-
 #include "ubxGPS.h"
 
-//------------------------------------------------------------
-// For the NeoGPS example programs, "Streamers" is common set 
-//   of printing and formatting routines for GPS data, in a
-//   Comma-Separated Values text format (aka CSV).  The CSV
-//   data will be printed to the "debug output device", called
-//   "trace".  It's just an alias for the debug Stream.
-//   Set "trace" to your debug output device, if it's not "Serial".
-// If you don't need these formatters, simply delete this section.
+//======================================================================
+//  Program: ublox.ino
+//
+//  Prerequisites:
+//     1) You have a ublox GPS device
+//     2) PUBX.ino works with your device
+//     3) You have installed the ubxGPS.* and ubxmsg.* files.
+//     4) At least one UBX message has been enabled in ubxGPS.h.
+//     5) Implicit Merging is disabled in NMEAGPS_cfg.h.
+//
+//  Description:  This program parses UBX binary protocal messages from
+//     ublox devices.  It is an extension of NMEAfused.ino.
+//
+//  Serial is for trace output to the Serial Monitor window.
+//
+//======================================================================
 
+#include "GPSport.h"
 #include "Streamers.h"
 Stream & trace = Serial;
+
+//------------------------------------------------------------
+// Check that the config files are set up properly
+
+#if !defined(UBLOX_PARSE_STATUS) & !defined(UBLOX_PARSE_TIMEGPS) & \
+    !defined(UBLOX_PARSE_TIMEUTC) & !defined(UBLOX_PARSE_POSLLH) & \
+    !defined(UBLOX_PARSE_VELNED) & !defined(UBLOX_PARSE_SVINFO)
+
+  #error No UBX binary messages enabled: no fix data available for fusing.
+
+#endif
 
 //-----------------------------------------------------------------
 //  Derive a class to add the state machine for starting up:
@@ -70,18 +64,18 @@ public:
     bool ok_to_process;
     
     MyGPS( Stream *device ) : ubloxGPS( device )
-      {
-        state = GETTING_STATUS;
-        last_rx = 0L;
-        ok_to_process = false;
-      };
+    {
+      state = GETTING_STATUS;
+      last_rx = 0L;
+      ok_to_process = false;
+    }
 
     //--------------------------
 
     void begin()
-      {
-        last_rx = millis();
-      }
+    {
+      last_rx = millis();
+    }
 
     //--------------------------
 
@@ -112,7 +106,7 @@ public:
           }
         }
       }
-    }
+    } // run
 
     //--------------------------
 
@@ -209,7 +203,7 @@ public:
         enabled_msg_with_time = true;
       #endif
 
-      #if defined(NMEAGPS_PARSE_SATELLITES) & \
+      #if (defined(GPS_FIX_SATELLITES) | defined(NMEAGPS_PARSE_SATELLITES)) & \
           defined(UBLOX_PARSE_SVINFO)
         if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_SVINFO ))
           trace << PSTR("enable SVINFO failed!\n");
@@ -235,7 +229,8 @@ public:
 
       state = RUNNING;
       trace_header();
-    }
+      
+    } // start_running
 
     //--------------------------
 
@@ -277,47 +272,48 @@ public:
     //--------------------------
 
     bool processSentence()
-      {
-        bool old_otp = ok_to_process;
-        ok_to_process = false;
+    {
+      bool old_otp = ok_to_process;
+      ok_to_process = false;
 
-        bool ok = false;
+      bool ok = false;
 
-        if (!ok && (nmeaMessage >= (nmea_msg_t)ubloxGPS::PUBX_00))
-          ok = true;
+      if (!ok && (nmeaMessage >= (nmea_msg_t)ubloxGPS::PUBX_00))
+        ok = true;
 
-        if (!ok && (rx().msg_class != ublox::UBX_UNK))
-          ok = true;
+      if (!ok && (rx().msg_class != ublox::UBX_UNK))
+        ok = true;
 
-        if (ok) {
+      if (ok) {
 
-          switch (state) {
-            case GETTING_STATUS      : get_status      (); break;
+        switch (state) {
+          case GETTING_STATUS      : get_status      (); break;
 
-            case GETTING_LEAP_SECONDS: get_leap_seconds(); break;
+          case GETTING_LEAP_SECONDS: get_leap_seconds(); break;
 
-            case GETTING_UTC         : get_utc         (); break;
+          case GETTING_UTC         : get_utc         (); break;
 
-            case RUNNING:
-              if (is_new_interval()) {
+          case RUNNING:
+            if (is_new_interval()) {
 
-                //  Since we're into the next time interval, we throw away
-                //     all of the previous fix and start with what we
-                //     just received.
-                merged = fix();
+              //  Since we're into the next time interval, we throw away
+              //     all of the previous fix and start with what we
+              //     just received.
+              merged = fix();
 
-              } else {
-                // Accumulate all the reports in this time interval
-                merged |= fix();
-              }
-              break;
-          }
+            } else {
+              // Accumulate all the reports in this time interval
+              merged |= fix();
+            }
+            break;
         }
-
-        ok_to_process = old_otp;
-
-        return ok;
       }
+
+      ok_to_process = old_otp;
+
+      return ok;
+      
+    } // processSentence
 
     //--------------------------
 
@@ -341,6 +337,11 @@ static MyGPS gps( &gps_port );
 
 static bool quietTimeStarted()
 {
+  // As was shown in NMEAfused.ino, this could be replaced by a 
+  //   test for the last UBX binary message that is sent in each
+  //   one-second interval: NAV_VELNED.
+  // For now, the timing technique is used.
+
   uint32_t current_ms       = millis();
   uint32_t ms_since_last_rx = current_ms - gps.last_rx;
 

@@ -173,6 +173,9 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
           } else if (rxEnd()) {
 //trace << '!';
             res = ubloxGPS::DECODE_COMPLETED;
+            #ifdef NMEAGPS_STATS
+              statistics.ok++;
+            #endif
           }
           rxState = (rxState_t) UBX_IDLE;
           break;
@@ -189,6 +192,11 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
 
       // Delegate
       res = NMEAGPS::decode( c );
+
+    } else {
+      #ifdef NMEAGPS_STATS
+        statistics.chars++;
+      #endif
     }
 
     return res;
@@ -346,7 +354,7 @@ bool ubloxGPS::parseField( char c )
     switch (rx().msg_class) {
 
       case UBX_NAV: //=================================================
-//if (chrCount == 0) trace << F( " NAV ");
+//if (chrCount == 0) trace << F( " NAV ") << (uint8_t) rx().msg_id;
         switch (rx().msg_id) {
 
           case UBX_NAV_STATUS: //--------------------------------------
@@ -589,7 +597,7 @@ bool ubloxGPS::parseField( char c )
             break;
 
           case UBX_NAV_SVINFO: //--------------------------------------
-//if (chrCount == 0) trace << PSTR( "svinfo ");
+//if (chrCount == 0) trace << F("svinfo ");
             #ifdef UBLOX_PARSE_SVINFO
               switch (chrCount) {
 

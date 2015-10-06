@@ -1,28 +1,33 @@
-/*
-  This test program uses one GPGGA sentence to test the parser's:
-  1) robustness WRT dropped, inserted, and mangled characters
-  2) correctness WRT values extracted from the input stream
-  
-  Some care in testing must be taken because
-  1) The XOR-style checksum is not very good at catching errors.  
-  2) The '*' is a special character for delimiting the CRC.  If
-     it is changed, a CR/LF will allow the sentence to pass.
-
-  Serial is for trace output.
-*/
-
 #include <Arduino.h>
-
-#include "Streamers.h"
-
-// Set this to your debug output device.
-Stream & trace = Serial;
-
 #include "NMEAGPS.h"
 
-/*
- * Make sure gpsfix.h and NMEAGPS.h are configured properly.
- */
+//======================================================================
+//  Program: NMEAtest.ino
+//
+//  Prerequisites:
+//     1) All NMEA standard messages and Satellite Information
+//             are enabled.
+//     2) All 'gps_fix' members are enabled.
+//
+//  Description:  This test program uses one GPGGA sentence 
+//  to test the parser's:
+//     1) robustness WRT dropped, inserted, and mangled characters
+//     2) correctness WRT values extracted from the input stream
+//     
+//  Some care in testing must be taken because
+//     1) The XOR-style checksum is not very good at catching errors.  
+//     2) The '*' is a special character for delimiting the CRC.  If
+//        it is changed, a CR/LF will allow the sentence to pass.
+//
+//  'Serial' is for trace output to the Serial Monitor window.
+//
+//======================================================================
+
+#include "Streamers.h"
+Stream & trace = Serial;
+
+//------------------------------------------------------------
+// Check that the config files are set up properly
 
 #if !defined(NMEAGPS_PARSE_GGA) | \
     !defined(NMEAGPS_PARSE_GLL) | \
@@ -33,39 +38,39 @@ Stream & trace = Serial;
     !defined(NMEAGPS_PARSE_VTG) | \
     !defined(NMEAGPS_PARSE_ZDA)
 
-#error NMEAGPS_PARSE_GGA, GLL, GSA, GSV, RMC, VTG and ZDA must be defined in NMEAGPS_cfg.h!
+  #error NMEAGPS_PARSE_GGA, GLL, GSA, GSV, RMC, VTG and ZDA must be defined in NMEAGPS_cfg.h!
 #endif
 
 #ifndef GPS_FIX_DATE
-#error GPS_FIX_DATE must be defined in GPSfix_cfg.h!
+  #error GPS_FIX_DATE must be defined in GPSfix_cfg.h!
 #endif
 
 #ifndef GPS_FIX_TIME
-#error GPS_FIX_TIME must be defined in GPSfix_cfg.h!
+  #error GPS_FIX_TIME must be defined in GPSfix_cfg.h!
 #endif
 
 #ifndef GPS_FIX_LOCATION
-#error GPS_FIX_LOCATION must be defined in GPSfix_cfg.h!
+  #error GPS_FIX_LOCATION must be defined in GPSfix_cfg.h!
 #endif
 
 #ifndef GPS_FIX_ALTITUDE
-#error GPS_FIX_ALTITUDE must be defined in GPSfix_cfg.h!
+  #error GPS_FIX_ALTITUDE must be defined in GPSfix_cfg.h!
 #endif
 
 #ifndef GPS_FIX_SPEED
-#error GPS_FIX_SPEED must be defined in GPSfix_cfg.h!
+  #error GPS_FIX_SPEED must be defined in GPSfix_cfg.h!
 #endif
 
 #ifndef GPS_FIX_HEADING
-#error GPS_FIX_HEADING must be defined in GPSfix_cfg.h!
+  #error GPS_FIX_HEADING must be defined in GPSfix_cfg.h!
 #endif
 
 #ifndef GPS_FIX_SATELLITES
-#error GPS_FIX_SATELLITES must be defined in GPSfix_cfg.h!
+  #error GPS_FIX_SATELLITES must be defined in GPSfix_cfg.h!
 #endif
 
 #ifndef GPS_FIX_HDOP
-#error GPS_FIX_HDOP must be defined in GPSfix_cfg.h!
+  #error GPS_FIX_HDOP must be defined in GPSfix_cfg.h!
 #endif
 
 static NMEAGPS gps;
@@ -98,8 +103,16 @@ const char validGGA2[] __PROGMEM =
 //  36.794405,N,89.958655,W
 //  3647.6643,N,8957.5193,W
 
+// Ni'ihau, HI
+//   21.827621, -160.244876
+//   21.827621,N,160.244876,W
+//   2149.65726,N,16014.69256,W
+
 const char validRMC2[] __PROGMEM =
   "$GPRMC,162254.00,A,3647.6643,N,8957.5193,W,0.820,188.36,110706,,,A*49\r\n";
+
+const char validRMC3[] __PROGMEM =
+"$GPRMC,235959.99,A,2149.65726,N,16014.69256,W,8.690,359.99,051015,9.47,E,A*26\r\n";
 
 // Some place in Kenya
 const char validGLL[] __PROGMEM =
@@ -198,27 +211,29 @@ static void checkLatLon
       break;
     }
     if (NMEAGPS::DECODE_COMPLETED == gps.decode( c )) {
+      bool ok = true;
 
       if (gps.nmeaMessage != msg_type) {
         trace.print( F("FAILED wrong message type ") );
         trace.println( gps.nmeaMessage );
         failed++;
-        break;
+        ok = false;
       }
       if (gps.fix().latitudeL() != lat) {
         trace.print( F("FAILED wrong latitude ") );
         trace.println( gps.fix().latitudeL() );
         failed++;
-        break;
+        ok = false;
       }
       if (gps.fix().longitudeL() != lon) {
         trace.print( F("FAILED wrong longitude ") );
         trace.println( gps.fix().longitudeL() );
         failed++;
-        break;
+        ok = false;
       }
 
-      passed++;
+      if (ok)
+        passed++;
       break;
     }
   }
@@ -416,10 +431,11 @@ void setup()
   }
   passed++;
 
-  checkLatLon( validRMC , NMEAGPS::NMEA_RMC, -253448688L, 1310324913L );
-  checkLatLon( validGGA2, NMEAGPS::NMEA_GGA, -131628050L, -725455083L );
-  checkLatLon( validRMC2, NMEAGPS::NMEA_RMC,  367944050L, -899586550L );
-  checkLatLon( validGLL , NMEAGPS::NMEA_GLL,  -10934607L,  370283722L );
+  checkLatLon( validRMC , NMEAGPS::NMEA_RMC, -253448688L,  1310324913L );
+  checkLatLon( validGGA2, NMEAGPS::NMEA_GGA, -131628050L,  -725455083L );
+  checkLatLon( validRMC2, NMEAGPS::NMEA_RMC,  367944050L,  -899586550L );
+  checkLatLon( validRMC3, NMEAGPS::NMEA_RMC,  218276210L, -1602448760L );
+  checkLatLon( validGLL , NMEAGPS::NMEA_GLL,  -10934607L,   370283722L );
 }
 
 //--------------------------
@@ -445,6 +461,8 @@ void loop()
 
     traceSample( validGGA );
     traceSample( validRMC );
+    traceSample( validRMC2 );
+    traceSample( validRMC3 );
     traceSample( validGLL );
     traceSample( mtk1 );
     traceSample( mtk2 );

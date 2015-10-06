@@ -82,6 +82,10 @@ public:
     static const nmea_msg_t NMEA_FIRST_MSG = NMEA_GGA;
     static const nmea_msg_t NMEA_LAST_MSG  = NMEA_ZDA;
 
+    //  Convert a nmea_msg_t to a PROGMEM string.
+    //    Useful for printing the sentence type instead of a number.
+    const char *string_for( nmea_msg_t msg ) const;
+
     /**
      * Most recent NMEA sentence type received.
      */
@@ -165,13 +169,24 @@ public:
     static void send_P( Stream *device, str_P msg );
 
     // Set all parsed data (fix(), satellite info, etc.) to initial values.
-    void data_init();
+    void data_init()
+    {
+      fix().init();
+
+      #ifdef NMEAGPS_PARSE_SATELLITES
+        sat_count = 0;
+      #endif
+    }
 
     // Reset the parsing process.
     //   This is used internally after a CS error, or could be used 
     //   externally to abort processing if it has been too long 
     //   since any data was received.
-    void reset();
+    void reset()
+    {
+      rxState = NMEA_IDLE;
+      safe    = true;
+    }
 
 protected:
     //  Current fix
@@ -185,12 +200,28 @@ protected:
     uint8_t      chrCount;       // index of current character in current field
     uint8_t      decimal;        // digits received after the decimal point
     struct {
-      bool       negative     NEOGPS_BF(1); // field had a leading '-'
-      bool       safe         NEOGPS_BF(1); // fix is safe to access
-      bool       comma_needed NEOGPS_BF(1); // field needs a comma to finish parsing
-      bool       group_valid  NEOGPS_BF(1); // multi-field group valid
-      bool       proprietary  NEOGPS_BF(1); // receiving proprietary message
+      bool       negative      NEOGPS_BF(1); // field had a leading '-'
+      bool       safe          NEOGPS_BF(1); // fix is safe to access
+      bool       _comma_needed NEOGPS_BF(1); // field needs a comma to finish parsing
+      bool       group_valid   NEOGPS_BF(1); // multi-field group valid
+      bool       proprietary   NEOGPS_BF(1); // receiving proprietary message
     } NEOGPS_PACKED;
+
+    bool comma_needed()
+    {
+      #ifdef NMEAGPS_COMMA_NEEDED
+        return _comma_needed;
+      #else
+        return false;
+      #endif
+    }
+
+    void comma_needed( bool value )
+    {
+      #ifdef NMEAGPS_COMMA_NEEDED
+        _comma_needed = value;
+      #endif
+    }
 
     /*
      * Internal FSM states
