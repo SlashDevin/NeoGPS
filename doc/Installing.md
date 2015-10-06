@@ -60,6 +60,10 @@ If you do not see this output, please see the [Troubleshooting](Troubleshooting.
 #The NMEA.ino example works!
 Once you have verified the GPS device connection and build process with this first example, you should also verify your device's behavior with `NMEAorder.ino` (see [this section](Troubleshooting#quiet-time-interval)).  This can avoid problems later on, when you start adding/merging other functions to do your "work".
 
+Next, you should try `NMEAfused.ino`.
+
+If you are working on a drone or other autonomous system, you should then try `NMEAcoherent.ino`.
+
 You can also try other configurations.  Please see [Choosing Your Configuration](Choosing.md) for more information, and then simply edit `GPSfix_cfg.h` and/or `NMEAGPS_cfg.h`, or select an [example configuration](../configs) and copy these three files into your application directory: `NeoGPS_cfg.h`, `GPSfix_cfg.h`, and `NMEAGPS_cfg.h`.
 
 You can review and edit each of the copied configuration files to add or remove messages or fields, at any time.
@@ -67,4 +71,4 @@ You can review and edit each of the copied configuration files to add or remove 
 **Note:**  Not all configurations will work with all example applications.
 
 #I have a ublox GPS device
-After you have tried all the standard NMEA examples, and you need the ublox-specific capabilities of NeoGPS, please see the [ublox](ublox.md) section.
+After you have tried all the standard NMEA examples, and you need the ublox-specific capabilities of NeoGPS, please see the [ublox](ublox.md) section.  Try `PUBX.ino` first, then try `ublox.ino` if you *really* need the binary protocol.
