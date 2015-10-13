@@ -79,8 +79,8 @@ static NMEAGPS gps;
 // Example sentences
 
 const char validGGA[] __PROGMEM =
-  "$GPGGA,092725.00,4717.11399,N,00833.91590,E,"
-    "1,8,1.01,499.6,M,48.0,M,,0*5B\r\n";
+  "$GPGGA,092725.00,4717.113993,N,00833.915904,E,"
+    "1,8,1.01,499.6,M,48.0,M,,0*5C\r\n";
 
 // Ayers Rock
 //  -25.3448688,131.0324914
@@ -141,22 +141,28 @@ const char mtk10[] __PROGMEM =
 const char mtk11[] __PROGMEM =
   "$GLZDA,225627.00,21,09,2015,00,00*70\r\n";
 
-const char fpGGA1[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8169,W,"
+const char fpGGA00[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.816900,W,"
   "1,8,1.01,499.6,M,48.0,M,,0*49\r\n";
-const char fpGGA2[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8170,W,"
+const char fpGGA01[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.816901,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*48\r\n";
+const char fpGGA02[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.816902,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*4B\r\n";
+const char fpGGA03[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.816903,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*4A\r\n";
+const char fpGGA04[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.816904,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*4D\r\n";
+const char fpGGA05[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.816905,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*4C\r\n";
+const char fpGGA06[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.816906,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*4F\r\n";
+const char fpGGA07[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.816907,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*4E\r\n";
+const char fpGGA08[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.816908,W,"
   "1,8,1.01,499.6,M,48.0,M,,0*41\r\n";
-const char fpGGA3[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8171,W,"
+const char fpGGA09[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.816909,W,"
   "1,8,1.01,499.6,M,48.0,M,,0*40\r\n";
-const char fpGGA4[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8172,W,"
-  "1,8,1.01,499.6,M,48.0,M,,0*43\r\n";
-const char fpGGA5[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8173,W,"
-  "1,8,1.01,499.6,M,48.0,M,,0*42\r\n";
-const char fpGGA6[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8174,W,"
-  "1,8,1.01,499.6,M,48.0,M,,0*45\r\n";
-const char fpGGA7[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8175,W,"
-  "1,8,1.01,499.6,M,48.0,M,,0*44\r\n";
-const char fpGGA8[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.8176,W,"
-  "1,8,1.01,499.6,M,48.0,M,,0*47\r\n";
+const char fpGGA10[] __PROGMEM = "$GPGGA,092725.00,3242.9000,N,11705.816910,W,"
+  "1,8,1.01,499.6,M,48.0,M,,0*48\r\n";
 
 //--------------------------
 
@@ -177,10 +183,12 @@ static bool parse_P( const char *ptr )
 
 //--------------------------
 
-static void traceSample( const char *ptr )
+static void traceSample( const char *ptr, bool init = true )
 {
     trace << F("Input:  ") << (const __FlashStringHelper *) ptr;
 
+    if (init)
+      gps.data_init();
     bool decoded = parse_P( ptr );
 
     if (decoded)
@@ -395,7 +403,7 @@ void setup()
           failed++;
           break;
         }
-        if (gps.fix().longitudeL() != 85652650L) {
+        if (gps.fix().longitudeL() != 85652651L) {
           trace.print( F("FAILED wrong longitude ") );
           trace.println( gps.fix().longitudeL() );
           failed++;
@@ -469,8 +477,8 @@ void loop()
     traceSample( mtk3 );
     traceSample( mtk4 );
     traceSample( mtk5 );
-    traceSample( mtk6 );
-    traceSample( mtk7 );
+    traceSample( mtk6, false );
+    traceSample( mtk7, false );
     traceSample( mtk8 );
     traceSample( mtk9 );
     traceSample( mtk10 );
@@ -493,14 +501,17 @@ void loop()
      */
     trace << F("--- floating point conversion tests ---\n\n");
 
-    traceSample( fpGGA1 );
-    traceSample( fpGGA2 );
-    traceSample( fpGGA3 );
-    traceSample( fpGGA4 );
-    traceSample( fpGGA5 );
-    traceSample( fpGGA6 );
-    traceSample( fpGGA7 );
-    traceSample( fpGGA8 );
+    traceSample( fpGGA00 );
+    traceSample( fpGGA01 );
+    traceSample( fpGGA02 );
+    traceSample( fpGGA03 );
+    traceSample( fpGGA04 );
+    traceSample( fpGGA05 );
+    traceSample( fpGGA06 );
+    traceSample( fpGGA07 );
+    traceSample( fpGGA08 );
+    traceSample( fpGGA09 );
+    traceSample( fpGGA10 );
   }
 
   for (;;);

@@ -2,11 +2,9 @@
 #include "NMEAGPS.h"
 
 //======================================================================
-//  Program: NMEAtest.ino
+//  Program: NMEAbenchmark.ino
 //
 //  Prerequisites:
-//     1) NMEA standard messages GGA and RMC are enabled.
-//     2) All 'gps_fix' members are enabled.
 //
 //  Description:  Use GPGGA and GPRMC sentences to test 
 //     the parser's performance.
@@ -19,14 +17,6 @@
 
 #include "Streamers.h"
 Stream & trace = Serial;
-
-//------------------------------------------------------------
-// Check that the config files are set up properly
-
-#if !defined(NMEAGPS_PARSE_GGA) & !defined(NMEAGPS_PARSE_RMC) & \
-    !defined(NMEAGPS_PARSE_GSV)
-  #error NMEAGPS_PARSE_GGA, RMC or GSV must be defined in NMEAGPS_cfg.h!
-#endif
 
 static NMEAGPS gps;
 
@@ -65,25 +55,21 @@ void setup()
 
 void loop()
 {
-  #ifdef NMEAGPS_PARSE_GGA
-    const char *gga =
-      "$GPGGA,092725.00,4717.11399,N,00833.91590,E,"
-      "1,8,1.01,499.6,M,48.0,M,,0*5B\r\n";
-    const char *gga_no_lat =
-      "$GPGGA,092725.00,,,00833.91590,E,"
-      "1,8,1.01,499.6,M,48.0,M,,0*5B\r\n";
+  const char *gga =
+    "$GPGGA,092725.00,4717.11399,N,00833.91590,E,"
+    "1,8,1.01,499.6,M,48.0,M,,0*5B\r\n";
+  const char *gga_no_lat =
+    "$GPGGA,092725.00,,,00833.91590,E,"
+    "1,8,1.01,499.6,M,48.0,M,,0*5B\r\n";
 
-    trace << F("GGA time = ")        << time_it( gga )        << '\n';
-    trace << F("GGA no lat time = ") << time_it( gga_no_lat ) << '\n';
-  #endif
+  trace << F("GGA time = ")        << time_it( gga )        << '\n';
+  trace << F("GGA no lat time = ") << time_it( gga_no_lat ) << '\n';
 
-  #ifdef NMEAGPS_PARSE_RMC
-    const char *rmc =
-      "$GPRMC,083559.00,A,4717.11437,N,00833.91522,E,"
-      "0.004,77.52,091202,,,A*57\r\n";
+  const char *rmc =
+    "$GPRMC,083559.00,A,4717.11437,N,00833.91522,E,"
+    "0.004,77.52,091202,,,A*57\r\n";
 
-    trace << F("RMC time = ")        << time_it( rmc )        << '\n';
-  #endif
+  trace << F("RMC time = ")        << time_it( rmc )        << '\n';
   
   #ifdef NMEAGPS_PARSE_GSV
     const char *gsv = 

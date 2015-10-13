@@ -1,7 +1,7 @@
 Performance
 ===========
 
-####**NeoGPS** is **35% to 70% faster**.
+####**NeoGPS** is **40% to 70% faster**.
 
 For comparison, the following sentences were parsed by various [Configurations](/doc/Configurations.md) of **NeoGPS**, **TinyGPS** and **TinyGPSPlus** on a 16MHz Arduino Mega2560.
 
@@ -15,10 +15,10 @@ $GPGSV,3,3,10,26,82,187,47,28,43,056,46*77
 
 <table>
 <tr><td>Configuration</td><td>Sentence</td><td>NeoGPS</td><td>TinyGPS<br>Time (% faster)</td><td>TinyGPS++<br>Time (% faster)</td><td>Adafrut_GPS<br>Time (%faster)</td></tr>
-<tr><td>Minimal</td><td>GGA<br>RMC</td><td>436us<br>485us</td><td>-    (70%)<br>-    (66%)</td><td>-    (72%)<br>-    (69%)</td></tr>
-<tr><td>DTL</td><td>GGA<br>RMC</td><td>839us<br>859us</td><td>-    (42%)<br>-    (40%)</td><td>-    (45%)<br>-    (55%)</td></tr>
-<tr><td>Nominal</td><td>GGA<br>RMC</td><td>885us<br>907us</td><td>1448us (39%)<br>1435us (37%)</td><td>1473us (40%)<br>1442us (38%)</td><td>1358us (35%)<br>1535us (41%)</td></tr>
-<tr><td>Full</td><td>GGA<br>RMC<br>GSV</td><td>1094us<br>1075us<br>2048us</td><td>- (25%)<BR>-  (25%)<br>-   (-)</td><td>1523us (42%)<br>1560us (42%)<br>6651us (70%)</td></tr>
+<tr><td>Minimal</td><td>GGA<br>RMC</td><td>329us<br>335us</td><td>-    (78%)<br>-    (77%)</td><td>-    (78%)<br>-    (77%)</td></tr>
+<tr><td>DTL</td><td>GGA<br>RMC</td><td>780us<br>803us</td><td>-    (46%)<br>-    (44%)</td><td>-    (47%)<br>-    (44%)</td></tr>
+<tr><td>Nominal</td><td>GGA<br>RMC</td><td>864us<br>883us</td><td>1448us (40%)<br>1435us (39%)</td><td>1473us (41%)<br>1442us (39%)</td><td>1358us (36%)<br>1535us (42%)</td></tr>
+<tr><td>Full</td><td>GGA<br>RMC<br>GSV</td><td>908us<br>899us<br>2194us</td><td>- (37%)<BR>-  (37%)<br>-   (-)</td><td>1523us (40%)<br>1560us (42%)<br>6651us (67%)</td></tr>
 </table>
 
 ####Why is **NeoGPS** faster?
