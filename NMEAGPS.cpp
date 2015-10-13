@@ -860,9 +860,26 @@ bool NMEAGPS::parseFloat( uint16_t & val, char chr, uint8_t max_decimal )
 
 } // parseFloat
 
-/**
- * Parse lat/lon dddmm.mmmm fields
- */
+//---------------------------------------------------
+// From http://www.hackersdelight.org/divcMore.pdf
+
+static uint32_t divu3( uint32_t n )
+{
+  #ifdef __AVR__
+    uint32_t q = (n >> 2) + (n >> 4); // q = n*0.0101 (approx).
+    q = q + (q >> 4); // q = n*0.01010101.
+    q = q + (q >> 8);
+    q = q + (q >> 16);
+
+    uint32_t r = n - q*3; // 0 <= r <= 15.
+    return q + (11*r >> 5); // Returning q + r/3.
+  #else
+    return n/3;
+  #endif
+}
+
+//.................................................
+// Parse lat/lon dddmm.mmmm fields
 
 bool NMEAGPS::parseDDDMM( int32_t & val, char chr )
 {
@@ -886,17 +903,19 @@ bool NMEAGPS::parseDDDMM( int32_t & val, char chr )
       val = (deg * 60) + to_binary( valBCD[0] );
       if (chr == '.') return true;
     }
-    
+
     if (chr == ',') {
       if (val) {
-        // If the last chars in ".mmmm" were not received,
+        // If the last chars in ".mmmmmm" were not received,
         //    force the value into its final state.
         if (decimal == 4)
           val *= 100;
         else if (decimal == 5)
           val *= 10;
-        else if (decimal >= 6)
+        else if (decimal == 6)
           ;
+        else if (decimal > 6)
+          return true; // already converted at decimal==6
         else if (decimal == 3)
           val *= 1000;
         else if (decimal == 2)
@@ -904,15 +923,29 @@ bool NMEAGPS::parseDDDMM( int32_t & val, char chr )
         else if (decimal == 1)
           val *= 100000;
 
-        // Value was in minutes x 1000000, convert to degrees x 10000000.
-        val += (val*2 + 1)/3; // aka (100*val+30)/60, but without sign truncation
+        // Convert minutes x 1000000 to degrees x 10000000.
+        val += divu3(val*2 + 1); // same as 10 * ((val+30)/60) without trunc
       }
+
     } else if (!decimal) {
       // val is BCD until *after* decimal point
       val = (val<<4) | (chr - '0');
-    } else if (decimal++ < 6) {
-      val = val*10 + (chr - '0');
+
+    } else {
+      decimal++;
+      if (decimal <= 6) {
+        val = val*10 + (chr - '0');
+
+      } else if (decimal > 6) {
+        // Convert now, while we still have the 6th decimal digit
+        val += divu3(val*2 + 1); // same as 10 * ((val+30)/60) without trunc
+        if (chr >= '9')
+          val += 2;
+        else if (chr >= '4')
+          val += 1;
+      }
     }
+
   #endif
 
   return true;
