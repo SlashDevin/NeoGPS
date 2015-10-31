@@ -45,10 +45,10 @@ static void tryAnotherBaudRate()
 {
   gps_port.end();
 
-  if (baud_index == INITIAL_BAUD_INDEX)
+  if (baud_index == INITIAL_BAUD_INDEX) {
     baud_index = 0;
 
-  else {
+  } else {
     baud_index++;
     if (baud_index == INITIAL_BAUD_INDEX)
       baud_index++; // skip it, we already tried it
@@ -75,10 +75,10 @@ static void tryAnotherBaudRate()
 
 //------------------------------------
 
-static bool saveSomeChars = false;
+static bool           saveSomeChars = false;
 static const uint16_t MAX_SAMPLE = 256;
-static uint8_t someChars[ MAX_SAMPLE ];
-static uint16_t someCharsIndex = 0;
+static uint8_t        someChars[ MAX_SAMPLE ];
+static uint16_t       someCharsIndex = 0;
 
 static void dumpSomeChars()
 {
@@ -211,9 +211,9 @@ void setup()
   // Start the normal trace output
   Serial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
 
-  trace.print( F("NMEAdiagnostic.INO: started\n") );
-  trace.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  trace.flush();
+  Serial.print( F("NMEAdiagnostic.INO: started\n") );
+  Serial.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  Serial.flush();
   
   // Start the UART for the GPS device
   gps_port.begin( baud_table[ baud_index ] );

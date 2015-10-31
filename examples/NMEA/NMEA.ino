@@ -26,11 +26,11 @@
 
 //-------------------------------------------------------------------------
 //  This include file will choose a default serial port for the GPS device.
-//    If you know which serial port you want to use, delete declare it here:
+//    If you know which serial port you want to use, declare it here:
 //
 //    SomeKindOfSerial gps_port( args );
 //          or
-//    HardwareSerial & gps_port = Serialx; // an alias
+//    HardwareSerial & gps_port = Serial2; // an alias
 //          or
 //    Search and replace all occurrences of "gps_port" with your port's name.
 
@@ -48,7 +48,11 @@
 #include "Streamers.h"
 Stream & trace = Serial;
 
-static NMEAGPS  gps         ; // This parses received characters
+//------------------------------------------------------------
+// This object parses received characters 
+//   into the gps.fix() data structure
+
+static NMEAGPS  gps; 
 
 //------------------------------------------------------------
 //  Define an extra set of GPS fix information.  It will
@@ -81,39 +85,17 @@ static void doSomeWork()
 
   static bool header_printed = false;
   if (!header_printed) {
-
-    trace.print( F("GPS quiet time begins after a ") );
-    trace.print( gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
-    trace.println( F(" sentence is received.\n"
-                     "You should confirm this with NMEAorder.ino") );
-
-    #if defined(GPS_FIX_TIME)
-      trace.print( F("Local time,") );
-    #endif
     trace_header();
-
     header_printed = true;
   }
 
-  #if defined(GPS_FIX_TIME)
-    // Display the local time
-    if (fix_data.valid.time) {
-      static const int32_t         zone_hours   = -4L; // EST
-      static const int32_t         zone_minutes =  0L;
-      static const NeoGPS::clock_t zone_offset  =
-                        zone_hours   * NeoGPS::SECONDS_PER_HOUR +
-                        zone_minutes * NeoGPS::SECONDS_PER_MINUTE;
-
-      trace << NeoGPS::time_t( fix_data.dateTime + zone_offset );
-    }
-    trace << ',';
-  #endif
-
   // Print all the things!
+
   trace_all( gps, fix_data );
 
   // Clear out what we just printed.  If you need this data elsewhere,
   //   don't do this.
+
   gps.data_init();
   fix_data.init();
 
@@ -183,13 +165,17 @@ void setup()
   // Start the normal trace output
   Serial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
 
-  trace.print( F("NMEA.INO: started\n") );
-  trace.print( F("fix object size = ") );
-  trace.println( sizeof(gps.fix()) );
-  trace.print( F("NMEAGPS object size = ") );
-  trace.println( sizeof(gps) );
-  trace.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  trace.flush();
+  Serial.print( F("NMEA.INO: started\n") );
+  Serial.print( F("fix object size = ") );
+  Serial.println( sizeof(gps.fix()) );
+  Serial.print( F("NMEAGPS object size = ") );
+  Serial.println( sizeof(gps) );
+  Serial.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  Serial.print( F("GPS quiet time begins after a ") );
+  Serial.print( (const __FlashStringHelper *) gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
+  Serial.println( F(" sentence is received.\n"
+                   "You should confirm this with NMEAorder.ino") );
+  Serial.flush();
   
   // Start the UART for the GPS device
   gps_port.begin( 9600 );

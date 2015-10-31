@@ -24,8 +24,6 @@
 //======================================================================
 
 #include "GPSport.h"
-#include "Streamers.h"
-Stream & trace = Serial;
 
 static NMEAGPS  gps         ; // This parses received characters
 static uint32_t last_rx = 0L; // The last millis() time a character was
@@ -53,14 +51,14 @@ static void recordSentenceTypes()
 
 static void printSentenceOrder()
 {
-  trace << F("\nSentence order in each 1-second interval:\n  ");
+  Serial.println( F("\nSentence order in each 1-second interval:") );
 
-  for (uint8_t i=0; i<sentence_count; i++)
-    trace <<
-      (const __FlashStringHelper *)
-        gps.string_for( sentences[i] ) << F("\n  ");
+  for (uint8_t i=0; i<sentence_count; i++) {
+    Serial.print( F("  ") );
+    Serial.println( (const __FlashStringHelper *) gps.string_for( sentences[i] ) );
+  }
 
-  trace << '\n';
+  Serial.println();
 
 } // printSentenceOrder
 
@@ -76,8 +74,7 @@ static void GPSloop()
       if (last_sentence_in_interval == NMEAGPS::NMEA_UNKNOWN) {
         // Still building the list
         recordSentenceTypes();
-        trace << '.';
-
+        Serial.print( '.' );
       }
     }
   }
@@ -124,20 +121,20 @@ static bool quietTimeStarted()
 
       if (!getting_chars) {
         
-        trace.println( F("\nCheck GPS device and/or connections.  No characters received.\n") );
+        Serial.println( F("\nCheck GPS device and/or connections.  No characters received.\n") );
         
         allDone = true;
 
       } else if (sentence_count == 0) {
         
-        trace.println( F("No valid sentences, but characters are being received.\n"
+        Serial.println( F("No valid sentences, but characters are being received.\n"
         "Check baud rate or device protocol configuration.\n" ) );
 
         allDone = true;
       }
 
       if (allDone) {
-        trace << F("\nEND.\n");
+        Serial.print( F("\nEND.\n") );
         for (;;)
           ; // hang!
       }
@@ -181,15 +178,15 @@ static void watchForLastSentence()
 void setup()
 {
   // Start the normal trace output
-  Serial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
+  Serial.begin(9600);
 
-  trace.print( F("NMEAorder.INO: started\n") );
-  trace.print( F("fix object size = ") );
-  trace.println( sizeof(gps.fix()) );
-  trace.print( F("NMEAGPS object size = ") );
-  trace.println( sizeof(gps) );
-  trace.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  trace.flush();
+  Serial.print( F("NMEAorder.INO: started\n") );
+  Serial.print( F("fix object size = ") );
+  Serial.println( sizeof(gps.fix()) );
+  Serial.print( F("NMEAGPS object size = ") );
+  Serial.println( sizeof(gps) );
+  Serial.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  Serial.flush();
   
   // Start the UART for the GPS device
   gps_port.begin( 9600 );

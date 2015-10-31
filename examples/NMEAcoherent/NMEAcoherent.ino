@@ -6,8 +6,8 @@
 //
 //  Prerequisites:
 //     1) NMEAfused.ino works with your device
-//     3) At least one NMEA sentence has been enabled.
-//     4) Implicit Merging is disabled.
+//     2) At least one NMEA sentence has been enabled.
+//     3) Implicit Merging is disabled.
 //
 //  Description:  This program guarantees coherency in the fix data.  
 //     When a sentence is received with a new time interval, 
@@ -49,10 +49,7 @@ Stream & trace = Serial;
 
 //------------------------------------------------------------
 
-static NMEAGPS  gps         ; // This parses received characters
-static uint32_t last_rx = 0L; // The last millis() time a character was
-                              // received from GPS.  This is used to
-                              // determine when the GPS quiet time begins.
+static NMEAGPS gps;
 static gps_fix coherent;
 
 static const NMEAGPS::nmea_msg_t LAST_SENTENCE_IN_INTERVAL = NMEAGPS::NMEA_GLL;
@@ -121,7 +118,6 @@ static bool isNewInterval()
 static void GPSloop()
 {  
   while (gps_port.available()) {
-    last_rx = millis();
 
     if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
 
@@ -145,16 +141,16 @@ void setup()
   // Start the normal trace output
   Serial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
 
-  trace.print( F("NMEAcoherent: started\n") );
-  trace.print( F("fix object size = ") );
-  trace.println( sizeof(gps.fix()) );
-  trace.print( F("NMEAGPS object size = ") );
-  trace.println( sizeof(gps) );
-  trace.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  Serial.print( F("NMEAcoherent: started\n") );
+  Serial.print( F("fix object size = ") );
+  Serial.println( sizeof(gps.fix()) );
+  Serial.print( F("NMEAGPS object size = ") );
+  Serial.println( sizeof(gps) );
+  Serial.println( F("Looking for GPS device on " USING_GPS_PORT) );
 
   trace_header();
 
-  trace.flush();
+  Serial.flush();
   
   // Start the UART for the GPS device
   gps_port.begin(9600);

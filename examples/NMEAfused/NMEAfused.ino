@@ -33,25 +33,19 @@ Stream & trace = Serial;
 #endif
 
 #ifdef NMEAGPS_ACCUMULATE_FIX
+
   #error NMEAGPS_ACCUMULATE_FIX should not be enabled when explicit merging is used.
+
   // This is an Explicit Merge: "fused |= gps.fix()"
   //
   // If you don't want or need the safe copy 'fused', you could
   //   use NMEA.ino with NMEAGPS_ACCUMULATE_FIX enabled instead.
+
 #endif
 
 //------------------------------------------------------------
 
-static NMEAGPS  gps         ; // This parses received characters
-static uint32_t last_rx = 0L; // The last millis() time a character was
-                              // received from GPS.  This is used to
-                              // determine when the GPS quiet time begins.
-
-//------------------------------------------------------------
-//  Define an extra set of GPS fix information.  It will
-//  hold on to the various pieces as they are received from
-//  different kinds of sentences.
-
+static NMEAGPS  gps;
 static gps_fix fused;
 
 static const NMEAGPS::nmea_msg_t LAST_SENTENCE_IN_INTERVAL = NMEAGPS::NMEA_GLL;
@@ -75,21 +69,16 @@ static void doSomeWork()
 static void GPSloop()
 {  
   while (gps_port.available()) {
-    last_rx = millis();
 
     if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
 
       // All enabled sentence types will be merged into one fix.
       //   This 'fused' data can be safely used anywhere in your program.
-      fused |= gps.fix();
 
-      // As explained in the example program NMEA.ino, you should
-      //   hard-code the last sentence in a 1-second interval
-      //   that is sent by *your* GPS device.
+      fused |= gps.fix();
 
       if (gps.nmeaMessage == LAST_SENTENCE_IN_INTERVAL)
         doSomeWork();
-
     }
   }
 } // GPSloop
@@ -101,16 +90,16 @@ void setup()
   // Start the normal trace output
   Serial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
 
-  trace.print( F("NMEAfused.INO: started\n") );
-  trace.print( F("fix object size = ") );
-  trace.println( sizeof(gps.fix()) );
-  trace.print( F("NMEAGPS object size = ") );
-  trace.println( sizeof(gps) );
-  trace.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  Serial.print( F("NMEAfused.INO: started\n") );
+  Serial.print( F("fix object size = ") );
+  Serial.println( sizeof(gps.fix()) );
+  Serial.print( F("NMEAGPS object size = ") );
+  Serial.println( sizeof(gps) );
+  Serial.println( F("Looking for GPS device on " USING_GPS_PORT) );
 
   trace_header();
 
-  trace.flush();
+  Serial.flush();
   
   // Start the UART for the GPS device
   gps_port.begin(9600);
