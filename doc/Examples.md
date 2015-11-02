@@ -1,13 +1,22 @@
 Examples
 ======
-Several programs are provided to demonstrate how to use the classes in different programming styles:
+In an attempt to be reusable in a variety of different programming styles, this library supports:
+* sync or async operation (main `loop()` vs interrupt processing)
+* fused or not fused (multiple reports into one fix)
+* optional buffering of fixes
+* optional floating point
+* configurable message sets, including hooks for implementing proprietary NMEA messages
+* configurable message fields
+* multiple protocols from same device
 
-* [NMEA](/examples/NMEA/NMEA.ino) - sync, polled, single, standard NMEA only
-* [NMEAblink](/examples/NMEAblink/NMEAblink.ino) - sync, polled, single, standard NMEA only, minimal example, only blinks LED
-* [NMEAfused](/examples/NMEAfused/NMEAfused.ino) - sync, polled, fused, standard NMEA only
-* [NMEAcoherent](/examples/NMEAcoherent/NMEAcoherent.ino) - sync, polled, coherent, standard NMEA only
-* [PUBX](/examples/PUBX/PUBX.ino) - sync, polled, coherent, standard NMEA + ublox proprietary NMEA
-* [ublox](/examples/ublox/ublox.ino) - sync, polled, coherent, ublox protocol
+These example programs demonstrate how to use the classes in the different programming styles:
+* [NMEA](/examples/NMEA/NMEA.ino) - sync, single fix, standard NMEA only
+* [NMEAblink](/examples/NMEAblink/NMEAblink.ino) - sync, single fix, standard NMEA only, minimal example, only blinks LED
+* [NMEAfused](/examples/NMEAfused/NMEAfused.ino) - sync, fused fix, standard NMEA only
+* [NMEAfused_isr](/examples/NMEAfused_isr/NMEAfused_isr.ino) - **async**, fused fix, standard NMEA only
+* [NMEAcoherent](/examples/NMEAcoherent/NMEAcoherent.ino) - sync, coherent fix, standard NMEA only
+* [PUBX](/examples/PUBX/PUBX.ino) - sync, coherent fix, standard NMEA + ublox proprietary NMEA
+* [ublox](/examples/ublox/ublox.ino) - sync, coherent fix, ublox binary protocol UBX
 
 Preprocessor symbol `USE_FLOAT` can be used in [Streamers.cpp](Streamers.cpp) to select integer or floating-point output.
 
