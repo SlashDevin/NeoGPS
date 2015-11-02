@@ -23,8 +23,12 @@
 //
 //======================================================================
 
+#ifndef UBRR1H
+  // No extra serial ports, must use SoftwareSerial  :(
+  #include <SoftwareSerial.h>
+#endif
 #include "GPSport.h"
-
+  
 static NMEAGPS  gps         ; // This parses received characters
 static uint32_t last_rx = 0L; // The last millis() time a character was
                               // received from GPS.  This is used to

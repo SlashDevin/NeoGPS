@@ -28,12 +28,16 @@
 //  This include file will choose a default serial port for the GPS device.
 //    If you know which serial port you want to use, declare it here:
 //
-//    SomeKindOfSerial gps_port( args );
+//    SoftwareSerial gps_port( rxpin, txpin ); // to GPS TX, RX
 //          or
 //    HardwareSerial & gps_port = Serial2; // an alias
 //          or
 //    Search and replace all occurrences of "gps_port" with your port's name.
 
+#ifndef UBRR1H
+  // No extra serial ports, must use SoftwareSerial  :(
+  #include <SoftwareSerial.h>
+#endif
 #include "GPSport.h"
 
 //------------------------------------------------------------
@@ -81,14 +85,6 @@ static const NMEAGPS::nmea_msg_t LAST_SENTENCE_IN_INTERVAL = NMEAGPS::NMEA_GLL;
 
 static void doSomeWork()
 {
-  // Display the header, just once.
-
-  static bool header_printed = false;
-  if (!header_printed) {
-    trace_header();
-    header_printed = true;
-  }
-
   // Print all the things!
 
   trace_all( gps, fix_data );
@@ -108,7 +104,16 @@ static void GPSloop()
 {  
   while (gps_port.available()) {
 
+    //  Are we just getting garbage?
+    static uint32_t chars_received = 0;
+    chars_received++;
+    if (chars_received > 1000) {
+      chars_received = 0;
+      Serial.println( "Invalid data received.  Use NMEAdiagnostic.INO to verify baud rate." );
+    }
+
     if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
+      chars_received = 0;
 
       // If you have something quick to do, you can safely use gps.fix()
       //   members now.  For example, comparing the current speed
@@ -140,20 +145,49 @@ static void GPSloop()
       //   You could use any criteria to filter or sort the
       //   data: talker ID, speed, satellites, etc.
       //
-      // NOTE: you may not need a copy of 'gps.fix()' if 
-      //   'doSomeWork' is the only routine that uses fix data,
-      //   *and* the RMC sentence is the only sentence you need.
-
-      if (gps.nmeaMessage == NMEAGPS::NMEA_RMC)
+      if (gps.nmeaMessage == NMEAGPS::NMEA_RMC) {
         fix_data = gps.fix();
+
+        // NOTE: you may not need a copy of 'gps.fix()' if 
+        //   'doSomeWork' is the only routine that uses fix data,
+        //   *and* the RMC sentence is the only sentence you need.
+      }
 
       // If this happens to be the last sentence in a 1-second interval,
       //   the GPS quiet time is beginning, and it is safe to do some
       //   time-consuming work.
 
-      if (gps.nmeaMessage == LAST_SENTENCE_IN_INTERVAL)
+      static bool last_sentence_received = false;
+      if (gps.nmeaMessage == LAST_SENTENCE_IN_INTERVAL) {
+
+        last_sentence_received = true;
         doSomeWork();
 
+      } else if (!last_sentence_received) {
+
+        // Print out some diagnostics about LAST_SENTENCE_IN_INTERVAL and
+        // why it may not have been received yet:
+        //   1) The sketch just started, and we're getting the first
+        //      few sentences; or
+        //   2) We're waiting for the *wrong* last sentence.
+        // This will also provide a little positive feedback
+        // at the beginning, even if the last sentence never arrives.
+
+        static uint8_t sentences_printed = 0;
+        if (sentences_printed < 20) {
+          sentences_printed++;
+          Serial.print( F("Received ") );
+          Serial.print( (const __FlashStringHelper *) gps.string_for( gps.nmeaMessage ) );
+          Serial.println( F("...") );
+        } else if (sentences_printed == 20) {
+          sentences_printed++;
+          Serial.print( F("Warning: ") );
+          Serial.print( (const __FlashStringHelper *) gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
+          Serial.println( F(" sentence was never received and is not the LAST_SENTENCE_IN_INTERVAL.\n"
+                            "  Please use NMEAorder.ino to determine which sentences your GPS device sends, and then\n"
+                            "  use the last one for the definition above.") );
+        }
+      }
     }
   }
 } // GPSloop
@@ -175,6 +209,7 @@ void setup()
   Serial.print( (const __FlashStringHelper *) gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
   Serial.println( F(" sentence is received.\n"
                    "You should confirm this with NMEAorder.ino") );
+  trace_header();
   Serial.flush();
   
   // Start the UART for the GPS device

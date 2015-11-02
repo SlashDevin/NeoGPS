@@ -18,6 +18,10 @@
 //
 //======================================================================
 
+#ifndef UBRR1H
+  // No extra serial ports, must use SoftwareSerial  :(
+  #include <SoftwareSerial.h>
+#endif
 #include "GPSport.h"
 #include "Streamers.h"
 Stream & trace = Serial;

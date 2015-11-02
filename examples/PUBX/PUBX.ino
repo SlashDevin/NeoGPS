@@ -18,6 +18,10 @@
 //
 //======================================================================
 
+#ifndef UBRR1H
+  // No extra serial ports, must use SoftwareSerial  :(
+  #include <SoftwareSerial.h>
+#endif
 #include "GPSport.h"
 #include "Streamers.h"
 Stream & trace = Serial;
@@ -47,8 +51,8 @@ static const NMEAGPS::nmea_msg_t LAST_SENTENCE_IN_INTERVAL =
 
 static void poll()
 {
-  gps.send_P( &Serial1, PSTR("PUBX,00") );
-  gps.send_P( &Serial1, PSTR("PUBX,04") );
+  gps.send_P( &gps_port, PSTR("PUBX,00") );
+  gps.send_P( &gps_port, PSTR("PUBX,04") );
 }
 
 //----------------------------------------------------------------

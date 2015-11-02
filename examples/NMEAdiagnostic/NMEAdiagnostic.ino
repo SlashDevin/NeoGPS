@@ -20,6 +20,10 @@
 //
 //======================================================================
 
+#ifndef UBRR1H
+  // No extra serial ports, must use SoftwareSerial  :(
+  #include <SoftwareSerial.h>
+#endif
 #include "GPSport.h"
 #include "Streamers.h"
 Stream & trace = Serial;
@@ -44,6 +48,8 @@ static       bool    triedDifferentBaud = false;
 static void tryAnotherBaudRate()
 {
   gps_port.end();
+  while (gps_port.available())
+    gps_port.read();
 
   if (baud_index == INITIAL_BAUD_INDEX) {
     baud_index = 0;
@@ -75,8 +81,7 @@ static void tryAnotherBaudRate()
 
 //------------------------------------
 
-static bool           saveSomeChars = false;
-static const uint16_t MAX_SAMPLE = 256;
+static const uint16_t MAX_SAMPLE = 512;
 static uint8_t        someChars[ MAX_SAMPLE ];
 static uint16_t       someCharsIndex = 0;
 
@@ -84,7 +89,7 @@ static void dumpSomeChars()
 {
   trace << F("Received data:\n");
 
-  const uint16_t  bytes_per_line = 16;
+  const uint16_t  bytes_per_line = 32;
         char      ascii[ bytes_per_line ];
         uint8_t  *ptr            = &someChars[0];
 
@@ -163,13 +168,10 @@ static void listenForSomething()
         trace.println( F("No valid sentences, but characters are being received.\n"
         "Check baud rate or device protocol configuration.\n" ) );
 
-        if (saveSomeChars) {
-          dumpSomeChars();
-          delay( 2000 );
+        dumpSomeChars();
+        delay( 2000 );
 
-          tryAnotherBaudRate();
-        } else
-          saveSomeChars = true;
+        tryAnotherBaudRate();
       }
     }
   }
@@ -179,28 +181,39 @@ static void listenForSomething()
 //------------------------------------
 
 static void GPSloop()
-{  
+{
+  static bool valid_sentence_received = false;
+
   while (gps_port.available()) {
     last_rx = millis();
 
     uint8_t c = gps_port.read();
 
-    if (saveSomeChars && (someCharsIndex < MAX_SAMPLE))
+    if (someCharsIndex < MAX_SAMPLE)
       someChars[ someCharsIndex++ ] = c;
 
     if (gps.decode( c ) == NMEAGPS::DECODE_COMPLETED) {
+      valid_sentence_received = true;
 
-      // We received a sentence, display the baud rate
-      trace << F("\n\n**** NMEA sentence detected!  "
-                 "Your device baud rate is ") <<
-        baud_table[ baud_index ] << F("  ****\n");
+      trace << F("Received ");
+      trace << (const __FlashStringHelper *) gps.string_for( gps.nmeaMessage );
+      trace << F("...\n");
 
-      for (;;)
-        ; // All done!
+      if (someCharsIndex >= MAX_SAMPLE) {
+        // We received a sentence, display the baud rate
+        trace << F("\n\n**** NMEA sentence(s) detected!  ****\n");
+        dumpSomeChars();
+        trace << F("\n  SUCCESS: Your device baud rate is ") <<
+          baud_table[ baud_index ] << '\n';
+
+        for (;;)
+          ; // All done!
+      }
     }
   }
 
-  listenForSomething();
+  if (!valid_sentence_received)
+    listenForSomething();
 
 } // GPSloop
 
