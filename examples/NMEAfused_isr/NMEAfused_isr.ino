@@ -102,7 +102,7 @@ void setup()
   // Start the normal trace output
   NeoSerial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
 
-  NeoSerial.print( F("NMEA.INO: started\n") );
+  NeoSerial.print( F("NMEAfused_isr.INO: started\n") );
   NeoSerial.print( F("fix object size = ") );
   NeoSerial.println( sizeof(gps.fix()) );
   NeoSerial.print( F("NMEAGPS object size = ") );
