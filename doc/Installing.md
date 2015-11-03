@@ -42,17 +42,40 @@ By default, Mega Boards will use `Serial1`.  For all other Boards, a `SoftwareSe
 When the sketch begins, you should see a few lines of startup text:
 ```
 NMEA.ino: started
-fix object size = 44
-NMEAGPS object size = 269
+fix object size = 34
+NMEAGPS object size = 53
 Looking for GPS device on Serial1
+GPS quiet time begins after a GLL sentence is received.
+You should confirm this with NMEAorder.ino
 ```
-If the GPS device has a fix on several satellites, you will see the received GPS data as comma-separated values:
+If the GPS device is correctly wired and running at the specified baud rate, you should see the header for the GPS data fields, and a few messages that report which NMEA sentences are being received.  Depending on when the Arduino resets within the GPS reporting interval, and your specific GPS device, you may see different sentence reports:
 ```
-Local time,Status,UTC Date/Time,Lat,Lon,Hdg,Spd,Alt,HDOP,
-2015-09-14 15:07:30,3,2015-09-14 19:07:30.00,472852332,85652650,,1262,,
-2015-09-14 15:07:31,3,2015-09-14 19:07:31.00,472852338,85652646,,1678,,
+Status,UTC Date/Time,Lat,Lon,Hdg,Spd,Alt,HDOP,Sats,Rx ok,Rx err,Rx chars,
+Received RMC...
+Received VTG...
+Received GGA...
+Received GSA...
+Received GSV...
+Received GSV...
+Received GSV...
+```
+When the LAST_SENTENCE_IN_INTERVAL is received (default is a GLL), it begins printing the GPS data fields in a CSV format.  If the GPS device has a fix on several satellites, you will see something like this:
+```
+3,2015-09-14 19:07:30.00,472852332,85652650,,1262,,,,8,0,501,
+3,2015-09-14 19:07:31.00,472852338,85652646,,1678,,,,16,0,1004,
   etc.
 ```
+If your device does not send the expected LAST_SENTENCE_IN_INTERVAL, you will receive a warning:
+```
+Warning: GLL sentence was never received and is not the LAST_SENTENCE_IN_INTERVAL.
+  Please use NMEAorder.ino to determine which sentences your GPS device sends, and then
+  use the last one for the definition above.
+```
+As described in the [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section, you should run the NMEAorder.ino sketch to determine which sentence is last.  You may be able to see a slight pause in the "Received XXX" messages above, which would also identify the last sentence.  Edit NMEA.ino and change this line:
+```
+static const NMEAGPS::nmea_msg_t LAST_SENTENCE_IN_INTERVAL = NMEAGPS::NMEA_GLL;
+```
+
 The default NeoGPS configuration is **Nominal**, as described [here](Configurations.md#typical-configurations).  This output can be copy & pasted into a spreadsheet for graphing or analysis, or into a text editor for saving as a CSV file.
 
 If you do not see this output, please see the [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section.
