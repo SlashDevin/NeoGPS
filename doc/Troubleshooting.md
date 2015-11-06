@@ -121,7 +121,7 @@ Most Arduino libraries are written in a blocking fashion.  That is, if you call 
 
 Many programmers want to write GPS data to an SD card.  This is completely reasonable to do, but an `SD.write` can block long enough to cause the input buffer to overflow.  SD libraries have their own buffers, and when they are filled, the library performs SPI operations to "flush" the buffer to the SD card.  While that is happening, the GPS device is _still_ sending data, and it will eventually overflow the serial input buffer.
 
-This is a very common problem!  Here's some diagrams to help explain the timing for the Adafruit_GPS library.  First, lets look at how the incoming GPS data relates to reading and parsing it:
+This is a very common problem!  Here are some diagrams to help explain the timing for the Adafruit_GPS library.  First, lets look at how the incoming GPS data relates to reading and parsing it:
 
 <img src="images/GPS%20Timing%200.jpg"/>
 
@@ -133,7 +133,19 @@ The problem is that if you try to do anything that takes "too long", `GPS.read` 
 
 The next sentence, a GPRMC, continues to come in while `Serial.print` and `SD.write` are doing their thing... and data gets lost.
 
-Fortunately, there is a way to work around this.  It turns out that the GPS device is sending a batch of sentences once every second, maybe 5 at a time.  Most of that one-second interval is actually is a "quiet time" that is perfect for doing other things:
+Fortunately, there are two ways to work around this:
+
+####**1)** Use an interrupt-driven approach
+
+For boards that have two hardware serial ports (e.g. a Mega2560), or configurations where `Serial` is connected to the GPS device (i.e., instead of `SoftwareSerial`), you can `decode` the received data in an **I**nterrupt **S**ervice **R**outine.   The example program [NMEAfused_isr.INO](/examples/NMEAfused_isr/NMEAfused_isr.ino) shows how to handle the received GPS characters *during* the RX interrupt.  This program uses the replacement library, [NeoHWSerial](https://github.com/SlashDevin/NeoHWSerial), to attach an interrupt handler to a `HardwareSerial` instance, like `Serial1`.
+
+When a character is received, the ISR is called, where it is immediately decoded.  Normally, the character is stored in an input buffer, and you have to call `available()` and then `read()` to retrieve the character.  Handling it in the ISR totally avoids having to continuously call `Serial1.read()`, and is much more efficient.  Your program does not have to be structured around the GPS quiet time.
+
+While it is considered a more advanced technique, it is similar to the existing Arduino [attachInterrupt](https://www.arduino.cc/en/Reference/AttachInterrupt) function for detecting when pin change.
+
+####**2)** Restructure `loop()` to do time-consuming operations during the GPS [quiet time](#quiet-time-interval).
+
+All example programs, except NMEAfused_isr.INO, are structured this way.  The "quiet time" is perfect for doing other things:
 
 <img src="images/GPS%20Timing%202.jpg"/>
 
@@ -146,7 +158,7 @@ This is why NeoGPS uses a `fix` structure: it can be
 
 You do not have to call a "parse" function after a complete sentence has been received -- the data was parsed as it was received.  Essentially, the processing time for parsing is spread out across the receipt of all characters.  When the last character of the sentence is received (i.e. `gps.decode(c) == DECODE_COMPLETED`), the relevant members of `gps.fix()` have already been populated.
 
-All the example programs are structured so that the (relatively) slow printing operations are performed during the GPS quiet time.  Simply replace those trace/print statements with your specific code.
+These example programs are structured so that the (relatively) slow printing operations are performed during the GPS quiet time.  Simply replace those trace/print statements with your specific code.
 
 If you still do not have enough time to complete your tasks during the GPS quiet time, you can
    * Increase the baud rate on the debug port (takes less time to print)
@@ -154,3 +166,4 @@ If you still do not have enough time to complete your tasks during the GPS quiet
    * Configure the GPS device to send fewer sentences (decreases parsing time, increases quiet time)
    * Use a binary protocol for your specific device (decreases parsing time, increases quiet time)
    * Watch for a specific message to be COMPLETED, then begin your specific processing.  This may cause some sentences to lose characters, but they may not be necessary.  See comments regarding `LAST_SENTENCE_IN_INTERVAL` above.
+   * Use the interrupt-driven approach, described above.  It is *guaranteed* to work!
