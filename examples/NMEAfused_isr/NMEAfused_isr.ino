@@ -6,17 +6,18 @@
 //
 //  Description:  This program is an interrupt-driven version 
 //    of NMEAfused.ino, and uses the special NeoHWSerial replacement for the 
-//    default Arduino HardwareSerial.
+//    default Arduino HardwareSerial.  (NeoICSerial could also be used)
 //
 //  Prerequisites:
 //     1) You have completed the requirements for NMEAfused.ino
-//     2) You have installed NeoHWSerial
+//     2) You have installed NeoHWSerial or NeoICSerial.
 //
 //  'NeoSerial' is for trace output to the Serial Monitor window.
 //
 //======================================================================
 
 #include <NeoHWSerial.h>
+//#include <NeoICSerial.h>
 #include "GPSport.h"
 #include "Streamers.h"
 Stream & trace = NeoSerial;

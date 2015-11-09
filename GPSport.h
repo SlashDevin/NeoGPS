@@ -1,13 +1,18 @@
-#ifndef USING_GPS_PORT
+#ifndef GPSport_h
+#define GPSport_h
 
 //-----------------------------------------------------------
 // Pick the serial port to which the GPS device is connected.
 //
-// If you include "SoftwareSerial.h", "gSoftSerial.h",
-//   "AltSoftSerial.h"  *OR*  "NeoHWSerial.h" before 
+// This file tries to guess which port a beginner should use.
+//   If you already know which port and which library you want
+//   to use for that port, DON'T INCLUDE THIS FILE.
+//   Just declare it yourself!
+//
+// If you include <SoftwareSerial.h>, <gSoftSerial.h>,
+//   <AltSoftSerial.h>, <NeoICSerial>  *OR*  <NeoHWSerial.h> before 
 //   this file, one of those ports will be used for 
-//   the GPS.  Otherwise, just declare your own gps_port 
-//   in your INO and don't include this file.
+//   the GPS.
 //
 // It also defines USING_GPS_PORT, which can be used for printing
 //   the selected device:
@@ -16,16 +21,37 @@
 
 #if defined( SoftwareSerial_h )
   #define SS_TYPE SoftwareSerial
+
 #elif defined( gSoftSerial_h )
   #define SS_TYPE gSoftSerial
+
 #elif defined( AltSoftSerial_h )
-  #define SS_TYPE AltSoftSerial
+  AltSoftSerial gps_port;
+  #define USING_GPS_PORT "AltSoftSerial"
+
+#elif defined( NeoICSerial_h )
+  NeoICSerial gps_port;
+  #define USING_GPS_PORT "NeoICSerial"
+
+#elif defined( NeoHWSerial_h )
+  NeoHWSerial & gps_port = NeoSerial1;
+  #define USING_GPS_PORT "NeoSerial1"
+
+#elif defined( UBRR1H )
+  HardwareSerial & gps_port = Serial1;
+  #define USING_GPS_PORT "Serial1"
+
+#else
+  #error Unable to choose serial port for GPS device.  \
+  You must include a serial header before "#include GPSport.h" in the INO!  \
+  AltSoftSerial, gSoftSerial, SoftwareSerial, NeoICSerial and NeoHWSerial are supported.
 #endif
 
 #ifdef SS_TYPE
 
+  //---------------------------------------------------------------
   // The current Board (an Uno?) does not have an extra serial port.
-  // Use SoftwareSerial to listen to the GPS device.
+  // Use a software serial library to listen to the GPS device.
   //   You should expect to get some RX errors, which may
   //   prevent getting fix data every second.  YMMV.
 
@@ -37,7 +63,7 @@
 
   SS_TYPE gps_port( RX_PIN, TX_PIN );
 
-  //  Here's a little preprocessor magic to get a nice string
+  //  A little preprocessor magic to get a nice string
   #define xstr(x) str(x)
   #define str(x) #x
   #define USING_GPS_PORT \
@@ -48,29 +74,12 @@
     //  If you *really* want to do this, or you just happened
     //  to include SoftwareSerial.h for something else, you're
     //  better off *not* including this file.  Just declare
-    //  your own gps_port in you INO file.
+    //  your own gps_port in your INO file.
 
     #error You should be using Serial1 for the GPS device.  \
-        SoftwareSerial is very inefficient and unreliable when \
+        Software serial libraries are very inefficient and unreliable when \
         used for GPS communications!
   #endif
-        
-#else
-
-  // The current Board (a Mega?) has an extra hardware serial port
-  //   on pins 18 (TX1) and 19 (RX1) (probably).  You can change
-  //   this to Serial2 or Serial3, if you like.
-
-  #if defined( NeoHWSerial_h )
-    // App is using replacement NeoHWSerial class
-    NeoHWSerial & gps_port = NeoSerial1;
-    #define USING_GPS_PORT "NeoSerial1"
-  #else
-    // App is using standard IDE HardwareSerial class
-    HardwareSerial & gps_port = Serial1;
-    #define USING_GPS_PORT "Serial1"
-  #endif
-
 
 #endif
 
