@@ -7,7 +7,7 @@
 // This file tries to guess which port a beginner should use.
 //   If you already know which port and which library you want
 //   to use for that port, DON'T INCLUDE THIS FILE.
-//   Just declare it yourself!
+//   Just declare it yourself, and remove this include from your INO!
 //
 // If you include <SoftwareSerial.h>, <gSoftSerial.h>,
 //   <AltSoftSerial.h>, <NeoICSerial>  *OR*  <NeoHWSerial.h> before 
@@ -22,8 +22,8 @@
 #if defined( SoftwareSerial_h )
   #define SS_TYPE SoftwareSerial
 
-#elif defined( gSoftSerial_h )
-  #define SS_TYPE gSoftSerial
+#elif defined( NeoSWSerial_h )
+  #define SS_TYPE NeoSWSerial
 
 #elif defined( AltSoftSerial_h )
   AltSoftSerial gps_port;
@@ -44,7 +44,7 @@
 #else
   #error Unable to choose serial port for GPS device.  \
   You must include a serial header before "#include GPSport.h" in the INO!  \
-  AltSoftSerial, gSoftSerial, SoftwareSerial, NeoICSerial and NeoHWSerial are supported.
+  NeoSWSerial, NeoICSerial, NeoHWSerial, AltSoftSerial and SoftwareSerial are supported.
 #endif
 
 #ifdef SS_TYPE

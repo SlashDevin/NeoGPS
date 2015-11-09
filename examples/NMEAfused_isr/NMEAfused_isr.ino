@@ -10,7 +10,7 @@
 //
 //  Prerequisites:
 //     1) You have completed the requirements for NMEAfused.ino
-//     2) You have installed NeoHWSerial or NeoICSerial.
+//     2) You have installed NeoHWSerial, NeoICSerial or NeoSWSerial.
 //
 //  'NeoSerial' is for trace output to the Serial Monitor window.
 //
