@@ -5,22 +5,22 @@
 //  Program: NMEAfused_isr.ino
 //
 //  Description:  This program is an interrupt-driven version 
-//    of NMEAfused.ino, and uses the special NeoHWSerial replacement for the 
-//    default Arduino HardwareSerial.  (NeoICSerial could also be used)
+//    of NMEAfused.ino, and uses the special replacements for the 
+//    default Arduino HardwareSerial.
+//    NeoHWSerial, NeoSWSerial, or NeoICSerial can also be used.
 //
 //  Prerequisites:
 //     1) You have completed the requirements for NMEAfused.ino
-//     2) You have installed NeoHWSerial, NeoICSerial or NeoSWSerial.
+//     2) You have installed NeoHWSerial.
+//     3) For non-Mega boards, you have installed NeoICSerial or NeoSWSerial.
 //
-//  'Serial' is for trace output to the Serial Monitor window.
+//  'NeoSerial' is for trace output to the Serial Monitor window.
 //
 //======================================================================
 
+#include <NeoHWSerial.h>
 #if defined( UBRR1H )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
+  // Default is to use NeoSerial1 when available.
 #else  
   // Only one serial port is available, uncomment one of the following:
   //#include <NeoICSerial.h>
@@ -30,7 +30,7 @@
 #include "GPSport.h"
 
 #include "Streamers.h"
-Stream & trace = Serial;
+Stream & trace = NeoSerial;
 
 static NMEAGPS  gps; 
 static gps_fix  fused;
@@ -69,7 +69,7 @@ static void doSomeWork()
 //    of time.  Instead, set a flag here and watch for that flag to 
 //    change in loop() and call millis() there.
 
-volatile bool quiet_time = false; // a flag set by the ISR and cleared by GPSloop
+volatile bool fix_complete = false; // a flag set by the ISR and cleared by GPSloop
 
 static void GPSisr( uint8_t c )
 {
@@ -78,7 +78,7 @@ static void GPSisr( uint8_t c )
     fused |= gps.fix();
 
     if (gps.nmeaMessage == LAST_SENTENCE_IN_INTERVAL)
-      quiet_time = true;
+      fix_complete = true;
   }
 
 } // GPSisr
@@ -87,10 +87,11 @@ static void GPSisr( uint8_t c )
 
 static void GPSloop()
 {
-  // Wait for the quiet time to begin...
+  // Wait until all the fix data for this interval arrives.
+  //   This is also the start of the GPS quiet time.
   
-  if (quiet_time) {
-    quiet_time = false;
+  if (fix_complete) {
+    fix_complete = false;
     doSomeWork();
 
     // NOTE: you can use the fused fix data in doSomeWork until the 
@@ -111,20 +112,20 @@ static void GPSloop()
 void setup()
 {
   // Start the normal trace output
-  Serial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
+  NeoSerial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
 
-  Serial.print( F("NMEAfused_isr.INO: started\n") );
-  Serial.print( F("fix object size = ") );
-  Serial.println( sizeof(gps.fix()) );
-  Serial.print( F("NMEAGPS object size = ") );
-  Serial.println( sizeof(gps) );
-  Serial.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  Serial.print( F("GPS quiet time begins after a ") );
-  Serial.print( (const __FlashStringHelper *) gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
-  Serial.println( F(" sentence is received.\n"
+  NeoSerial.print( F("NMEAfused_isr.INO: started\n") );
+  NeoSerial.print( F("fix object size = ") );
+  NeoSerial.println( sizeof(gps.fix()) );
+  NeoSerial.print( F("NMEAGPS object size = ") );
+  NeoSerial.println( sizeof(gps) );
+  NeoSerial.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  NeoSerial.print( F("GPS quiet time begins after a ") );
+  NeoSerial.print( (const __FlashStringHelper *) gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
+  NeoSerial.println( F(" sentence is received.\n"
                    "You should confirm this with NMEAorder.ino") );
   trace_header();
-  Serial.flush();
+  NeoSerial.flush();
   
   // Start the UART for the GPS device
   gps_port.attachInterrupt( GPSisr );
