@@ -1,6 +1,6 @@
 Installing
 ==========
-**1.**  Download the [master ZIP file](https://github.com/SlashDevin/NeoGPS/archive/master.zip).
+**1.**  Download the [master ZIP file](https://github.com/SlashDevin/NeoGPS/archive/master.zip).  For most non-Mega boards, like UNOs, you should also download and install the [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) library.
 
 
 **2.**  Starting with the first example program, `NMEA.ino`, copy this subdirectory into your main Arduino directory:
