@@ -12,15 +12,16 @@
 //     1) You have completed the requirements for NMEAfused.ino
 //     2) You have installed NeoHWSerial, NeoICSerial or NeoSWSerial.
 //
-//  'NeoSerial' is for trace output to the Serial Monitor window.
+//  'Serial' is for trace output to the Serial Monitor window.
 //
 //======================================================================
 
-#include <NeoHWSerial.h>
+//#include <NeoHWSerial.h>
 //#include <NeoICSerial.h>
+#include <NeoSWSerial.h>
 #include "GPSport.h"
 #include "Streamers.h"
-Stream & trace = NeoSerial;
+Stream & trace = Serial;
 
 static NMEAGPS  gps; 
 static gps_fix  fused;
@@ -101,20 +102,20 @@ static void GPSloop()
 void setup()
 {
   // Start the normal trace output
-  NeoSerial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
+  Serial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
 
-  NeoSerial.print( F("NMEAfused_isr.INO: started\n") );
-  NeoSerial.print( F("fix object size = ") );
-  NeoSerial.println( sizeof(gps.fix()) );
-  NeoSerial.print( F("NMEAGPS object size = ") );
-  NeoSerial.println( sizeof(gps) );
-  NeoSerial.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  NeoSerial.print( F("GPS quiet time begins after a ") );
-  NeoSerial.print( (const __FlashStringHelper *) gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
-  NeoSerial.println( F(" sentence is received.\n"
+  Serial.print( F("NMEAfused_isr.INO: started\n") );
+  Serial.print( F("fix object size = ") );
+  Serial.println( sizeof(gps.fix()) );
+  Serial.print( F("NMEAGPS object size = ") );
+  Serial.println( sizeof(gps) );
+  Serial.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  Serial.print( F("GPS quiet time begins after a ") );
+  Serial.print( (const __FlashStringHelper *) gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
+  Serial.println( F(" sentence is received.\n"
                    "You should confirm this with NMEAorder.ino") );
   trace_header();
-  NeoSerial.flush();
+  Serial.flush();
   
   // Start the UART for the GPS device
   gps_port.attachInterrupt( GPSisr );

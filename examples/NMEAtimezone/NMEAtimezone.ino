@@ -20,10 +20,10 @@
 //
 //======================================================================
 
-#ifndef UBRR1H
-  // No extra serial ports, must use SoftwareSerial  :(
-  #include <SoftwareSerial.h>
-#endif
+//#include <NeoHWSerial.h>
+//#include <NeoICSerial.h>
+#include <NeoSWSerial.h>
+//#include <SoftwareSerial.h> /* NOT RECOMMENDED */
 #include "GPSport.h"
 
 static NMEAGPS  gps         ; // This parses received characters

@@ -32,7 +32,26 @@ This is different from most libraries, which are usually copied to the `Arduino/
 
 **4.** Review the example `GPSport.h` to confirm that the correct serial port will be used for your GPS device.
 
-By default, Mega Boards will use `Serial1`.  For all other Boards, a `SoftwareSerial` instance will be created on pins 3 and 4.   Modify these defaults if necessary, or if you know what serial port to use, you can declare it in `NMEA.ino`.  Be sure to delete the line `#include "GPSport.h"`, and delete the file `GPSport.h`.
+By default, Mega Boards will use `Serial1`.  If you have installed the [NeoHWSerial](https://github.com/SlashDevin/NeoHWSerial) library and included the header before `GPSport.h`, then `NeoSerial1` will be used.
+
+For all other Boards, a software serial instance will be created on pins 3 and 4.   The examples can use any of the following:
+
+* [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) (default, works on most pins)
+* [NeoICSerial](https://github.com/SlashDevin/NeoICSerial) (only works on one specific Input Capture pin)
+* [AltSoftSerial](https://github.com/PaulStoffregen/AltSoftSerial) (only works on one specific Input Capture pin)
+* SoftwareSerial (built-in, not recommended)
+
+To select one of the non-default types, simply include their header before including `GPSport.h`:
+
+    //#include <NeoHWSerial.h>
+    #include <NeoICSerial.h>
+    //#include <NeoSWSerial.h>
+    //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
+    #include "GPSport.h"
+
+The above will cause `GPSport.h` to declare `gps_port` using the class `NeoICSerial`.
+
+Modify these defaults if necessary, or if you know what serial port to use, you can declare it in `NMEA.ino`.  Be sure to delete the line `#include "GPSport.h"`, and delete the file `GPSport.h`.
 
 
 **5.**  Start the IDE by double-clicking on the `NMEA.INO` file and upload the example sketch.
@@ -48,7 +67,11 @@ Looking for GPS device on Serial1
 GPS quiet time begins after a GLL sentence is received.
 You should confirm this with NMEAorder.ino
 ```
-If the GPS device is correctly wired and running at the specified baud rate, you should see the header for the GPS data fields, and a few messages that report which NMEA sentences are being received.  Depending on when the Arduino resets within the GPS reporting interval, and your specific GPS device, you may see different sentence reports:
+If the GPS device is correctly wired but running at the wrong baud rate, you may see:
+
+    Invalid data received.  Use NMEAdiagnostic.INO to verify baud rate.
+
+If it is running at the specified baud rate, you should see the header for the GPS data fields, and a few messages that report which NMEA sentences are being received.  Depending on when the Arduino resets within the GPS reporting interval, and your specific GPS device, you may see different sentence reports:
 ```
 Status,UTC Date/Time,Lat,Lon,Hdg,Spd,Alt,HDOP,Sats,Rx ok,Rx err,Rx chars,
 Received RMC...

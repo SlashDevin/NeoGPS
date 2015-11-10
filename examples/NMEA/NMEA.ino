@@ -9,6 +9,9 @@
 //     disabled, or all 'gps_fix' members are disabled, no information 
 //     will be copied or printed.
 //
+//     It also does a little diagnosis if the baud rate is wrong or 
+//     the wrong LAST_SENTENCE_IN_INTERVAL is used.
+//
 //  Prerequisites:
 //     1) Your GPS device has been correctly powered.
 //          Be careful when connecting 3.3V devices.
@@ -34,10 +37,10 @@
 //          or
 //    Search and replace all occurrences of "gps_port" with your port's name.
 
-#ifndef UBRR1H
-  // No extra serial ports, must use SoftwareSerial  :(
-  #include <SoftwareSerial.h>
-#endif
+//#include <NeoHWSerial.h>
+//#include <NeoICSerial.h>
+#include <NeoSWSerial.h>
+//#include <SoftwareSerial.h> /* NOT RECOMMENDED */
 #include "GPSport.h"
 
 //------------------------------------------------------------
