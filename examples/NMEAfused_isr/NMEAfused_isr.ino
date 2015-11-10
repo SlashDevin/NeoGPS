@@ -16,10 +16,19 @@
 //
 //======================================================================
 
-//#include <NeoHWSerial.h>
-//#include <NeoICSerial.h>
-#include <NeoSWSerial.h>
+#if defined( UBRR1H )
+  // Default is to use Serial1 when available.  You could also
+  // use NeoHWSerial, especially if you want to handle GPS characters
+  // in an Interrupt Service Routine.
+  //#include <NeoHWSerial.h>
+#else  
+  // Only one serial port is available, uncomment one of the following:
+  //#include <NeoICSerial.h>
+  #include <NeoSWSerial.h>
+  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
+#endif
 #include "GPSport.h"
+
 #include "Streamers.h"
 Stream & trace = Serial;
 

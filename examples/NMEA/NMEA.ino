@@ -28,19 +28,29 @@
 //======================================================================
 
 //-------------------------------------------------------------------------
-//  This include file will choose a default serial port for the GPS device.
-//    If you know which serial port you want to use, declare it here:
+//  The GPSport.h include file tries to choose a default serial port 
+//  for the GPS device.  If you know which serial port you want to use,
+//  declare it here:
 //
 //    SoftwareSerial gps_port( rxpin, txpin ); // to GPS TX, RX
 //          or
 //    HardwareSerial & gps_port = Serial2; // an alias
 //          or
 //    Search and replace all occurrences of "gps_port" with your port's name.
+//
+//  See Installation instructions for additional information.
 
-//#include <NeoHWSerial.h>
-//#include <NeoICSerial.h>
-#include <NeoSWSerial.h>
-//#include <SoftwareSerial.h> /* NOT RECOMMENDED */
+#if defined( UBRR1H )
+  // Default is to use Serial1 when available.  You could also
+  // use NeoHWSerial, especially if you want to handle GPS characters
+  // in an Interrupt Service Routine.
+  //#include <NeoHWSerial.h>
+#else  
+  // Only one serial port is available, uncomment one of the following:
+  //#include <NeoICSerial.h>
+  #include <NeoSWSerial.h>
+  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
+#endif
 #include "GPSport.h"
 
 //------------------------------------------------------------
