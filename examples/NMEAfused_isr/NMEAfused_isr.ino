@@ -18,19 +18,28 @@
 //
 //======================================================================
 
-#include <NeoHWSerial.h>
 #if defined( UBRR1H )
   // Default is to use NeoSerial1 when available.
+  //#include <NeoHWSerial.h>
+  // NOTE: There is an issue with IDEs before 1.6.6.  The above include 
+  // must be commented out for non-Mega boards, even though it is
+  // conditionally included.  If you have a Mega board, uncomment 
+  // the above include.
 #else  
   // Only one serial port is available, uncomment one of the following:
   //#include <NeoICSerial.h>
   #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
 #endif
 #include "GPSport.h"
 
 #include "Streamers.h"
-Stream & trace = NeoSerial;
+#ifdef NeoHWSerial_h
+  Stream & trace = NeoSerial;
+  #define SERIAL NeoSerial
+#else
+  Stream & trace = Serial;
+  #define SERIAL Serial
+#endif
 
 static NMEAGPS  gps; 
 static gps_fix  fused;
@@ -104,7 +113,6 @@ static void GPSloop()
     // a private copy *now*:
     //     safe_fix = fused;
   }
-
 } // GPSloop
 
 //--------------------------
@@ -112,20 +120,20 @@ static void GPSloop()
 void setup()
 {
   // Start the normal trace output
-  NeoSerial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
+  SERIAL.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
 
-  NeoSerial.print( F("NMEAfused_isr.INO: started\n") );
-  NeoSerial.print( F("fix object size = ") );
-  NeoSerial.println( sizeof(gps.fix()) );
-  NeoSerial.print( F("NMEAGPS object size = ") );
-  NeoSerial.println( sizeof(gps) );
-  NeoSerial.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  NeoSerial.print( F("GPS quiet time begins after a ") );
-  NeoSerial.print( (const __FlashStringHelper *) gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
-  NeoSerial.println( F(" sentence is received.\n"
+  SERIAL.print( F("NMEAfused_isr.INO: started\n") );
+  SERIAL.print( F("fix object size = ") );
+  SERIAL.println( sizeof(gps.fix()) );
+  SERIAL.print( F("NMEAGPS object size = ") );
+  SERIAL.println( sizeof(gps) );
+  SERIAL.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  SERIAL.print( F("GPS quiet time begins after a ") );
+  SERIAL.print( (const __FlashStringHelper *) gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
+  SERIAL.println( F(" sentence is received.\n"
                    "You should confirm this with NMEAorder.ino") );
   trace_header();
-  NeoSerial.flush();
+  SERIAL.flush();
   
   // Start the UART for the GPS device
   gps_port.attachInterrupt( GPSisr );

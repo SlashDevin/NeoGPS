@@ -56,10 +56,14 @@
   //   prevent getting fix data every second.  YMMV.
 
   // Arduino RX pin number that is connected to the GPS TX pin
-  #define RX_PIN 4
+  #ifndef RX_PIN
+    #define RX_PIN 4
+  #endif
 
   // Arduino TX pin number that is connected to the GPS RX pin
-  #define TX_PIN 3
+  #ifndef TX_PIN
+    #define TX_PIN 3
+  #endif
 
   SS_TYPE gps_port( RX_PIN, TX_PIN );
 
