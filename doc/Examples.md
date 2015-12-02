@@ -10,7 +10,7 @@ In an attempt to be reusable in a variety of different programming styles, this 
 * multiple protocols from same device
 
 These example programs demonstrate how to use the classes in the different programming styles:
-* [NMEA](/examples/NMEA/NMEA.ino) - sync, single fix, standard NMEA only
+* [NMEA](/examples/NMEA/NMEA.ino) - sync, single fix, standard NMEA only (RMC sentence only)
 * [NMEAblink](/examples/NMEAblink/NMEAblink.ino) - sync, single fix, standard NMEA only, minimal example, only blinks LED
 * [NMEAfused](/examples/NMEAfused/NMEAfused.ino) - sync, fused fix, standard NMEA only
 * [NMEAfused_isr](/examples/NMEAfused_isr/NMEAfused_isr.ino) - **async**, fused fix, standard NMEA only
