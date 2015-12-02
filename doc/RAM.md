@@ -3,7 +3,7 @@ RAM requirements
 
 ####**NeoGPS** requires **72% to 96% _less_ RAM, saving 140 to 1100 bytes.**
 
-Because you can select what data members are stored, the RAM savings depends on the [configuration](doc/Configurations.md):
+Because you can select what data members are stored, the RAM savings depends on the [configuration](Configurations.md):
 
 <table>
 <tr><td>Configuration</td><td>NeoGPS<br>Size</td><td>TinyGPS<br>Size (% smaller)</td><td>TinyGPS++<br>Size (% smaller)</td><td>Adafruit_GPS<br>Size (% smaller)</td></tr>
