@@ -137,11 +137,17 @@ Fortunately, there are two ways to work around this:
 
 ####**1)** Use an interrupt-driven approach
 
-For boards that have two hardware serial ports (e.g. a Mega2560), or configurations where `Serial` is connected to the GPS device (i.e., instead of `SoftwareSerial`), you can `decode` the received data in an **I**nterrupt **S**ervice **R**outine.   The example program [NMEAfused_isr.INO](/examples/NMEAfused_isr/NMEAfused_isr.ino) shows how to handle the received GPS characters *during* the RX interrupt.  This program uses the replacement library, [NeoHWSerial](https://github.com/SlashDevin/NeoHWSerial), to attach an interrupt handler to a `HardwareSerial` instance, like `Serial1`.
+You can `decode` the received data in an **I**nterrupt **S**ervice **R**outine.   The example program [NMEAfused_isr.INO](/examples/NMEAfused_isr/NMEAfused_isr.ino) shows how to handle the received GPS characters *during* the RX interrupt.  This program uses one of the replacement **NeoXXSerial** libraries to attach an interrupt handler to the GPS serial port.
 
 When a character is received, the ISR is called, where it is immediately decoded.  Normally, the character is stored in an input buffer, and you have to call `available()` and then `read()` to retrieve the character.  Handling it in the ISR totally avoids having to continuously call `Serial1.read()`, and is much more efficient.  Your program does not have to be structured around the GPS quiet time.
 
 While it is considered a more advanced technique, it is similar to the existing Arduino [attachInterrupt](https://www.arduino.cc/en/Reference/AttachInterrupt) function for detecting when pin change.
+
+Which **NeoXXLibrary** should you use?
+
+* If `Serial` or `Serial1` is connected to the GPS device, you can use [NeoHWSerial](https://github.com/SlashDevin/NeoHWSerial).
+* If the Input Capture pin can be connected to the GPS device, as required for AltSoftSerial, you can use [NeoICSerial](https://github.com/SlashDevin/NeoICSerial).
+* If neither of those connections is possible, you can [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) on almost any pair of digital pins.  It only supports a few baud rates, though.
 
 ####**2)** Restructure `loop()` to do time-consuming operations during the GPS [quiet time](#quiet-time-interval).
 
