@@ -4,8 +4,8 @@ Rather than holding onto individual fields, the concept of a **fix** is used to 
 This also facilitates the merging of separately received packets into a fused or coherent position.  Satellite-specific information, the latest received message type, talker IDs and manufacturer IDs are not part of a `fix`; they are stored in the main GPS object.
 
 The nested structures that your program can access are:
-* the main `NMEAGPS gps` variable you declare in your sketch (see [Usage](Data%20Model.md#usage) below), which contains
-    * a gps_fix member called `gps.fix()`, which contains
+* the main `NMEAGPS gps` variable you declare in your sketch (see [NMEAGPS.h](/NMEAGPS.h) and [Usage](Data%20Model.md#usage) below), which contains
+    * a gps_fix member called `gps.fix()` (see [GPS_fix.h](/GPS_fix.h)), which contains
         * a status
         * a latitude and longitude
         * an altitude
@@ -13,7 +13,7 @@ The nested structures that your program can access are:
         * HDOP, VDOP and PDOP
         * latitude, longitude and altitude error in centimeters
         * a satellite count
-        * a `NeoGPS::time_t` structure called `dateTime`, which contains
+        * a `NeoGPS::time_t` structure called `dateTime` (see [Time.h](/Time.h)), which contains
             *  year, month, day-of-month, hours, minutes, and seconds
         * centiseconds
         * a collection of `valid` flags for each of the above members
