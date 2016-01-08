@@ -480,12 +480,13 @@ bool NMEAGPS::parseGGA( char chr )
 {
   #ifdef NMEAGPS_PARSE_GGA
     switch (fieldIndex) {
-        case 1: return parseTime( chr );
+        case  1: return parseTime( chr );
         PARSE_LOC(2);
-        case 6: return parseFix( chr );
-        case 7: return parseSatellites( chr );
-        case 8: return parseHDOP( chr );
-        case 9: return parseAlt( chr );
+        case  6: return parseFix( chr );
+        case  7: return parseSatellites( chr );
+        case  8: return parseHDOP( chr );
+        case  9: return parseAlt( chr );
+        case 11: return parseGeoidHeight( chr );
     }
   #endif
 
@@ -1051,6 +1052,21 @@ bool NMEAGPS::parseAlt(char chr )
   return true;
 
 } // parseAlt
+
+//---------------------------------
+
+bool NMEAGPS::parseGeoidHeight( char chr )
+{
+  #ifdef GPS_FIX_GEOID_HEIGHT
+    if (chrCount == 0)
+      NMEAGPS_INVALIDATE( geoidHeight );
+    if (parseFloat( m_fix.geoidHt, chr, 2 ))
+      m_fix.valid.geoidHeight = (chrCount != 0);
+  #endif
+
+  return true;
+
+} // parseGeoidHeight
 
 //---------------------------------
 

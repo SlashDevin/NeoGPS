@@ -85,6 +85,10 @@ const char gps_fix_header[] __PROGMEM =
     "Alt err,"
   #endif
 
+  #if defined(GPS_FIX_GEOID_HEIGHT)
+    "Geoid Ht,"
+  #endif
+
   #if defined(GPS_FIX_SATELLITES)
     "Sats,"
   #endif
@@ -184,6 +188,12 @@ Stream & operator <<( Stream &outs, const gps_fix &fix )
       outs << ',';
     #endif
 
+    #ifdef GPS_FIX_GEOID_HEIGHT
+      if (fix.valid.geoidHeight)
+        outs.print( fix.geoidHeight(), 2 );
+      outs << ',';
+    #endif
+
   #else
 
     // not USE_FLOAT ----------------------
@@ -243,6 +253,12 @@ Stream & operator <<( Stream &outs, const gps_fix &fix )
       outs << ',';
     #endif
 
+    #ifdef GPS_FIX_GEOID_HEIGHT
+      if (fix.valid.geoidHeight)
+        outs << fix.geoidHeight_cm();
+      outs << ',';
+    #endif
+    
   #endif
 
   #ifdef GPS_FIX_SATELLITES

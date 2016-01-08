@@ -29,5 +29,6 @@
 //#define GPS_FIX_LAT_ERR
 //#define GPS_FIX_LON_ERR
 //#define GPS_FIX_ALT_ERR
+//#define GPS_FIX_GEOID_HEIGHT
 
 #endif

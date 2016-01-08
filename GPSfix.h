@@ -163,6 +163,15 @@ public:
   #endif
 
   //--------------------------------------------------------
+  // Height of the geoid above the WGS84 ellipsoid
+  #ifdef GPS_FIX_GEOID_HEIGHT
+    whole_frac    geoidHt; // .01 meters
+
+    int32_t geoidHeight_cm() const { return geoidHt.int32_00(); };
+    float   geoidHeight   () const { return geoidHt.float_00(); };
+  #endif
+
+  //--------------------------------------------------------
   // Number of satellites used to calculate a fix.
   #ifdef GPS_FIX_SATELLITES
     uint8_t   satellites;
@@ -257,6 +266,10 @@ public:
       bool alt_err NEOGPS_BF(1);
     #endif
 
+    #ifdef GPS_FIX_GEOID_HEIGHT
+      bool geoidHeight NEOGPS_BF(1);
+    #endif
+
     // Initialize all flags to false
     void init()
       {
@@ -315,6 +328,10 @@ public:
     #endif
     #ifdef GPS_FIX_ALT_ERR
       alt_err_cm = 0;
+    #endif
+
+    #ifdef GPS_FIX_GEOID_HEIGHT
+      geoidHt.init();
     #endif
 
     #ifdef GPS_FIX_SATELLITES
@@ -419,6 +436,11 @@ public:
     #ifdef GPS_FIX_ALT_ERR
       if (r.valid.alt_err)
         alt_err_cm = r.alt_err_cm;
+    #endif
+
+    #ifdef GPS_FIX_ALTITUDE
+      if (r.valid.geoidHeight)
+        geoidHt = r.geoidHt;
     #endif
 
     // Update all the valid flags

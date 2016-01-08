@@ -307,7 +307,8 @@ protected:
     bool parseEW( char chr );
     bool parseSpeed( char chr );
     bool parseHeading( char chr );
-    bool parseAlt(char chr );
+    bool parseAlt( char chr );
+    bool parseGeoidHeight( char chr );
     bool parseHDOP( char chr );
     bool parseVDOP( char chr );
     bool parsePDOP( char chr );
