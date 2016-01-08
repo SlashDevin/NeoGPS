@@ -8,10 +8,11 @@ The nested structures that your program can access are:
     * a gps_fix member called `gps.fix()` (see [GPS_fix.h](/GPS_fix.h)), which contains
         * a status
         * a latitude and longitude
-        * an altitude
+        * an altitude (above ellipsoid, not Mean Sea Level)
         * a speed and heading
         * HDOP, VDOP and PDOP
         * latitude, longitude and altitude error in centimeters
+        * geoid height above ellipsoid (see [here](https://en.wikipedia.org/wiki/Geoid) for description)
         * a satellite count
         * a `NeoGPS::time_t` structure called `dateTime` (see [Time.h](/Time.h)), which contains
             *  year, month, day-of-month, hours, minutes, and seconds
