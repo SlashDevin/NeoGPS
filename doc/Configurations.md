@@ -22,6 +22,7 @@ The following configuration items are near the top of GPSfix_cfg.h:
 #define GPS_FIX_LAT_ERR
 #define GPS_FIX_LON_ERR
 #define GPS_FIX_ALT_ERR
+#define GPS_FIX_GEOID_HEIGHT
 ```
 ========================
 #class NMEAGPS
