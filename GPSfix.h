@@ -438,7 +438,7 @@ public:
         alt_err_cm = r.alt_err_cm;
     #endif
 
-    #ifdef GPS_FIX_ALTITUDE
+    #ifdef GPS_FIX_GEOID_HEIGHT
       if (r.valid.geoidHeight)
         geoidHt = r.geoidHt;
     #endif
