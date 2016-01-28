@@ -1,14 +1,22 @@
 Installing
 ==========
-**1.**  Download the [master ZIP file](https://github.com/SlashDevin/NeoGPS/archive/master.zip).  For most non-Mega boards, like UNOs, you should also download and install the [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) library.
+**1.**  Download the [master ZIP file](https://github.com/SlashDevin/NeoGPS/archive/master.zip).
 
+You can extract/unzip the files for use in step 3, but \*\***DO NOT**\*\* copy these files into your `Arduino/Libraries` folder!  This is different from most libraries.
+
+Unfortunately, the sad state of Arduino library management requires you to copy the NeoGPS files into *each* example subdirectory that you would like to try.  :(  Fortunately, this will allow you to have a different configuration for each example and sketch that you write. :)
+
+For most non-Mega boards (e.g., UNOs), you should also download and install the [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) library.  NeoSWSerial files should be copied to your `Arduino/Libraries` folder, like most Arduino libraries.
+<br>
+<br>
 
 **2.**  Starting with the first example program, `NMEA.ino`, copy this subdirectory into your main Arduino directory:
 ```
 NeoGPS-master/examples/NMEA  ->  Arduino
 ```
 This creates an `Arduino/NMEA` sketch subdirectory containing `NMEA.INO`.
-
+<br>
+<br>
 
 **3.**  Copy all the .H and .CPP files from the top directory of NeoGPS-master into `Arduino/NMEA`.  Your application subdirectory should now contain these files:
 ```
@@ -27,8 +35,8 @@ This creates an `Arduino/NMEA` sketch subdirectory containing `NMEA.INO`.
     Time.h
 ```
 You do not need the files from any other subdirectories, like **ublox**.  Most of the example programs only use these generic NMEA files.
-
-This is different from most libraries, which are usually copied to the `Arduino/Libraries` subdirectory.  Unfortunately, the sad state of Arduino library management requires you to copy the NeoGPS files into *each* example subdirectory that you would like to try.  :(  Fortunately, this will allow you to have a different configuration for each example. :)
+<br>
+<br>
 
 **4.** Review the example `GPSport.h` to confirm that the correct serial port will be used for your GPS device.
 
@@ -52,8 +60,8 @@ To select one of the non-default types, simply include their header before inclu
 The above will cause `GPSport.h` to declare `gps_port` using the class `NeoICSerial`.
 
 Modify these defaults if necessary, or if you know what serial port to use, you can declare it in `NMEA.ino`.  Be sure to delete the line `#include "GPSport.h"`, and delete the file `GPSport.h`.
-
-
+<br>
+<br>
 **5.**  Start the IDE by double-clicking on the `NMEA.INO` file and upload the example sketch.
 
 **Note:**  If the sketch does not compile, please see the [Troubleshooting](Troubleshooting.md#configuration-errors) section.
