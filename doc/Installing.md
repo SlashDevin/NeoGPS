@@ -6,7 +6,7 @@ You can extract/unzip the files for use in step 3, but \*\***DO NOT**\*\* copy t
 
 Unfortunately, the sad state of Arduino library management requires you to copy the NeoGPS files into *each* example subdirectory that you would like to try.  :(  Fortunately, this will allow you to have a different configuration for each example and sketch that you write. :)
 
-For most non-Mega boards (e.g., UNOs), you should also download and install the [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) library.  NeoSWSerial files should be copied to your `Arduino/Libraries` folder, like most Arduino libraries.
+For most non-Mega boards (e.g., UNOs) and GPS devices that run at 9600, 19200 or 38400 baud, you should also download and install the [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) library.  NeoSWSerial files should be copied to your `Arduino/Libraries` folder, like most Arduino libraries.
 <br>
 <br>
 
@@ -42,7 +42,13 @@ You do not need the files from any other subdirectories, like **ublox**.  Most o
 
 By default, Mega Boards will use `Serial1`.  If you have installed the [NeoHWSerial](https://github.com/SlashDevin/NeoHWSerial) library and included the header before `GPSport.h`, then `NeoSerial1` will be used.
 
-For all other Boards, a software serial instance will be created on pins 3 and 4.   The examples can use any of the following:
+For all other Boards, a software serial instance will be created on pins 3 and 4.  If your GPS is on different pins, put these `#define` lines in the INO, before the `#include "GPSport.h"` line:
+
+    #define RX_PIN 2
+    #define TX_PIN 3
+    #include "GPSport.h"
+
+All the example programs can use any of the following serial port types:
 
 * [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) (default, works on most pins)
 * [NeoICSerial](https://github.com/SlashDevin/NeoICSerial) (only works on one specific Input Capture pin)
