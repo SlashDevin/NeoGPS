@@ -8,7 +8,7 @@
 // However, the sentence type will still be recognized by /decode/ and 
 // stored in member /nmeaMessage/.  No valid flags would be available.
 //
-// Only RMC and ZDA contain date information.  Other
+// FYI: Only RMC and ZDA contain date information.  Other
 // sentences contain time information.  Both date and time are 
 // required if you will be doing time_t-to-clock_t operations.
 

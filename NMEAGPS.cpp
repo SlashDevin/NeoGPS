@@ -17,7 +17,6 @@
  */
 
 #include "NMEAGPS.h"
-#include "Streamers.h"
 
 #include <Stream.h>
 
@@ -250,7 +249,7 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
 }
 
 /*
- * NMEA Sentence strings
+ * NMEA Sentence strings (alphabetical)
  */
 static const char gga[] __PROGMEM =  "GGA";
 static const char gll[] __PROGMEM =  "GLL";
@@ -347,14 +346,14 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
     bool     check_this_table = true;
     uint8_t  entry;
 
-    if (nmeaMessage == NMEA_UNKNOWN)
+    if (nmeaMessage == NMEA_UNKNOWN) {
       // We're just starting
       entry = 0;
 
-    else if ((msg_offset <= nmeaMessage) && (nmeaMessage < msg_offset+table_size))
+    } else if ((msg_offset <= nmeaMessage) && (nmeaMessage < msg_offset+table_size)) {
       // In range of this table, pick up where we left off
       entry = nmeaMessage - msg_offset;
-
+    }
     #ifdef NMEAGPS_DERIVED_TYPES
       else
         check_this_table = false;
@@ -375,9 +374,10 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
           break;
         }
 
-        if (c < rc)
+        if (c < rc) {
           // Alphabetical rejection, check next table
           break;
+        }
 
         // Ok to check another entry in this table
         uint8_t next_msg = i+1;
@@ -409,9 +409,10 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
           // No more tables, chr is invalid.
       #endif
       
-    } else
+    } else {
       //  This entry is good so far.
       nmeaMessage = (nmea_msg_t) (entry + msg_offset);
+    }
 
     return res;
   }
