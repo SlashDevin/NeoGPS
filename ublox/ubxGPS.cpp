@@ -548,12 +548,16 @@ bool ubloxGPS::parseField( char c )
                     ((uint8_t *)&m_fix.hdg) [ chrCount-24 ] = chr;
                     if (chrCount == 27) {
                       gps_fix::whole_frac *hdgp = &m_fix.hdg;
-                      uint32_t ui = (*((uint32_t *)hdgp) * 36UL);
+                      uint32_t ui = *((uint32_t *)hdgp);
+//trace << F("hdg ");
+//trace << ui;
+//trace << F("E-5, ");
 
                       m_fix.hdg.whole = ui / 100000UL;
-                      m_fix.hdg.frac  = (ui - (m_fix.hdg.whole * 100000UL))/1000UL;
+                      ui -= ((uint32_t)m_fix.hdg.whole) * 100000UL;
+                      m_fix.hdg.frac  = (ui/1000UL);  // hundredths
                       m_fix.valid.heading = true;
-    //trace << F(" hdg = ") << m_fix.heading_cd();
+//trace << m_fix.heading_cd() << F("E-2 ");
                     }
                     break;
                 #endif
