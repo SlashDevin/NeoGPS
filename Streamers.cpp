@@ -147,7 +147,7 @@ Stream & operator <<( Stream &outs, const gps_fix &fix )
     #endif
     #ifdef GPS_FIX_SPEED
       if (fix.valid.speed)
-        outs.print( fix.speed(), 3 );
+        outs.print( fix.speed(), 3 ); // knots
       outs << ',';
     #endif
     #ifdef GPS_FIX_ALTITUDE

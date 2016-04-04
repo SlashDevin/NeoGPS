@@ -114,8 +114,18 @@ public:
   #ifdef GPS_FIX_SPEED
     whole_frac    spd; // .001 nautical miles per hour
 
-    uint32_t speed_mkn() const { return spd.int32_000(); };
-    float    speed    () const { return spd.float_000(); };
+    uint32_t speed_mkn () const { return spd.int32_000(); };
+    float    speed     () const { return spd.float_000(); };
+
+    // Utilities for speed in other units
+    static const float KM_PER_NMI = 1.852;
+    float    speed_kph () const { return speed() * KM_PER_NMI; };
+
+    static const uint16_t M_PER_NMI = 1852;
+    uint32_t speed_metersph() const { return (spd.whole * M_PER_NMI) + (spd.frac * M_PER_NMI)/1000; };
+
+    static const float MI_PER_NMI = 1.150779;
+    float  speed_mph() const { return speed() * MI_PER_NMI; };
   #endif
 
   #ifdef GPS_FIX_HEADING

@@ -218,15 +218,41 @@ bool ubloxGPS::wait_for_ack()
 {
   m_device->flush();
 
-  uint16_t sent = 0;
-  uint16_t idle_time = 0;
+  uint16_t sent              = 0;
+  uint16_t idle_time         = 0;
+  uint16_t removed_idle_time = 0;
 
   do {
     if (receiving()) {
+      uint8_t rx_chars = m_device->available();
       wait_for_idle();
       sent = millis();
+      
+      if (rx_chars) {
+        //  If chars were received, decrease idle_time by the
+        //    number of character times (TODO: use current baud rate)
+
+        const uint16_t ms_per_charE5 = ((10UL * 1000) << 5) / 9600UL;
+        uint16_t rx_char_time = (rx_chars * ms_per_charE5) >> 5;
+        if (idle_time > rx_char_time) {
+          idle_time -= rx_char_time;
+          removed_idle_time += rx_char_time;
+        } else {
+          removed_idle_time += idle_time;
+          idle_time = 0;
+        }
+      }
+
     } else if (!waiting()) {
+      //Serial.print( F("a/r/n=") );
+      //Serial.print( ack_received );
+      //Serial.print( reply_received );
+      //Serial.print( nak_received );
+      //Serial.print( F(" -") );
+      //Serial.println( removed_idle_time );
+
       return ack_received || reply_received || !nak_received;
+
     } else {
       // Idle, accumulate time
       uint16_t ms = millis();
@@ -235,7 +261,10 @@ bool ubloxGPS::wait_for_ack()
       sent = ms;
       run();
     }
-  } while (idle_time < 100);
+  } while ((idle_time < 250) && ((removed_idle_time+idle_time) < 1000));
+
+  //Serial.print( F("! -") );
+  //Serial.println( removed_idle_time );
 
   return false;
 }
@@ -475,17 +504,39 @@ bool ubloxGPS::parseField( char c )
                   break;
 
                 #ifdef GPS_FIX_SPEED
+                  //  Use the speed_3D field at offset 20
                   case 20:
                     NMEAGPS_INVALIDATE( speed );
                   case 21: case 22: case 23:
+                    // Temporarily store the 32-bit cm/s in the spd member
                     ((uint8_t *)&m_fix.spd) [ chrCount-20 ] = chr;
+
                     if (chrCount == 23) {
                       gps_fix::whole_frac *spdp = &m_fix.spd;
-                      uint32_t ui = (*((uint32_t *)spdp) * 9UL);
-                      m_fix.spd.whole = ui/250UL; // kph = cm/s * 3600/100000
-                      m_fix.spd.frac = ui - (m_fix.spd.whole * 1000UL);
+//trace << F("spd = ");
+//trace << (*((uint32_t *)spdp));
+//trace << F(" cm/s, ");
+                      // Convert the 32-bit cm/s to nautical miles per hour
+                      //   (actually, 1000nmi/h limit is 51444, a 16-bit cm/s)
+                      // Conversion factor:
+                      //     = cm/s * (3600s/1hr) * (1m/100cm) * (1nmi/1852m)
+                      //     = cm/s * 36/1852
+                      //     = cm/s * 0.0194384449
+                      //   Fixed point math:
+                      //     0.0194384449 * 2^19 = 10191.343 (14 bits)
+
+                      const uint32_t FACTOR_E19 = 10191UL;
+                      uint32_t nmiph_E19 = (*((uint32_t *)spdp) * FACTOR_E19);
+                      m_fix.spd.whole = (nmiph_E19 >> 19);
+
+                      // remove whole part, leaving fractional part
+                      nmiph_E19 -= ((uint32_t)m_fix.spd.whole) << 19;
+
+                      //m_fix.spd.frac = (nmiph_E19 * 1000UL) >> 19;
+                      m_fix.spd.frac   = (nmiph_E19 * 125)    >> 16;
+
                       m_fix.valid.speed = true;
-    //trace << F("spd = ") << m_fix.speed_mkn();
+//trace << m_fix.speed_mkn() << F(" nmi/h ");
                     }
                     break;
                 #endif
