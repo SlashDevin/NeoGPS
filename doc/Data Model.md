@@ -5,7 +5,7 @@ This also facilitates the merging of separately received packets into a fused or
 
 The nested structures that your program can access are:
 * the main `NMEAGPS gps` variable you declare in your sketch (see [NMEAGPS.h](/NMEAGPS.h) and [Usage](Data%20Model.md#usage) below), which contains
-    * a gps_fix member called `gps.fix()` (see [GPS_fix.h](/GPS_fix.h)), which contains
+    * a gps_fix member called `gps.fix()` (see [GPSfix.h](/GPSfix.h#L39)), which contains
         * a status
         * a latitude and longitude
         * an altitude (above ellipsoid, not Mean Sea Level)
