@@ -105,7 +105,9 @@ As `gps` decodes those bytes, it will gradually fill out the pieces of its own `
 ```
 However, there are two things to know *before* accessing the fix data:
 
-(1) You must wait for the sentence to be completely decoded.  As bytes are received, they will gradually fill out a `gps.fix()` member.  For example, `gps.fix().speed` may be half-formed.  You can either do all your accessing after `gps.decode()` returns `DECODE_COMPLETED`:
+###(1) You must wait for the sentence to be completely decoded.
+
+As bytes are received, they will gradually fill out a `gps.fix()` member.  For example, `gps.fix().speed` may be half-formed.  You can either do all your accessing after `gps.decode()` returns `DECODE_COMPLETED`:
 ```
 void loop()
 {
@@ -145,7 +147,9 @@ void loop()
 ```
 This technique is used in the example program, [NMEA.ino](/examples/NMEA/NMEA.ino#L96).
 
-(2) You must check that the `fix` piece is valid.  Remember that the GPS device may *not* have a fix: it may not know the lat/long yet.  To check whether the a piece of fix data has been received, test the corresponding `valid` flag.  For example, to see if lat/long data has been received yet:
+###(2) You must check that the `fix` piece is valid.
+
+Remember that the GPS device may *not* have a fix: it may not know the lat/long yet.  To check whether the a piece of fix data has been received, test the corresponding `valid` flag.  For example, to see if lat/long data has been received yet:
 ```
   if (my_fix.valid.location) {
     Serial.print( my_fix.latitude() );
