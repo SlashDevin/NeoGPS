@@ -109,7 +109,7 @@ When enabled, `decode` will perform implicit merging of fix data as it is parsed
 #define NMEAGPS_ACCUMULATE_FIX
 ```
 
-Implicit merging can eliminate the need for a second `fix` (i.e., reduced RAM), but it could prevent coherency.  See [Data Model - Merging](Data%20Model.md#Merging) for a discussion of the different types of merging.
+Implicit merging can eliminate the need for a second `fix` (i.e., reduced RAM), but it could prevent coherency.  See [Data Model - Merging](Data%20Model.md#merging) for a discussion of the different types of merging.
 
 ========================
 #ublox-specific configuration items
