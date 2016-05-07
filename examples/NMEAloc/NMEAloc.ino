@@ -50,6 +50,36 @@ static gps_fix  fix; // This holds on to the parsed fields, like lat/lon
 
 //----------------------------------------------------------------
 
+static void printL( Stream & stream, int32_t degE7 );
+
+static void printL( Stream & stream, int32_t degE7 )
+{
+  // Extract and print negative sign
+  if (degE7 < 0) {
+    degE7 = -degE7;
+    stream.print( '-' );
+  }
+
+  // Whole degrees
+  int32_t deg = degE7 / 10000000L;
+  stream.print( deg );
+  stream.print( '.' );
+
+  // Get fractional degrees
+  degE7 -= deg*10000000L;
+
+  // Print leading zeroes, if needed
+  int32_t factor = 1000000L;
+  while ((degE7 < factor) && (factor > 1L)){
+    stream.print( '0' );
+    factor /= 10L;
+  }
+  
+  // Print fractional degrees
+  stream.print( degE7 );
+}
+
+static void doSomeWork();
 static void doSomeWork()
 {
   //  This is the best place to do your time-consuming work, right after
@@ -62,11 +92,13 @@ static void doSomeWork()
 
   if (fix.valid.location) {
 
-    Serial.print( fix.latitude(), 6 ); // floating-point display
+    // Serial.print( fix.latitude(), 6 ); // floating-point display
     // Serial.print( fix.latitudeL() ); // integer display
+    printL( Serial, fix.latitudeL() );
     Serial.print( ',' );
-    Serial.print( fix.longitude(), 6 ); // floating-point display
+    // Serial.print( fix.longitude(), 6 ); // floating-point display
     // Serial.print( fix.longitudeL() );  // integer display
+    printL( Serial, fix.longitudeL() );
 
   } else {
     // No valid location data yet!
@@ -79,6 +111,7 @@ static void doSomeWork()
 
 //------------------------------------
 
+static void GPSloop();
 static void GPSloop()
 {  
   while (gps_port.available()) {

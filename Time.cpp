@@ -20,7 +20,9 @@
  */
 
 #include "Time.h"
-#include "Streamers.h"
+
+// For strtoul declaration
+#include <stdlib.h>
 
 Stream& operator<<(Stream& outs, const NeoGPS::time_t& t)
 {

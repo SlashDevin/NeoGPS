@@ -118,13 +118,13 @@ public:
     float    speed     () const { return spd.float_000(); };
 
     // Utilities for speed in other units
-    static constexpr float KM_PER_NMI = 1.852;
+    CONST_CLASS_DATA float KM_PER_NMI = 1.852;
     float    speed_kph () const { return speed() * KM_PER_NMI; };
 
-    static constexpr uint16_t M_PER_NMI = 1852;
+    CONST_CLASS_DATA uint16_t M_PER_NMI = 1852;
     uint32_t speed_metersph() const { return (spd.whole * M_PER_NMI) + (spd.frac * M_PER_NMI)/1000; };
 
-    static constexpr float MI_PER_NMI = 1.150779;
+    CONST_CLASS_DATA float MI_PER_NMI = 1.150779;
     float  speed_mph() const { return speed() * MI_PER_NMI; };
   #endif
 
@@ -366,7 +366,7 @@ public:
   //   on the left (i.e., /this/).
   //
   // Usage:  gps_fix left, right;
-  //         left |= right;  // explict merge
+  //         left |= right;  // explicit merge
 
   gps_fix & operator |=( const gps_fix & r )
   {

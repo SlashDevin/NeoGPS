@@ -232,8 +232,8 @@ protected:
         NMEA_RECEIVING_DATA,   // Parsing fields up to the terminating '*'
         NMEA_RECEIVING_CRC     // Receiving two-byte transmitted CRC
     };
-    static const uint8_t NMEA_FIRST_STATE = NMEA_IDLE;
-    static const uint8_t NMEA_LAST_STATE  = NMEA_RECEIVING_CRC;
+    CONST_CLASS_DATA uint8_t NMEA_FIRST_STATE = NMEA_IDLE;
+    CONST_CLASS_DATA uint8_t NMEA_LAST_STATE  = NMEA_RECEIVING_CRC;
 
     rxState_t rxState NEOGPS_BF(8);
 

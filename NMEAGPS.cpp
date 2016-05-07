@@ -655,13 +655,13 @@ bool NMEAGPS::parseRMC( char chr )
 {
   #ifdef NMEAGPS_PARSE_RMC
     switch (fieldIndex) {
-        case 1: return parseTime( chr );
-        case 2: return parseFix( chr );
+        case 1:  return parseTime   ( chr );
+        case 2:  return parseFix    ( chr );
         PARSE_LOC(3);
-        case 7: return parseSpeed( chr );
-        case 8: return parseHeading( chr );
-        case 9: return parseDDMMYY( chr );
-        case 12: return parseFix( chr );
+        case 7:  return parseSpeed  ( chr );
+        case 8:  return parseHeading( chr );
+        case 9:  return parseDDMMYY ( chr );
+        case 12: return parseFix    ( chr );
     }
   #endif
 
@@ -1076,8 +1076,10 @@ bool NMEAGPS::parseSatellites( char chr )
   #ifdef GPS_FIX_SATELLITES
     if (chrCount == 0)
       NMEAGPS_INVALIDATE( satellites );
-    if (parseInt( m_fix.satellites, chr ))
+    if (parseInt( m_fix.satellites, chr )) {
+
       m_fix.valid.satellites = true;
+    }
   #endif
 
   return true;
