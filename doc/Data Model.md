@@ -8,6 +8,7 @@ The nested structures that your program can access are:
     * a gps_fix member called `gps.fix()` (see [GPSfix.h](/GPSfix.h#L39)), which contains
         * a status
         * a latitude and longitude
+        * a latitude and longitude in Degrees, Minutes and Seconds (see DMS.h)
         * an altitude (above ellipsoid, not Mean Sea Level)
         * a speed and heading
         * HDOP, VDOP and PDOP
@@ -34,6 +35,12 @@ fix_copy = gps.fix(); // copies all current fix data
 
 int32_t lat_10e7 = gps.fix().lat; // scaled integer value of latitude
 float lat = fix_copy.latitude(); // float value of latitude
+
+Serial.print( gps.fix().latDMS.degrees );
+Serial.print( ' ' );
+Serial.print( gps.fix().latDMS.minutes );
+Serial.print( F("' " );
+Serial.print( gps.fix().latDMS.seconds );
 
 if (gps.fix().dateTime.month == 4) // test for the cruelest month
   cry();
