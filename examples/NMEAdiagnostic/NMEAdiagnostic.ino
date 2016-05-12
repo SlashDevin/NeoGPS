@@ -16,7 +16,7 @@
 //     2) Your GPS device is correctly connected to an Arduino serial port.
 //          See GPSport.h for the default connections.
 //
-//  'Serial' is for trace output to the Serial Monitor window.
+//  'Serial' is for debug output to the Serial Monitor window.
 //
 //======================================================================
 
@@ -34,7 +34,18 @@
 #include "GPSport.h"
 
 #include "Streamers.h"
-Stream & trace = Serial;
+#ifdef NeoHWSerial_h
+  #define DEBUG_PORT NeoSerial
+#else
+  #define DEBUG_PORT Serial
+#endif
+
+// Check configuration
+
+#ifndef NMEAGPS_RECOGNIZE_ALL
+  #error You must define NMEAGPS_RECOGNIZE_ALL in NMEAGPS_cfg.h!
+#endif
+
 
 static NMEAGPS  gps         ; // This parses received characters
 static uint32_t last_rx = 0L; // The last millis() time a character was
@@ -50,6 +61,19 @@ static const uint8_t num_bauds          = sizeof(baud_table)/sizeof(baud_table[0
 static const uint8_t INITIAL_BAUD_INDEX = 3; // 9600
 static       uint8_t baud_index         = INITIAL_BAUD_INDEX;
 static       bool    triedDifferentBaud = false;
+
+//--------------------------
+
+static void tryBaud()
+{
+  long baud = baud_table[baud_index];
+  DEBUG_PORT.print( F("\n____________________________\n\nChecking ") );
+  DEBUG_PORT.print( baud );
+  DEBUG_PORT.print( F(" baud...\n\n") );
+  DEBUG_PORT.flush();
+
+  gps_port.begin( baud );
+}
 
 //--------------------------
 
@@ -69,19 +93,13 @@ static void tryAnotherBaudRate()
 
     if (baud_index >= num_bauds) {
       baud_index = INITIAL_BAUD_INDEX;
-      trace << F("\n  All baud rates tried!\n");
+      DEBUG_PORT.print( F("\n  All baud rates tried!\n") );
       for (;;)
         ; // hang!
     }
   }
 
-  long baud = baud_table[baud_index];
-  trace.print( F("\n____________________________\n\nChecking ") );
-  trace.print( baud );
-  trace.print( F(" baud...\n\n") );
-  trace.flush();
-
-  gps_port.begin( baud );
+  tryBaud();
 
   triedDifferentBaud = true;
 
@@ -95,7 +113,7 @@ static uint16_t       someCharsIndex = 0;
 
 static void dumpSomeChars()
 {
-  trace << F("Received data:\n");
+  DEBUG_PORT.print( F("Received data:\n") );
 
   const uint16_t  bytes_per_line = 32;
         char      ascii[ bytes_per_line ];
@@ -107,8 +125,8 @@ static void dumpSomeChars()
     for (j=0; (i<someCharsIndex) && (j<bytes_per_line); i++, j++) {
       uint8_t c = *ptr++;
       if (c < 0x10)
-        trace.print('0');
-      trace.print( c, HEX );
+        DEBUG_PORT.print('0');
+      DEBUG_PORT.print( c, HEX );
       if ((' ' <= c) && (c <= '~'))
         ascii[ j ] = c;
       else
@@ -117,12 +135,12 @@ static void dumpSomeChars()
 
     uint16_t jmax = j;
     while (j++ < bytes_per_line)
-      trace.print( F("  ") );
-    trace.print( ' ' );
+      DEBUG_PORT.print( F("  ") );
+    DEBUG_PORT.print( ' ' );
     
     for (j=0; j<jmax; j++)
-      trace.print( ascii[ j ] );
-    trace.print( '\n' );
+      DEBUG_PORT.print( ascii[ j ] );
+    DEBUG_PORT.print( '\n' );
   }
 
   someCharsIndex = 0;
@@ -162,10 +180,10 @@ static void listenForSomething()
       static uint8_t tries = 1;
       if (!getting_chars) {
       
-        trace.println( F("\nCheck GPS device and/or connections.  No data received.\n") );
+        DEBUG_PORT.println( F("\nCheck GPS device and/or connections.  No data received.\n") );
       
         if (tries++ >= 3) {
-          trace << F("END.\n");
+          DEBUG_PORT.print( F("END.\n") );
           for (;;)
             ; // hang!
         }
@@ -173,7 +191,7 @@ static void listenForSomething()
       } else {
         tries = 1;
         
-        trace.println( F("No valid sentences, but characters are being received.\n"
+        DEBUG_PORT.println( F("No valid sentences, but characters are being received.\n"
         "Check baud rate or device protocol configuration.\n" ) );
 
         dumpSomeChars();
@@ -203,15 +221,15 @@ static void GPSloop()
     if (gps.decode( c ) == NMEAGPS::DECODE_COMPLETED) {
       valid_sentence_received = true;
 
-      trace << F("Received ");
-      trace << (const __FlashStringHelper *) gps.string_for( gps.nmeaMessage );
-      trace << F("...\n");
+      DEBUG_PORT.print( F("Received ") );
+      DEBUG_PORT << gps.string_for( gps.nmeaMessage );
+      DEBUG_PORT.print( F("...\n") );
 
       if (someCharsIndex >= MAX_SAMPLE) {
         // We received a sentence, display the baud rate
-        trace << F("\n\n**** NMEA sentence(s) detected!  ****\n");
+        DEBUG_PORT.print( F("\n\n**** NMEA sentence(s) detected!  ****\n") );
         dumpSomeChars();
-        trace << F("\n  SUCCESS: Your device baud rate is ") <<
+        DEBUG_PORT << F("\n  SUCCESS: Your device baud rate is ") <<
           baud_table[ baud_index ] << '\n';
 
         for (;;)
@@ -230,14 +248,14 @@ static void GPSloop()
 void setup()
 {
   // Start the normal trace output
-  Serial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
+  DEBUG_PORT.begin(9600);
 
-  Serial.print( F("NMEAdiagnostic.INO: started\n") );
-  Serial.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  Serial.flush();
+  DEBUG_PORT.print( F("NMEAdiagnostic.INO: started\n") );
+  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.flush();
   
   // Start the UART for the GPS device
-  gps_port.begin( baud_table[ baud_index ] );
+  tryBaud();
 }
 
 //--------------------------

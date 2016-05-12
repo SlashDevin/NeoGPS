@@ -19,12 +19,11 @@
 //     2) The '*' is a special character for delimiting the CRC.  If
 //        it is changed, a CR/LF will allow the sentence to pass.
 //
-//  'Serial' is for trace output to the Serial Monitor window.
+//  'Serial' is for debug output to the Serial Monitor window.
 //
 //======================================================================
 
 #include "Streamers.h"
-Stream & trace = Serial;
 
 //------------------------------------------------------------
 // Check that the config files are set up properly
@@ -53,6 +52,10 @@ Stream & trace = Serial;
   #error GPS_FIX_LOCATION must be defined in GPSfix_cfg.h!
 #endif
 
+#ifndef GPS_FIX_LOCATION_DMS
+  #error GPS_FIX_LOCATION_DMS must be defined in GPSfix_cfg.h!
+#endif
+
 #ifndef GPS_FIX_ALTITUDE
   #error GPS_FIX_ALTITUDE must be defined in GPSfix_cfg.h!
 #endif
@@ -78,21 +81,23 @@ static NMEAGPS gps;
 //--------------------------
 // Example sentences
 
-const char validGGA[] __PROGMEM =
-  "$GPGGA,092725.00,4717.113993,N,00833.915904,E,"
-    "1,8,1.01,499.6,M,48.0,M,,0*5C\r\n";
-
 // Ayers Rock
 //  -25.3448688,131.0324914
 //  2520.692128,S,13101.949484,E
+//  25 20' 41.528" S 131 1' 56.969" E
 const char validRMC[] __PROGMEM =
   "$GPRMC,092725.00,A,2520.69213,S,13101.94948,E,"
     "0.004,77.52,091202,,,A*43\r\n";
 
+// 47 17' 6.840" N 008 33' 54.954" E
+const char validGGA[] __PROGMEM =
+  "$GPGGA,092725.00,4717.113993,N,00833.915904,E,"
+    "1,8,1.01,499.6,M,48.0,M,,0*5C\r\n";
+
 // Macchu Picchu
 //  -13.162805, -72.545508
 //  13.162805,S,72.545508,W
-//  1309.7683,S,7232.7305,W
+//  13 09' 46.098" S 72 32' 43.830" W
 
 const char validGGA2[] __PROGMEM =
   "$GPGGA,162254.00,1309.7683,S,7232.7305,W,"
@@ -101,20 +106,21 @@ const char validGGA2[] __PROGMEM =
 // Dexter MO
 //  36.794405, -89.958655
 //  36.794405,N,89.958655,W
-//  3647.6643,N,8957.5193,W
+//  36 47' 39.858" N 89 57' 31.158" W
+
+const char validRMC2[] __PROGMEM =
+  "$GPRMC,162254.00,A,3647.6643,N,8957.5193,W,0.820,188.36,110706,,,A*49\r\n";
 
 // Ni'ihau, HI
 //   21.827621, -160.244876
 //   21.827621,N,160.244876,W
-//   2149.65726,N,16014.69256,W
-
-const char validRMC2[] __PROGMEM =
-  "$GPRMC,162254.00,A,3647.6643,N,8957.5193,W,0.820,188.36,110706,,,A*49\r\n";
+//   21 49' 39.436" N 160 14' 41.554 W
 
 const char validRMC3[] __PROGMEM =
 "$GPRMC,235959.99,A,2149.65726,N,16014.69256,W,8.690,359.99,051015,9.47,E,A*26\r\n";
 
 // Some place in Kenya
+//    01 05' 36.458" S 037 01' 42.140" E
 const char validGLL[] __PROGMEM =
 "$GNGLL,0105.60764,S,03701.70233,E,225627.00,A,A*6B\r\n";
 
@@ -185,19 +191,19 @@ static bool parse_P( const char *ptr )
 
 static void traceSample( const char *ptr, bool init = true )
 {
-    trace << F("Input:  ") << (const __FlashStringHelper *) ptr;
+    Serial << F("Input:  ") << (const __FlashStringHelper *) ptr;
 
     if (init)
       gps.data_init();
     bool decoded = parse_P( ptr );
 
     if (decoded)
-      trace << F("Results:  ");
+      Serial << F("Results:  ");
     else
-      trace << F("Failed to decode!  ");
+      Serial << F("Failed to decode!  ");
 
-    trace_all( gps, gps.fix() );
-    trace << '\n';
+    trace_all( Serial, gps, gps.fix() );
+    Serial << '\n';
 }
 
 //--------------------------
@@ -206,15 +212,17 @@ static uint8_t passed = 0;
 static uint8_t failed = 0;
 
 static void checkLatLon
-  ( const char *msg, NMEAGPS::nmea_msg_t msg_type, int32_t lat, int32_t lon )
+  ( const char *msg, NMEAGPS::nmea_msg_t msg_type, int32_t lat, int32_t lon,
+    uint8_t latDeg, uint8_t latMin, uint8_t latSec, uint16_t latSecFrac, Hemisphere_t ns,
+    uint8_t lonDeg, uint8_t lonMin, uint8_t lonSec, uint16_t lonSecFrac, Hemisphere_t ew )
 {
   const char *ptr = msg;
   for (;;) {
     char c = pgm_read_byte( ptr++ );
     if (!c) {
-      trace.print( F("FAILED to parse \"") );
-      trace.print( (const __FlashStringHelper *) msg );
-      trace.println( F("\"\n") );
+      Serial.print( F("FAILED to parse \"") );
+      Serial.print( (const __FlashStringHelper *) msg );
+      Serial.println( F("\"\n") );
       failed++;
       break;
     }
@@ -222,20 +230,101 @@ static void checkLatLon
       bool ok = true;
 
       if (gps.nmeaMessage != msg_type) {
-        trace.print( F("FAILED wrong message type ") );
-        trace.println( gps.nmeaMessage );
+        Serial.print( F("FAILED wrong message type ") );
+        Serial.println( gps.nmeaMessage );
         failed++;
         ok = false;
       }
       if (gps.fix().latitudeL() != lat) {
-        trace.print( F("FAILED wrong latitude ") );
-        trace.println( gps.fix().latitudeL() );
+        Serial.print( F("FAILED wrong latitude ") );
+        Serial.println( gps.fix().latitudeL() );
         failed++;
         ok = false;
       }
       if (gps.fix().longitudeL() != lon) {
-        trace.print( F("FAILED wrong longitude ") );
-        trace.println( gps.fix().longitudeL() );
+        Serial.print( F("FAILED wrong longitude ") );
+        Serial.println( gps.fix().longitudeL() );
+        failed++;
+        ok = false;
+      }
+
+      if (gps.fix().latitudeDMS.degrees != latDeg) {
+        Serial.print( F("FAILED wrong latitude degrees ") );
+        Serial.print( gps.fix().latitudeDMS.degrees );
+        Serial.print( F(", expected ") );
+        Serial.println( latDeg );
+        failed++;
+        ok = false;
+      }
+      if (gps.fix().latitudeDMS.minutes != latMin) {
+        Serial.print( F("FAILED wrong latitude minutes ") );
+        Serial.print( gps.fix().latitudeDMS.minutes );
+        Serial.print( F(", expected ") );
+        Serial.println( latMin );
+        failed++;
+        ok = false;
+      }
+      if (gps.fix().latitudeDMS.seconds_whole != latSec) {
+        Serial.print( F("FAILED wrong latitude seconds ") );
+        Serial.print( gps.fix().latitudeDMS.seconds_whole );
+        Serial.print( F(", expected ") );
+        Serial.println( latSec );
+        failed++;
+        ok = false;
+      }
+            int8_t fracDiff = (int8_t)(gps.fix().latitudeDMS.seconds_frac - latSecFrac);
+      const int8_t eps      = 1;
+      if (abs(fracDiff) > eps) {
+        Serial.print( F("FAILED wrong latitude seconds fraction ") );
+        Serial.print( gps.fix().latitudeDMS.seconds_frac );
+        Serial.print( F(", expected ") );
+        Serial.println( latSecFrac );
+        failed++;
+        ok = false;
+      }
+      if (gps.fix().latitudeDMS.hemisphere    != ns) {
+        Serial.print( F("FAILED wrong latitude NS ") );
+        Serial.println( gps.fix().latitudeDMS.NS() );
+        failed++;
+        ok = false;
+      }
+
+      if (gps.fix().longitudeDMS.degrees != lonDeg) {
+        Serial.print( F("FAILED wrong longitude degrees ") );
+        Serial.print( gps.fix().longitudeDMS.degrees );
+        Serial.print( F(", expected ") );
+        Serial.println( lonDeg );
+        failed++;
+        ok = false;
+      }
+      if (gps.fix().longitudeDMS.minutes != lonMin) {
+        Serial.print( F("FAILED wrong longitude minutes ") );
+        Serial.print( gps.fix().longitudeDMS.minutes );
+        Serial.print( F(", expected ") );
+        Serial.println( lonMin );
+        failed++;
+        ok = false;
+      }
+      if (gps.fix().longitudeDMS.seconds_whole != lonSec) {
+        Serial.print( F("FAILED wrong longitude seconds ") );
+        Serial.print( gps.fix().longitudeDMS.seconds_whole );
+        Serial.print( F(", expected ") );
+        Serial.println( lonSec );
+        failed++;
+        ok = false;
+      }
+      fracDiff = (int8_t)(gps.fix().longitudeDMS.seconds_frac - lonSecFrac);
+      if (abs(fracDiff) > eps) {
+        Serial.print( F("FAILED wrong longitude seconds fraction ") );
+        Serial.print( gps.fix().longitudeDMS.seconds_frac );
+        Serial.print( F(", expected ") );
+        Serial.println( lonSecFrac );
+        failed++;
+        ok = false;
+      }
+      if (gps.fix().longitudeDMS.hemisphere    != ew) {
+        Serial.print( F("FAILED wrong longitude EW ") );
+        Serial.println( gps.fix().longitudeDMS.EW() );
         failed++;
         ok = false;
       }
@@ -254,20 +343,18 @@ void setup()
   // Start the normal trace output
   Serial.begin(9600);
 
-  trace.print( F("NMEA test: started\n") );
-  trace.print( F("fix object size = ") );
-  trace.println( sizeof(gps.fix()) );
-  trace.print( F("NMEAGPS object size = ") );
-  trace.println( sizeof(gps) );
-  trace.flush();
-
+  Serial.print( F("NMEA test: started\n") );
+  Serial.print( F("fix object size = ") );
+  Serial.println( sizeof(gps.fix()) );
+  Serial.print( F("NMEAGPS object size = ") );
+  Serial.println( sizeof(gps) );
 
   //  Some basic rejection tests
   for (uint16_t c=0; c < 256; c++) {
     if (c != '$') {
       if (NMEAGPS::DECODE_CHR_INVALID != gps.decode( (char)c )) {
-        trace.print( F("FAILED to reject single character ") );
-        trace.println( c );
+        Serial.print( F("FAILED to reject single character ") );
+        Serial.println( c );
         failed++;
         return;
       }
@@ -277,7 +364,7 @@ void setup()
 
   for (uint16_t i=0; i < 256; i++) {
     if (NMEAGPS::DECODE_COMPLETED == gps.decode( '$' )) {
-      trace.print( F("FAILED to reject multiple '$' characters\n") );
+      Serial.print( F("FAILED to reject multiple '$' characters\n") );
       failed++;
       return;
     }
@@ -294,8 +381,8 @@ void setup()
     for (;;) {
       if (j++ == insert_at) {
         if (NMEAGPS::DECODE_COMPLETED == gps.decode( ' ' )) {
-          trace.print( F("FAILED inserting ' ' @ pos ") );
-          trace.println( insert_at );
+          Serial.print( F("FAILED inserting ' ' @ pos ") );
+          Serial.println( insert_at );
           failed++;
           return;
         }
@@ -304,14 +391,14 @@ void setup()
       if (!c) {
         if (validGGA_len == 0) {
           validGGA_len = j-1;
-          trace.print( F("Test string length = ") );
-          trace.println( validGGA_len );
+          Serial.print( F("Test string length = ") );
+          Serial.println( validGGA_len );
         }
         break;
       }
       if (NMEAGPS::DECODE_COMPLETED == gps.decode( c )) {
-        trace.print( F("FAILED inserting @ pos ") );
-        trace.println( insert_at );
+        Serial.print( F("FAILED inserting @ pos ") );
+        Serial.println( insert_at );
         failed++;
         return;
       }
@@ -329,10 +416,10 @@ void setup()
       if (!c || (c == '*')) break;
       if (j == i) dropped = c;
       if ((j++ != i) && (gps.decode( c ) == NMEAGPS::DECODE_COMPLETED)) {
-        trace.print( F("FAILED dropping '") );
-        trace << dropped;
-        trace.print( F("' at pos ") );
-        trace.println( i );
+        Serial.print( F("FAILED dropping '") );
+        Serial << dropped;
+        Serial.print( F("' at pos ") );
+        Serial.println( i );
         failed++;
         break;
         //return;
@@ -352,12 +439,12 @@ void setup()
       if (j++ == i)
         replaced = c++; // mangle means increment
       if (NMEAGPS::DECODE_COMPLETED == gps.decode( c )) {
-        trace.print( F("FAILED replacing '") );
-        trace << (uint8_t) replaced;
-        trace.print( F("' with '") );
-        trace << (uint8_t) (replaced+1);
-        trace.print( F("' at pos ") );
-        trace.println( i );
+        Serial.print( F("FAILED replacing '") );
+        Serial << (uint8_t) replaced;
+        Serial.print( F("' with '") );
+        Serial << (uint8_t) (replaced+1);
+        Serial.print( F("' at pos ") );
+        Serial.println( i );
         failed++;
         break;
         //return;
@@ -372,9 +459,9 @@ void setup()
     for (;;) {
       char c = pgm_read_byte( ptr++ );
       if (!c) {
-        trace.print( F("FAILED to parse \"") );
-        trace.print( (str_P) validGGA );
-        trace.println( F("\"\n") );
+        Serial.print( F("FAILED to parse \"") );
+        Serial.print( (str_P) validGGA );
+        Serial.println( F("\"\n") );
         failed++;
         break;
       }
@@ -384,8 +471,8 @@ void setup()
         expected.dateTime_cs = 0;
 
         if (gps.nmeaMessage != NMEAGPS::NMEA_GGA) {
-          trace.print( F("FAILED wrong message type ") );
-          trace.println( gps.nmeaMessage );
+          Serial.print( F("FAILED wrong message type ") );
+          Serial.println( gps.nmeaMessage );
           failed++;
           break;
         }
@@ -393,43 +480,43 @@ void setup()
             (gps.fix().dateTime.minutes != expected.dateTime.minutes) ||
             (gps.fix().dateTime.seconds != expected.dateTime.seconds) ||
             (gps.fix().dateTime_cs      != expected.dateTime_cs)) {
-          trace << F("FAILED wrong time ") << gps.fix().dateTime << '.' << gps.fix().dateTime_cs << F(" != ") << expected.dateTime << '.' << expected.dateTime_cs << '\n';
+          Serial << F("FAILED wrong time ") << gps.fix().dateTime << '.' << gps.fix().dateTime_cs << F(" != ") << expected.dateTime << '.' << expected.dateTime_cs << '\n';
           failed++;
           break;
         }
         if (gps.fix().latitudeL() != 472852332L) {
-          trace.print( F("FAILED wrong latitude ") );
-          trace.println( gps.fix().latitudeL() );
+          Serial.print( F("FAILED wrong latitude ") );
+          Serial.println( gps.fix().latitudeL() );
           failed++;
           break;
         }
         if (gps.fix().longitudeL() != 85652651L) {
-          trace.print( F("FAILED wrong longitude ") );
-          trace.println( gps.fix().longitudeL() );
+          Serial.print( F("FAILED wrong longitude ") );
+          Serial.println( gps.fix().longitudeL() );
           failed++;
           break;
         }
         if (gps.fix().status != gps_fix::STATUS_STD) {
-          trace.print( F("FAILED wrong status ") );
-          trace.println( gps.fix().status );
+          Serial.print( F("FAILED wrong status ") );
+          Serial.println( gps.fix().status );
           failed++;
           break;
         }
         if (gps.fix().satellites != 8) {
-          trace.print( F("FAILED wrong satellites ") );
-          trace.println( gps.fix().satellites );
+          Serial.print( F("FAILED wrong satellites ") );
+          Serial.println( gps.fix().satellites );
           failed++;
           break;
         }
         if (gps.fix().hdop != 1010) {
-          trace.print( F("FAILED wrong HDOP ") );
-          trace.println( gps.fix().hdop );
+          Serial.print( F("FAILED wrong HDOP ") );
+          Serial.println( gps.fix().hdop );
           failed++;
           break;
         }
         if (gps.fix().altitude_cm() != 49960) {
-          trace.print( F("FAILED wrong altitude ") );
-          trace.println( gps.fix().longitudeL() );
+          Serial.print( F("FAILED wrong altitude ") );
+          Serial.println( gps.fix().longitudeL() );
           failed++;
           break;
         }
@@ -439,29 +526,36 @@ void setup()
   }
   passed++;
 
-  checkLatLon( validRMC , NMEAGPS::NMEA_RMC, -253448688L,  1310324913L );
-  checkLatLon( validGGA2, NMEAGPS::NMEA_GGA, -131628050L,  -725455083L );
-  checkLatLon( validRMC2, NMEAGPS::NMEA_RMC,  367944050L,  -899586550L );
-  checkLatLon( validRMC3, NMEAGPS::NMEA_RMC,  218276210L, -1602448760L );
-  checkLatLon( validGLL , NMEAGPS::NMEA_GLL,  -10934607L,   370283722L );
+  checkLatLon( validRMC , NMEAGPS::NMEA_RMC, -253448688L,  1310324913L,
+               25, 20, 41, 528, SOUTH_H, 131, 1, 56, 969, EAST_H );
+  checkLatLon( validGGA , NMEAGPS::NMEA_GGA,  472852332L,    85652651L,
+               47, 17, 6, 840, NORTH_H, 8, 33, 54, 954, EAST_H );
+  checkLatLon( validGGA2, NMEAGPS::NMEA_GGA, -131628050L,  -725455083L,
+               13, 9, 46, 98, SOUTH_H, 72, 32, 43, 830, WEST_H );
+  checkLatLon( validRMC2, NMEAGPS::NMEA_RMC,  367944050L,  -899586550L,
+               36, 47, 39, 858, NORTH_H, 89, 57, 31, 158, WEST_H );
+  checkLatLon( validRMC3, NMEAGPS::NMEA_RMC,  218276210L, -1602448760L,
+               21, 49, 39, 436, NORTH_H, 160, 14, 41, 554, WEST_H );
+  checkLatLon( validGLL , NMEAGPS::NMEA_GLL,  -10934607L,   370283722L,
+               1, 5, 36, 458, SOUTH_H, 37, 1, 42, 140, EAST_H );
 }
 
 //--------------------------
 
 void loop()
 {
-  trace.print( F("PASSED ") );
-  trace << passed;
-  trace.println( F(" tests.") );
+  Serial.print( F("PASSED ") );
+  Serial << passed;
+  Serial.println( F(" tests.") );
 
   if (failed) {
-    trace.print( F("FAILED ") );
-    trace << failed;
-    trace.println( F(" tests.") );
+    Serial.print( F("FAILED ") );
+    Serial << failed;
+    Serial.println( F(" tests.") );
   } else {
-    trace << F("------ Samples ------\nResults format:\n  ");
-    trace_header();
-    trace << '\n';
+    Serial << F("------ Samples ------\nResults format:\n  ");
+    trace_header( Serial );
+    Serial << '\n';
 
 #ifdef NMEAGPS_STATS
     gps.statistics.init();
@@ -491,7 +585,7 @@ void loop()
         (gps.fix().dateTime.hours   != 22) ||
         (gps.fix().dateTime.minutes != 56) ||
         (gps.fix().dateTime.seconds != 27))
-      trace << F("********  ZDA not parsed correctly **********\n");
+      Serial << F("********  ZDA not parsed correctly **********\n");
 
     /**
      * This next section displays incremental longitudes.
@@ -499,7 +593,7 @@ void loop()
      * how the conversion to /float/ causes loss of accuracy compared 
      * to the /uint32_t/ values.
      */
-    trace << F("--- floating point conversion tests ---\n\n");
+    Serial << F("--- floating point conversion tests ---\n\n");
 
     traceSample( fpGGA00 );
     traceSample( fpGGA01 );

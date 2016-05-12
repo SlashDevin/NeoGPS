@@ -20,6 +20,17 @@
 
 #include <Stream.h>
 
+// Check configurations
+ 
+#if defined( GPS_FIX_LOCATION_DMS ) & \
+    !defined( NMEAGPS_PARSING_SCRATCHPAD )
+
+  // The fractional part of the NMEA minutes can have 5 significant figures.
+  //   This requires more temporary storage than is available in the DMS_t.
+  #error You must enable NMEAGPS_PARSING_SCRATCHPAD in NMEAGPS_cfg.h
+
+#endif
+
 #ifndef CR
   #define CR ((char)13)
 #endif
@@ -82,17 +93,20 @@ void NMEAGPS::sentenceBegin()
   rxState      = NMEA_RECEIVING_HEADER;
   chrCount     = 0;
   comma_needed( false );
-  proprietary  = false;
+
+  #ifdef NMEAGPS_PARSE_PROPRIETARY
+    proprietary  = false;
+
+    #ifdef NMEAGPS_SAVE_MFR_ID
+      mfr_id[0] =
+      mfr_id[1] =
+      mfr_id[2] = 0;
+    #endif
+  #endif
 
   #ifdef NMEAGPS_SAVE_TALKER_ID
     talker_id[0] =
     talker_id[1] = 0;
-  #endif
-
-  #ifdef NMEAGPS_SAVE_MFR_ID
-    mfr_id[0] =
-    mfr_id[1] =
-    mfr_id[2] = 0;
   #endif
 }
 
@@ -175,7 +189,7 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
 
         crc ^= c;  // accumulate CRC as the chars come in...
 
-        if (!parseField( c ))
+        if (!parseField( c ) && (MSGS_ENABLED > 0))
           sentenceInvalid();
         else if (c == ',') {
           // Start the next field
@@ -212,7 +226,7 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
       chrCount++;
     } else if (cmd_res == DECODE_COMPLETED) {
       headerReceived();
-    } else // DECODE_CHR_INVALID
+    } else if (MSGS_ENABLED > 0) // DECODE_CHR_INVALID
       sentenceUnrecognized();
 
 
@@ -251,25 +265,58 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
 /*
  * NMEA Sentence strings (alphabetical)
  */
-static const char gga[] __PROGMEM =  "GGA";
-static const char gll[] __PROGMEM =  "GLL";
-static const char gsa[] __PROGMEM =  "GSA";
-static const char gst[] __PROGMEM =  "GST";
-static const char gsv[] __PROGMEM =  "GSV";
-static const char rmc[] __PROGMEM =  "RMC";
-static const char vtg[] __PROGMEM =  "VTG";
-static const char zda[] __PROGMEM =  "ZDA";
+#if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
+  static const char gga[] __PROGMEM =  "GGA";
+#endif
+#if defined(NMEAGPS_PARSE_GLL) | defined(NMEAGPS_RECOGNIZE_ALL)
+  static const char gll[] __PROGMEM =  "GLL";
+#endif
+#if defined(NMEAGPS_PARSE_GSA) | defined(NMEAGPS_RECOGNIZE_ALL)
+  static const char gsa[] __PROGMEM =  "GSA";
+#endif
+#if defined(NMEAGPS_PARSE_GST) | defined(NMEAGPS_RECOGNIZE_ALL)
+  static const char gst[] __PROGMEM =  "GST";
+#endif
+#if defined(NMEAGPS_PARSE_GSV) | defined(NMEAGPS_RECOGNIZE_ALL)
+  static const char gsv[] __PROGMEM =  "GSV";
+#endif
+#if defined(NMEAGPS_PARSE_RMC) | defined(NMEAGPS_RECOGNIZE_ALL)
+  static const char rmc[] __PROGMEM =  "RMC";
+#endif
+#if defined(NMEAGPS_PARSE_VTG) | defined(NMEAGPS_RECOGNIZE_ALL)
+  static const char vtg[] __PROGMEM =  "VTG";
+#endif
+#if defined(NMEAGPS_PARSE_ZDA) | defined(NMEAGPS_RECOGNIZE_ALL)
+  static const char zda[] __PROGMEM =  "ZDA";
+#endif
 
-static const char * const std_nmea[] __PROGMEM = {
-  gga,
-  gll,
-  gsa,
-  gst,
-  gsv,
-  rmc,
-  vtg,
-  zda
-};
+static const char * const std_nmea[] __PROGMEM =
+  {
+    #if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
+      gga,
+    #endif
+    #if defined(NMEAGPS_PARSE_GLL) | defined(NMEAGPS_RECOGNIZE_ALL)
+      gll,
+    #endif
+    #if defined(NMEAGPS_PARSE_GSA) | defined(NMEAGPS_RECOGNIZE_ALL)
+      gsa,
+    #endif
+    #if defined(NMEAGPS_PARSE_GST) | defined(NMEAGPS_RECOGNIZE_ALL)
+      gst,
+    #endif
+    #if defined(NMEAGPS_PARSE_GSV) | defined(NMEAGPS_RECOGNIZE_ALL)
+      gsv,
+    #endif
+    #if defined(NMEAGPS_PARSE_RMC) | defined(NMEAGPS_RECOGNIZE_ALL)
+      rmc,
+    #endif
+    #if defined(NMEAGPS_PARSE_VTG) | defined(NMEAGPS_RECOGNIZE_ALL)
+      vtg,
+    #endif
+    #if defined(NMEAGPS_PARSE_ZDA) | defined(NMEAGPS_RECOGNIZE_ALL)
+      zda
+    #endif
+  };
 
 const NMEAGPS::msg_table_t NMEAGPS::nmea_msg_table __PROGMEM =
   {
@@ -285,38 +332,43 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
   if (c == ',') {
     // End of field, did we get a sentence type yet?
     return
-      (nmeaMessage == NMEA_UNKNOWN) ?
+      ((nmeaMessage == NMEA_UNKNOWN) && (MSGS_ENABLED > 0)) ?
         DECODE_CHR_INVALID :
         DECODE_COMPLETED;
   }
 
-  if ((chrCount == 0) && (c == 'P')) {
-    //  Starting a proprietary message...
-    proprietary = true;
-    return DECODE_CHR_OK;
-  }
+  #ifdef NMEAGPS_PARSE_PROPRIETARY
+    if ((chrCount == 0) && (c == 'P')) {
+      //  Starting a proprietary message...
+      proprietary = true;
+      return DECODE_CHR_OK;
+    }
+  #endif
   
   uint8_t cmdCount = chrCount;
 
-  if (proprietary) {
+  #ifdef NMEAGPS_PARSE_PROPRIETARY
+    if (proprietary) {
 
-    // Next three chars are the manufacturer ID
-    if (chrCount < 4) {
-      #ifdef NMEAGPS_SAVE_MFR_ID
-        mfr_id[chrCount-1] = c;
-      #endif
+      // Next three chars are the manufacturer ID
+      if (chrCount < 4) {
+        #ifdef NMEAGPS_SAVE_MFR_ID
+          mfr_id[chrCount-1] = c;
+        #endif
 
-      #ifdef NMEAGPS_PARSE_MFR_ID
-        if (!parseMfrID( c ))
-          return DECODE_CHR_INVALID;
-      #endif
+        #ifdef NMEAGPS_PARSE_MFR_ID
+          if (!parseMfrID( c ))
+            return DECODE_CHR_INVALID;
+        #endif
 
-      return DECODE_CHR_OK;
-    }
+        return DECODE_CHR_OK;
+      }
 
-    cmdCount -= 4;
+      cmdCount -= 4;
 
-  } else { // standard
+    } else
+  #endif
+  { // standard
 
     // First two chars are talker ID
     if (chrCount < 2) {
@@ -339,6 +391,15 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
 
   const msg_table_t *msgs = msg_table();
 
+  return parseCommand( msgs, cmdCount, c );
+
+} // parseCommand
+
+//---------------------------------------------
+
+NMEAGPS::decode_t NMEAGPS::parseCommand
+  ( const msg_table_t *msgs, uint8_t cmdCount, char c )
+{
   for (;;) {
     uint8_t  table_size       = pgm_read_byte( &msgs->size );
     uint8_t  msg_offset       = pgm_read_byte( &msgs->offset );
@@ -421,10 +482,10 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
 
 //---------------------------------------------
 
-const char *NMEAGPS::string_for( nmea_msg_t msg ) const
+const __FlashStringHelper *NMEAGPS::string_for( nmea_msg_t msg ) const
 {
   if (msg == NMEA_UNKNOWN)
-    return (const char *) NULL;
+    return (const __FlashStringHelper *) NULL;
 
   const msg_table_t *msgs = msg_table();
 
@@ -436,7 +497,7 @@ const char *NMEAGPS::string_for( nmea_msg_t msg ) const
       // In range of this table
       const char * const *table   = (const char * const *) pgm_read_word( &msgs->table );
       return
-        (const char *)
+        (const __FlashStringHelper *) 
           pgm_read_word( &table[ ((uint8_t)msg) - msg_offset ] );
     }
  
@@ -447,7 +508,7 @@ const char *NMEAGPS::string_for( nmea_msg_t msg ) const
         continue;
     #endif
 
-    return (const char *) NULL;
+    return (const __FlashStringHelper *)  NULL;
   }
 
 } // string_for
@@ -458,14 +519,37 @@ bool NMEAGPS::parseField(char chr)
 {
     switch (nmeaMessage) {
 
-      case NMEA_GGA: return parseGGA( chr );
-      case NMEA_GLL: return parseGLL( chr );
-      case NMEA_GSA: return parseGSA( chr );
-      case NMEA_GST: return parseGST( chr );
-      case NMEA_GSV: return parseGSV( chr );
-      case NMEA_RMC: return parseRMC( chr );
-      case NMEA_VTG: return parseVTG( chr );
-      case NMEA_ZDA: return parseZDA( chr );
+      #if defined(NMEAGPS_PARSE_GGA)
+        case NMEA_GGA: return parseGGA( chr );
+      #endif
+
+      #if defined(NMEAGPS_PARSE_GLL)
+        case NMEA_GLL: return parseGLL( chr );
+      #endif
+
+      #if defined(NMEAGPS_PARSE_GSA)
+        case NMEA_GSA: return parseGSA( chr );
+      #endif
+
+      #if defined(NMEAGPS_PARSE_GST)
+        case NMEA_GST: return parseGST( chr );
+      #endif
+
+      #if defined(NMEAGPS_PARSE_GSV)
+        case NMEA_GSV: return parseGSV( chr );
+      #endif
+
+      #if defined(NMEAGPS_PARSE_RMC)
+        case NMEA_RMC: return parseRMC( chr );
+      #endif
+
+      #if defined(NMEAGPS_PARSE_VTG)
+        case NMEA_VTG: return parseVTG( chr );
+      #endif
+
+      #if defined(NMEAGPS_PARSE_ZDA)
+        case NMEA_ZDA: return parseZDA( chr );
+      #endif
 
       default:
           break;
@@ -863,6 +947,54 @@ bool NMEAGPS::parseFloat( uint16_t & val, char chr, uint8_t max_decimal )
 } // parseFloat
 
 //---------------------------------------------------
+
+#ifdef GPS_FIX_LOCATION_DMS
+
+  static void finalizeDMS( uint32_t min_frac, DMS_t & dms )
+  {
+    // To convert from fractional minutes (ten thousandths) to 
+    //   seconds_whole and seconds_frac,
+    //
+    //   seconds = min_frac * 60/10000
+    //           = min_frac * 0.006
+
+    #ifdef __AVR__
+      // Fixed point conversion factor 0.0006 * 2^26 = 40265
+      const uint32_t to_seconds_E26 = 40265UL;
+
+      uint32_t secs_E26      = min_frac * to_seconds_E26;
+      uint8_t  secs          = secs_E26 >> 26;
+      uint32_t remainder_E26 = secs_E26 - (((uint32_t) secs) << 26);
+
+      // thousandths = (rem_E26 * 1000) >> 26;
+      //             = (rem_E26 *  125) >> 23;             // 1000 = (125 << 3)
+      //             = ((rem_E26 >> 8) * 125) >> 15;       // avoid overflow
+      //             = (((rem_E26 >> 8) * 125) >> 8) >> 7; // final shift 15 in two steps
+      //             = ((((rem_E26 >> 8) * 125) >> 8) + 72) >> 7;
+      //                                                   // round up
+      uint16_t frac_x1000   = ((((remainder_E26 >> 8) * 125UL) >> 8) + 64) >> 7;
+
+    #else // not __AVR__
+
+      min_frac *= 6UL;
+      uint32_t secs       = min_frac / 10000UL;
+      uint16_t frac_x1000 = (min_frac - (secs * 10000UL) + 5) / 10;
+
+    #endif
+
+    // Rounding up can yield a frac of 1000/1000ths. Carry into whole.
+    if (frac_x1000 >= 1000) {
+      frac_x1000 -= 1000;
+      secs       += 1;
+    }
+    dms.seconds_whole  = secs;
+    dms.seconds_frac   = frac_x1000;
+
+  } // finalizeDMS
+
+#endif
+
+//.................................................
 // From http://www.hackersdelight.org/divcMore.pdf
 
 static uint32_t divu3( uint32_t n )
@@ -883,12 +1015,26 @@ static uint32_t divu3( uint32_t n )
 //.................................................
 // Parse lat/lon dddmm.mmmm fields
 
-bool NMEAGPS::parseDDDMM( int32_t & val, char chr )
+bool NMEAGPS::parseDDDMM
+  (
+    #if defined( GPS_FIX_LOCATION )
+      int32_t & val,
+    #endif
+    #if defined( GPS_FIX_LOCATION_DMS )
+      DMS_t & dms,
+    #endif
+    char chr
+  )
 {
-  #ifdef GPS_FIX_LOCATION
+  #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
 
     if (chrCount == 0) {
-      val          = 0;
+      #ifdef GPS_FIX_LOCATION
+        val        = 0;
+      #endif
+      #ifdef GPS_FIX_LOCATION_DMS
+        dms.init();
+      #endif
       decimal      = 0;
       comma_needed( true );
     }
@@ -897,19 +1043,49 @@ bool NMEAGPS::parseDDDMM( int32_t & val, char chr )
       // Now we know how many digits are in degrees; all but the last two.
       // Switch from BCD (digits) to binary minutes.
       decimal = 1;
-      uint8_t *valBCD = (uint8_t *) &val;
+      #ifdef GPS_FIX_LOCATION
+        uint8_t *valBCD = (uint8_t *) &val;
+      #else
+        uint8_t *valBCD = (uint8_t *) &dms;
+      #endif
       uint8_t  deg     = to_binary( valBCD[1] );
       if (valBCD[2] != 0)
         deg += 100; // only possible if abs(longitude) >= 100.0 degrees
+
       // Convert val to minutes
-      val = (deg * 60) + to_binary( valBCD[0] );
+      uint8_t min = to_binary( valBCD[0] );
+      #ifdef GPS_FIX_LOCATION
+        val = (deg * 60) + min;
+      #endif
+      #ifdef GPS_FIX_LOCATION_DMS
+        dms.degrees = deg;
+        dms.minutes = min;
+        scratchpad.U4 = 0;
+      #endif
+
       if (chr == '.') return true;
     }
 
     if (chr == ',') {
-      if (val) {
-        // If the last chars in ".mmmmmm" were not received,
-        //    force the value into its final state.
+      // If the last chars in ".mmmmmm" were not received,
+      //    force the value into its final state.
+
+      #ifdef GPS_FIX_LOCATION_DMS
+        if (decimal <= 5) {
+          if (decimal == 5)
+            scratchpad.U4 *= 10;
+          else if (decimal == 4)
+            scratchpad.U4 *= 100;
+          else if (decimal == 3)
+            scratchpad.U4 *= 1000;
+          else if (decimal == 2)
+            scratchpad.U4 *= 10000;
+
+          finalizeDMS( scratchpad.U4, dms );
+        }
+      #endif
+
+      #ifdef GPS_FIX_LOCATION
         if (decimal == 4)
           val *= 100;
         else if (decimal == 5)
@@ -917,7 +1093,7 @@ bool NMEAGPS::parseDDDMM( int32_t & val, char chr )
         else if (decimal == 6)
           ;
         else if (decimal > 6)
-          return true; // already converted at decimal==6
+          return true; // already converted at decimal==7
         else if (decimal == 3)
           val *= 1000;
         else if (decimal == 2)
@@ -927,25 +1103,46 @@ bool NMEAGPS::parseDDDMM( int32_t & val, char chr )
 
         // Convert minutes x 1000000 to degrees x 10000000.
         val += divu3(val*2 + 1); // same as 10 * ((val+30)/60) without trunc
-      }
+      #endif
 
     } else if (!decimal) {
-      // val is BCD until *after* decimal point
-      val = (val<<4) | (chr - '0');
+
+      // BCD until *after* decimal point
+
+      #ifdef GPS_FIX_LOCATION
+        val = (val<<4) | (chr - '0');
+      #else
+        uint32_t *val = (uint32_t *) &dms;
+        *val = (*val<<4) | (chr - '0');
+      #endif
 
     } else {
-      decimal++;
-      if (decimal <= 6) {
-        val = val*10 + (chr - '0');
 
-      } else if (decimal > 6) {
-        // Convert now, while we still have the 6th decimal digit
-        val += divu3(val*2 + 1); // same as 10 * ((val+30)/60) without trunc
-        if (chr >= '9')
-          val += 2;
-        else if (chr >= '4')
-          val += 1;
-      }
+      decimal++;
+
+      #ifdef GPS_FIX_LOCATION_DMS
+        if (decimal <= 6) {
+          scratchpad.U4 = scratchpad.U4 * 10 + (chr - '0');
+          if (decimal == 6)
+            finalizeDMS( scratchpad.U4, dms );
+        }
+      #endif
+
+      #ifdef GPS_FIX_LOCATION
+        if (decimal <= 6) {
+
+          val = val*10 + (chr - '0');
+
+        } else if (decimal == 7) {
+
+          // Convert now, while we still have the 6th decimal digit
+          val += divu3(val*2 + 1); // same as 10 * ((val+30)/60) without trunc
+          if (chr >= '9')
+            val += 2;
+          else if (chr >= '4')
+            val += 1;
+        }
+      #endif
     }
 
   #endif
@@ -958,15 +1155,25 @@ bool NMEAGPS::parseDDDMM( int32_t & val, char chr )
 
 bool NMEAGPS::parseLat( char chr )
 {
-  #ifdef GPS_FIX_LOCATION
+  #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
     if (chrCount == 0) {
       group_valid = (chr != ',');
       if (group_valid)
         NMEAGPS_INVALIDATE( location );
     }
 
-    if (group_valid)
-      parseDDDMM( m_fix.lat, chr );
+    if (group_valid) {
+      parseDDDMM
+        (
+          #if defined( GPS_FIX_LOCATION )
+            m_fix.lat, 
+          #endif
+          #if defined( GPS_FIX_LOCATION_DMS )
+            m_fix.latitudeDMS,
+          #endif
+          chr
+        );
+    }
   #endif
 
   return true;
@@ -974,9 +1181,15 @@ bool NMEAGPS::parseLat( char chr )
 
 bool NMEAGPS::parseNS( char chr )
 {
-  #ifdef GPS_FIX_LOCATION
-    if (group_valid && (chr == 'S'))
-      m_fix.lat = -m_fix.lat;
+  #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
+    if (group_valid && (chr == 'S')) {
+      #ifdef GPS_FIX_LOCATION
+        m_fix.lat = -m_fix.lat;
+      #endif
+      #ifdef GPS_FIX_LOCATION_DMS
+        m_fix.latitudeDMS.hemisphere = SOUTH_H;
+      #endif
+    }
   #endif
 
   return true;
@@ -984,12 +1197,22 @@ bool NMEAGPS::parseNS( char chr )
 
 bool NMEAGPS::parseLon( char chr )
 {
-  #ifdef GPS_FIX_LOCATION
+  #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
     if ((chr == ',') && (chrCount == 0))
       group_valid = false;
 
-    if (group_valid)
-      parseDDDMM( m_fix.lon, chr );
+    if (group_valid) {
+      parseDDDMM
+        (
+          #if defined( GPS_FIX_LOCATION )
+            m_fix.lon, 
+          #endif
+          #if defined( GPS_FIX_LOCATION_DMS )
+            m_fix.longitudeDMS,
+          #endif
+          chr
+        );
+    }
   #endif
 
   return true;
@@ -997,11 +1220,16 @@ bool NMEAGPS::parseLon( char chr )
 
 bool NMEAGPS::parseEW( char chr )
 {
-  #ifdef GPS_FIX_LOCATION
+  #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
     if (group_valid) {
-      if (chr == 'W')
-        m_fix.lon = -m_fix.lon;
-
+      if (chr == 'W') {
+        #ifdef GPS_FIX_LOCATION
+          m_fix.lon = -m_fix.lon;
+        #endif
+        #ifdef GPS_FIX_LOCATION_DMS
+          m_fix.longitudeDMS.hemisphere = WEST_H;
+        #endif
+      }
       m_fix.valid.location = true;
     }
   #endif
@@ -1180,22 +1408,72 @@ bool NMEAGPS::parse_alt_err( char chr )
 
 void NMEAGPS::poll( Stream *device, nmea_msg_t msg )
 {
-  //  Only the ublox documentation references talker ID "EI".  
-  //  Other manufacturer's devices use "II" and "GP" talker IDs for the GPQ sentence.
-  //  However, "GP" is reserved for the GPS device, so it seems inconsistent
-  //  to use that talker ID when requesting something from the GPS device.
-  static const char pm0[] __PROGMEM = "EIGPQ,GGA";
-  static const char pm1[] __PROGMEM = "EIGPQ,GLL";
-  static const char pm2[] __PROGMEM = "EIGPQ,GSA";
-  static const char pm3[] __PROGMEM = "EIGPQ,GST";
-  static const char pm4[] __PROGMEM = "EIGPQ,GSV";
-  static const char pm5[] __PROGMEM = "EIGPQ,RMC";
-  static const char pm6[] __PROGMEM = "EIGPQ,VTG";
-  static const char pm7[] __PROGMEM = "EIGPQ,ZDA";
-  static const char * const poll_msgs[] __PROGMEM = { pm0, pm1, pm2, pm3, pm4, pm5, pm6, pm7 };
+  if (MSGS_ENABLED > 0) {
 
-  if ((NMEA_FIRST_MSG <= msg) && (msg <= NMEA_LAST_MSG))
-    send_P( device, (str_P) pgm_read_word(&poll_msgs[msg-NMEA_FIRST_MSG]) );
+    //  Only the ublox documentation references talker ID "EI".  
+    //  Other manufacturer's devices use "II" and "GP" talker IDs for the GPQ sentence.
+    //  However, "GP" is reserved for the GPS device, so it seems inconsistent
+    //  to use that talker ID when requesting something from the GPS device.
+
+    #if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char gga[] __PROGMEM = "EIGPQ,GGA";
+    #endif
+    #if defined(NMEAGPS_PARSE_GLL) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char gll[] __PROGMEM = "EIGPQ,GLL";
+    #endif
+    #if defined(NMEAGPS_PARSE_GSA) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char gsa[] __PROGMEM = "EIGPQ,GSA";
+    #endif
+    #if defined(NMEAGPS_PARSE_GST) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char gst[] __PROGMEM = "EIGPQ,GST";
+    #endif
+    #if defined(NMEAGPS_PARSE_GSV) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char gsv[] __PROGMEM = "EIGPQ,GSV";
+    #endif
+    #if defined(NMEAGPS_PARSE_RMC) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char rmc[] __PROGMEM = "EIGPQ,RMC";
+    #endif
+    #if defined(NMEAGPS_PARSE_VTG) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char vtg[] __PROGMEM = "EIGPQ,VTG";
+    #endif
+    #if defined(NMEAGPS_PARSE_ZDA) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char zda[] __PROGMEM = "EIGPQ,ZDA";
+    #endif
+
+    static const char * const poll_msgs[] __PROGMEM =
+      {
+        #if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
+          gga,
+        #endif
+        #if defined(NMEAGPS_PARSE_GLL) | defined(NMEAGPS_RECOGNIZE_ALL)
+          gll,
+        #endif
+        #if defined(NMEAGPS_PARSE_GSA) | defined(NMEAGPS_RECOGNIZE_ALL)
+          gsa,
+        #endif
+        #if defined(NMEAGPS_PARSE_GST) | defined(NMEAGPS_RECOGNIZE_ALL)
+          gst,
+        #endif
+        #if defined(NMEAGPS_PARSE_GSV) | defined(NMEAGPS_RECOGNIZE_ALL)
+          gsv,
+        #endif
+        #if defined(NMEAGPS_PARSE_RMC) | defined(NMEAGPS_RECOGNIZE_ALL)
+          rmc,
+        #endif
+        #if defined(NMEAGPS_PARSE_VTG) | defined(NMEAGPS_RECOGNIZE_ALL)
+          vtg,
+        #endif
+        #if defined(NMEAGPS_PARSE_ZDA) | defined(NMEAGPS_RECOGNIZE_ALL)
+          zda
+        #endif
+      };
+
+    if ((NMEA_FIRST_MSG <= msg) && (msg <= NMEA_LAST_MSG)) {
+      const __FlashStringHelper * pollCmd =
+        (const __FlashStringHelper *) pgm_read_word(&poll_msgs[msg-NMEA_FIRST_MSG]);
+      send_P( device, pollCmd );
+    }
+  }
 
 } // poll
 
@@ -1239,7 +1517,7 @@ void NMEAGPS::send( Stream *device, const char *msg )
 
 //---------------------------------
 
-void NMEAGPS::send_P( Stream *device, str_P msg )
+void NMEAGPS::send_P( Stream *device, const __FlashStringHelper *msg )
 {
   if (msg) {
     const char *ptr = (const char *)msg;

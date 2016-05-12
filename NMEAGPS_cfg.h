@@ -4,9 +4,8 @@
 //------------------------------------------------------
 // Enable/disable the parsing of specific sentences.
 //
-// Configuring out a sentence prevents its fields from being parsed.
-// However, the sentence type will still be recognized by /decode/ and 
-// stored in member /nmeaMessage/.  No valid flags would be available.
+// Configuring out a sentence prevents it from being recognized; it
+// will be completely ignored.  (See also NMEAGPS_RECOGNIZE_ALL, below)
 //
 // FYI: Only RMC and ZDA contain date information.  Other
 // sentences contain time information.  Both date and time are 
@@ -22,7 +21,20 @@
 //#define NMEAGPS_PARSE_ZDA
 
 //------------------------------------------------------
-// Enable/disable the talker ID and manufacturer ID processing.
+// Select which sentence is sent *last* by your GPS device
+// in each update interval.  This can be used by your sketch
+// to determine when the GPS quiet time begins, and thus
+// when you can perform "some" time-consuming operations.
+
+#define LAST_SENTENCE_IN_INTERVAL NMEAGPS::NMEA_RMC
+
+// If you don't know which sentence is the last one,
+// use NMEAorder.ino to list them.  You do not have to select
+// the last sentence the device sends if you have disabled
+// it.  Just select the last sentence that you have *enabled*.
+
+//------------------------------------------------------
+// Enable/disable the talker ID, manufacturer ID and proprietary message processing.
 //
 // First, some background information.  There are two kinds of NMEA sentences:
 //
@@ -52,11 +64,11 @@
 // /talker_id/ and/or /mfr_id/ members will contain ID bytes.  The entire
 // sentence will be parsed, perhaps modifying members of /fix/.  You should
 // enable one or both IDs if you want the information in all sentences *and*
-// you also want to know the ID bytes.  This add two bytes of RAM for the
+// you also want to know the ID bytes.  This adds two bytes of RAM for the
 // talker ID, and 3 bytes of RAM for the manufacturer ID.
 //
 // 2. Enable PARSING the ID:  The virtual /parse_talker_id/ and
-// /parse_mfr_id/ will receive each ID character as it is received.  If it
+// /parse_mfr_id/ will receive each ID character as it is parsed.  If it
 // is not a valid ID, return /false/ to abort processing the rest of the
 // sentence.  No CPU time will be wasted on the invalid sentence, and no
 // /fix/ members will be modified.  You should enable this if you want to
@@ -67,8 +79,11 @@
 //#define NMEAGPS_SAVE_TALKER_ID
 //#define NMEAGPS_PARSE_TALKER_ID
 
-//#define NMEAGPS_SAVE_MFR_ID
-//#define NMEAGPS_PARSE_MFR_ID
+//#define NMEAGPS_PARSE_PROPRIETARY
+#ifdef NMEAGPS_PARSE_PROPRIETARY
+  //#define NMEAGPS_SAVE_MFR_ID
+  #define NMEAGPS_PARSE_MFR_ID
+#endif
 
 //------------------------------------------------------
 // Enable/disable tracking the current satellite array and,
@@ -175,5 +190,21 @@
 // indicated that it still needs one.
 
 //#define NMEAGPS_COMMA_NEEDED
+
+//------------------------------------------------------
+//  Some applications may want to recognize a sentence type
+//  without actually parsing any of the fields.  Uncommenting
+//  this define will allow the nmeaMessage member to be set
+//  when *any* standard message is seen, even though that 
+//  message is not enabled by a NMEAGPS_PARSE_xxx define above.
+//  No valid flags will be true for those sentences.
+
+#define NMEAGPS_RECOGNIZE_ALL
+
+//------------------------------------------------------
+// Sometimes, a little extra space is needed to parse an intermediate form.
+// This config items enables extra space.
+
+#define NMEAGPS_PARSING_SCRATCHPAD
 
 #endif

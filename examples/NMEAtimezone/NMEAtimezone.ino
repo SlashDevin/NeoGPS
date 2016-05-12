@@ -16,7 +16,7 @@
 //        any sentence that contains a time field.  Be sure to change the 
 //        "if" statement in GPSloop from RMC to your selected sentence.
 //
-//  'Serial' is for trace output to the Serial Monitor window.
+//  'Serial' is for debug output to the Serial Monitor window.
 //
 //======================================================================
 
@@ -33,9 +33,14 @@
 #endif
 #include "GPSport.h"
 
+#ifdef NeoHWSerial_h
+  #define DEBUG_PORT NeoSerial
+#else
+  #define DEBUG_PORT Serial
+#endif
+
 static NMEAGPS  gps         ; // This parses received characters
 static gps_fix  fix_data;
-static const NMEAGPS::nmea_msg_t LAST_SENTENCE_IN_INTERVAL = NMEAGPS::NMEA_GLL;
 
 #if !defined(GPS_FIX_TIME)
   #error You must define GPS_FIX_TIME in GPSfix_cfg.h!
@@ -59,9 +64,9 @@ static void doSomeWork()
                       zone_hours   * NeoGPS::SECONDS_PER_HOUR +
                       zone_minutes * NeoGPS::SECONDS_PER_MINUTE;
 
-    Serial << NeoGPS::time_t( fix_data.dateTime + zone_offset );
+    DEBUG_PORT << NeoGPS::time_t( fix_data.dateTime + zone_offset );
   }
-  Serial.println();
+  DEBUG_PORT.println();
 
   // Clear out what we just printed.  If you need this data elsewhere,
   //   don't do this.
@@ -92,16 +97,16 @@ static void GPSloop()
 void setup()
 {
   // Start the normal trace output
-  Serial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
+  DEBUG_PORT.begin(9600);
 
-  Serial.print( F("NMEAtimezone.INO: started\n") );
-  Serial.print( F("fix object size = ") );
-  Serial.println( sizeof(gps.fix()) );
-  Serial.print( F("NMEAGPS object size = ") );
-  Serial.println( sizeof(gps) );
-  Serial.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  Serial.println( F("Local time") );
-  Serial.flush();
+  DEBUG_PORT.print( F("NMEAtimezone.INO: started\n") );
+  DEBUG_PORT.print( F("fix object size = ") );
+  DEBUG_PORT.println( sizeof(gps.fix()) );
+  DEBUG_PORT.print( F("NMEAGPS object size = ") );
+  DEBUG_PORT.println( sizeof(gps) );
+  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Local time") );
+  DEBUG_PORT.flush();
   
   // Start the UART for the GPS device
   gps_port.begin( 9600 );

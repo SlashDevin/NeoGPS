@@ -12,7 +12,7 @@
 //     2) At least one NMEA sentence has been enabled.
 //     3) Implicit Merging is disabled.
 //
-//  Serial is for trace output to the Serial Monitor window.
+//  Serial is for debug output to the Serial Monitor window.
 //
 //======================================================================
 
@@ -30,7 +30,11 @@
 #include "GPSport.h"
 
 #include "Streamers.h"
-Stream & trace = Serial;
+#ifdef NeoHWSerial_h
+  #define DEBUG_PORT NeoSerial
+#else
+  #define DEBUG_PORT Serial
+#endif
 
 //------------------------------------------------------------
 // Check that the config files are set up properly
@@ -51,7 +55,7 @@ Stream & trace = Serial;
   // This is an Explicit Merge: "fused |= gps.fix()"
   //
   // If you don't want or need the safe copy 'fused', you could
-  //   use NMEA.ino with NMEAGPS_ACCUMULATE_FIX enabled instead.
+  //   use gps.fix() with NMEAGPS_ACCUMULATE_FIX enabled instead.
 
 #endif
 
@@ -60,14 +64,12 @@ Stream & trace = Serial;
 static NMEAGPS  gps;
 static gps_fix fused;
 
-static const NMEAGPS::nmea_msg_t LAST_SENTENCE_IN_INTERVAL = NMEAGPS::NMEA_GLL;
-
 //----------------------------------------------------------------
 
 static void doSomeWork()
 {
   // Print all the things!
-  trace_all( gps, fused );
+  trace_all( DEBUG_PORT, gps, fused );
 
   // Clear out what we just printed.  If you need this data elsewhere,
   //   don't do this.
@@ -100,18 +102,18 @@ static void GPSloop()
 void setup()
 {
   // Start the normal trace output
-  Serial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
+  DEBUG_PORT.begin(9600);
 
-  Serial.print( F("NMEAfused.INO: started\n") );
-  Serial.print( F("fix object size = ") );
-  Serial.println( sizeof(gps.fix()) );
-  Serial.print( F("NMEAGPS object size = ") );
-  Serial.println( sizeof(gps) );
-  Serial.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.print( F("NMEAfused.INO: started\n") );
+  DEBUG_PORT.print( F("fix object size = ") );
+  DEBUG_PORT.println( sizeof(gps.fix()) );
+  DEBUG_PORT.print( F("NMEAGPS object size = ") );
+  DEBUG_PORT.println( sizeof(gps) );
+  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
 
-  trace_header();
+  trace_header( DEBUG_PORT );
 
-  Serial.flush();
+  DEBUG_PORT.flush();
   
   // Start the UART for the GPS device
   gps_port.begin(9600);

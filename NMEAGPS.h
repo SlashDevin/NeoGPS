@@ -21,6 +21,9 @@
 
 #include <avr/pgmspace.h>
 
+class __FlashStringHelper;
+class Stream;
+
 #include "GPSfix.h"
 #include "NMEAGPS_cfg.h"
 
@@ -70,21 +73,50 @@ public:
     /** NMEA standard message types. */
     enum nmea_msg_t {
         NMEA_UNKNOWN,
-        NMEA_GGA,
-        NMEA_GLL,
-        NMEA_GSA,
-        NMEA_GST,
-        NMEA_GSV,
-        NMEA_RMC,
-        NMEA_VTG,
-        NMEA_ZDA,
-    };
-    static const nmea_msg_t NMEA_FIRST_MSG = NMEA_GGA;
-    static const nmea_msg_t NMEA_LAST_MSG  = NMEA_ZDA;
 
+        #if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
+          NMEA_GGA,
+        #endif
+        
+        #if defined(NMEAGPS_PARSE_GLL) | defined(NMEAGPS_RECOGNIZE_ALL)
+          NMEA_GLL,
+        #endif
+        
+        #if defined(NMEAGPS_PARSE_GSA) | defined(NMEAGPS_RECOGNIZE_ALL)
+          NMEA_GSA,
+        #endif
+        
+        #if defined(NMEAGPS_PARSE_GST) | defined(NMEAGPS_RECOGNIZE_ALL)
+          NMEA_GST,
+        #endif
+        
+        #if defined(NMEAGPS_PARSE_GSV) | defined(NMEAGPS_RECOGNIZE_ALL)
+          NMEA_GSV,
+        #endif
+        
+        #if defined(NMEAGPS_PARSE_RMC) | defined(NMEAGPS_RECOGNIZE_ALL)
+          NMEA_RMC,
+        #endif
+        
+        #if defined(NMEAGPS_PARSE_VTG) | defined(NMEAGPS_RECOGNIZE_ALL)
+          NMEA_VTG,
+        #endif
+        
+        #if defined(NMEAGPS_PARSE_ZDA) | defined(NMEAGPS_RECOGNIZE_ALL)
+          NMEA_ZDA,
+        #endif
+        
+        NMEAMSG_END // a bookend that tells how many enums there were
+      };
+
+    CONST_CLASS_DATA nmea_msg_t NMEA_FIRST_MSG = (nmea_msg_t) 1;
+    CONST_CLASS_DATA nmea_msg_t NMEA_LAST_MSG  = (nmea_msg_t) (NMEAMSG_END-1);
+    CONST_CLASS_DATA uint8_t MSGS_ENABLED = NMEAMSG_END - NMEA_FIRST_MSG;
+    
     //  Convert a nmea_msg_t to a PROGMEM string.
     //    Useful for printing the sentence type instead of a number.
-    const char *string_for( nmea_msg_t msg ) const;
+    //    This can return NULL if the message is not a valid number.
+    const __FlashStringHelper *string_for( nmea_msg_t msg ) const;
 
     /**
      * Most recent NMEA sentence type received.
@@ -166,7 +198,7 @@ public:
      */
 
     static void send( Stream *device, const char *msg );
-    static void send_P( Stream *device, str_P msg );
+    static void send_P( Stream *device, const __FlashStringHelper *msg );
 
     // Set all parsed data (fix(), satellite info, etc.) to initial values.
     void data_init()
@@ -204,8 +236,18 @@ protected:
       bool       safe          NEOGPS_BF(1); // fix is safe to access
       bool       _comma_needed NEOGPS_BF(1); // field needs a comma to finish parsing
       bool       group_valid   NEOGPS_BF(1); // multi-field group valid
-      bool       proprietary   NEOGPS_BF(1); // receiving proprietary message
+      #ifdef NMEAGPS_PARSE_PROPRIETARY
+        bool       proprietary   NEOGPS_BF(1); // receiving proprietary message
+      #endif
     } NEOGPS_PACKED;
+
+    #ifdef NMEAGPS_PARSING_SCRATCHPAD
+      union {
+        uint32_t U4;
+        uint16_t U2[2];
+        uint8_t  U1[4];
+      } scratchpad;
+    #endif
 
     bool comma_needed()
     {
@@ -265,17 +307,20 @@ protected:
      *  to handle COMPLETED sentences from certain IDs differently.
      */
     #ifdef NMEAGPS_PARSE_TALKER_ID
-      NMEAGPS_VIRTUAL bool parseTalkerID( char chr ) { return true; };
+      NMEAGPS_VIRTUAL bool parseTalkerID( char ) { return true; };
     #endif
 
-    #ifdef NMEAGPS_PARSE_MFR_ID
-      NMEAGPS_VIRTUAL bool parseMfrID( char chr ) { return true; };
+    #ifdef NMEAGPS_PARSE_PROPRIETARY
+      #ifdef NMEAGPS_PARSE_MFR_ID
+        NMEAGPS_VIRTUAL bool parseMfrID( char ) { return true; };
+      #endif
     #endif
 
     /*
      * Try to recognize an NMEA sentence type, after the IDs have been accepted.
      */
     decode_t parseCommand( char c );
+    decode_t parseCommand( const msg_table_t *msgs, uint8_t cmdCount, char c );
 
     /*
      * Parse various NMEA sentences
@@ -298,31 +343,30 @@ protected:
      * Parse the primary NMEA field types into /fix/ members.
      */
 
-    bool parseFix( char chr ); // aka STATUS or MODE
-    bool parseTime( char chr );
-    bool parseDDMMYY( char chr );
-    bool parseLat( char chr );
-    bool parseNS( char chr );
-    bool parseLon( char chr );
-    bool parseEW( char chr );
-    bool parseSpeed( char chr );
-    bool parseHeading( char chr );
-    bool parseAlt( char chr );
+    bool parseFix        ( char chr ); // aka STATUS or MODE
+    bool parseTime       ( char chr );
+    bool parseDDMMYY     ( char chr );
+    bool parseLat        ( char chr );
+    bool parseNS         ( char chr );
+    bool parseLon        ( char chr );
+    bool parseEW         ( char chr );
+    bool parseSpeed      ( char chr );
+    bool parseHeading    ( char chr );
+    bool parseAlt        ( char chr );
     bool parseGeoidHeight( char chr );
-    bool parseHDOP( char chr );
-    bool parseVDOP( char chr );
-    bool parsePDOP( char chr );
-    bool parse_lat_err( char chr );
-    bool parse_lon_err( char chr );
-    bool parse_alt_err( char chr );
-    bool parseSatellites( char chr );
+    bool parseHDOP       ( char chr );
+    bool parseVDOP       ( char chr );
+    bool parsePDOP       ( char chr );
+    bool parse_lat_err   ( char chr );
+    bool parse_lon_err   ( char chr );
+    bool parse_alt_err   ( char chr );
+    bool parseSatellites ( char chr );
 
     // Helper macro for parsing the 4 consecutive fields of a location
-    #define PARSE_FIELD(i,f) case i: return parse##f( chr );
-    #define PARSE_LOC(i) PARSE_FIELD(i,Lat) \
-    PARSE_FIELD(i+1,NS); \
-    PARSE_FIELD(i+2,Lon); \
-    PARSE_FIELD(i+3,EW);
+    #define PARSE_LOC(i) case i: return parseLat( chr );\
+      case i+1: return parseNS ( chr ); \
+      case i+2: return parseLon( chr ); \
+      case i+3: return parseEW ( chr );
 
 public:
     // Optional SATELLITE VIEW array    -----------------------
@@ -362,7 +406,16 @@ protected:
      * Parse NMEA lat/lon dddmm.mmmm degrees
      * @return true.
      */
-    bool parseDDDMM( int32_t & val, char chr );
+    bool parseDDDMM
+      (
+        #if defined( GPS_FIX_LOCATION )
+          int32_t & val,
+        #endif
+        #if defined( GPS_FIX_LOCATION_DMS )
+          DMS_t & dms,
+        #endif
+        char chr
+      );
 
     /*
      * Parse integer into 8-bit int
@@ -381,10 +434,56 @@ protected:
     }
 
     /*
+     * Parse integer into signed 8-bit int
+     * @return true when non-empty value
+     */
+    bool parseInt( int8_t &val, uint8_t chr )
+    {
+      bool is_comma = (chr == ',');
+
+      if (chrCount == 0) {
+        if (is_comma)
+          return false; // empty field!
+
+        if (chr == '-') {
+          negative = true;
+          comma_needed( true ); // to negate
+        } else if (chr == '+') {
+          ;
+        } else {
+          val = (chr - '0');
+        }
+      } else if (!is_comma) {
+        val = (val*10) + (chr - '0');
+
+      } else if (negative) {
+        val = -val;
+      }
+
+      return true;
+    }
+
+    /*
      * Parse integer into 16-bit int
      * @return true when non-empty value
      */
     bool parseInt( uint16_t &val, uint8_t chr )
+    {
+      bool is_comma = (chr == ',');
+      if (chrCount == 0) {
+        if (is_comma)
+          return false; // empty field!
+        val = (chr - '0');
+      } else if (!is_comma)
+        val = (val*10) + (chr - '0');
+      return true;
+    }
+
+    /*
+     * Parse integer into 32-bit int
+     * @return true when non-empty value
+     */
+    bool parseInt( uint32_t &val, uint8_t chr )
     {
       bool is_comma = (chr == ',');
       if (chrCount == 0) {

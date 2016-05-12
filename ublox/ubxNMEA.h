@@ -41,14 +41,19 @@
 // field is completed by /parseField/, it may change /nmeamessage/ to one 
 // of the other PUBX message types.
 
-#if (defined(NMEAGPS_PARSE_PUBX_00) | defined(NMEAGPS_PARSE_PUBX_00))  \
-        &                \
-    !defined(NMEAGPS_PARSE_MFR_ID)
-#error NMEAGPS_PARSE_MFR_ID must be defined in NMEAGPS.h in order to parse PUBX messages!
+#if (defined(NMEAGPS_PARSE_PUBX_00) | defined(NMEAGPS_PARSE_PUBX_00))
+
+  #if !defined(NMEAGPS_PARSE_PROPRIETARY)
+    #error NMEAGPS_PARSE_PROPRIETARY must be defined in NMEAGPS_cfg.h in order to parse PUBX messages!
+  #endif
+
+  #if !defined(NMEAGPS_PARSE_MFR_ID)
+    #error NMEAGPS_PARSE_MFR_ID must be defined in NMEAGPS_cfg.h in order to parse PUBX messages!
+  #endif
 #endif
 
 #ifndef NMEAGPS_DERIVED_TYPES
-#error You must "#define NMEAGPS_DERIVED_TYPES" in NMEAGPS.h!
+  #error You must "#define NMEAGPS_DERIVED_TYPES" in NMEAGPS_cfg.h!
 #endif
 
 /**

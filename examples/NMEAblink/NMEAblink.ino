@@ -29,9 +29,9 @@
 //
 //    If you don't need debug output on Serial, this would be a lot 
 //      more reliable than using SoftwareSerial for the GPS.  Be 
-//      sure to delete all 'trace' statements and the 'Streamers' 
-//      include below.  If your system is not attached to a PC when
-//      installed, you should seriously consider using 'Serial' for
+//      sure to delete all 'Serial' debug statements.  If your system 
+//      is not attached to a PC when installed, you should seriously 
+//      consider using 'Serial' for
 //      the GPS device.
 //======================================================================
 

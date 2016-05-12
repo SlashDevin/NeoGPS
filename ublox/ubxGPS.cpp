@@ -1,6 +1,22 @@
 #include "ubxGPS.h"
 #include "Streamers.h"
 
+// Check configurations
+ 
+#if defined( UBLOX_PARSE_POSLLH ) & \
+    ( defined( GPS_FIX_LAT_ERR ) | \
+      defined( GPS_FIX_LON_ERR ) | \
+      defined( GPS_FIX_ALT_ERR ) ) & \
+    !defined( NMEAGPS_PARSING_SCRATCHPAD )
+
+  // The NAV_POSLLH message has 4-byte received errors in mm.
+  // These must be converted to the 2-byte gps_fix errors in cm.
+  // There's no easy way to perform this conversion as the bytes are
+  // being received, especially when the LSB is received first.
+  #error You must enable NMEAGPS_PARSING_SCRATCHPAD in NMEAGPS_cfg.h
+
+#endif
+
 using namespace ublox;
 
 //----------------------------------
@@ -98,9 +114,17 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
           switch (chrCount++) {
             case 0:
               rx().msg_class = (msg_class_t) chr;
+              //if ((uint8_t) chr < 0x10)
+              //  Serial.print( '0' );
+              //Serial.print( (uint8_t) chr, HEX );
               break;
             case 1:
               rx().msg_id = (msg_id_t) chr;
+              //Serial.print( '/' );
+              //if ((uint8_t) chr < 0x10)
+              //  Serial.print( '0' );
+              //Serial.print( (uint8_t) chr, HEX );
+              //Serial.write( ' ' );
               break;
             case 2:
               rx().length = chr;
@@ -261,7 +285,7 @@ bool ubloxGPS::wait_for_ack()
       sent = ms;
       run();
     }
-  } while ((idle_time < 250) && ((removed_idle_time+idle_time) < 1000));
+  } while ((idle_time < 300) && ((removed_idle_time+idle_time) < 1000));
 
   //Serial.print( F("! -") );
   //Serial.println( removed_idle_time );
@@ -419,16 +443,37 @@ bool ubloxGPS::parseField( char c )
                   ok = parseTOW( chr );
                   break;
 
-                #ifdef GPS_FIX_LOCATION
+                #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
                   case 4:
                     NMEAGPS_INVALIDATE( location );
                   case 5: case 6: case 7:
-                    ((uint8_t *)&m_fix.lon) [ chrCount-4 ] = chr;
+                    #ifdef GPS_FIX_LOCATION
+                      ((uint8_t *)&m_fix.lon) [ chrCount-4 ] = chr;
+                    #else
+                      scratchpad.U1[ chrCount-4 ] = chr;
+                    #endif
+                    if (chrCount == 7) {
+                      #if defined( GPS_FIX_LOCATION ) & defined( GPS_FIX_LOCATION_DMS )
+                        m_fix.longitudeDMS.From( m_fix.lon );
+                      #elif defined( GPS_FIX_LOCATION_DMS )
+                        m_fix.longitudeDMS.From( scratchpad.U4 );
+                      #endif
+                    }
                     break;
                   case 8: case 9: case 10: case 11:
-                    ((uint8_t *)&m_fix.lat) [ chrCount-8 ] = chr;
-                    if (chrCount == 11)
+                    #ifdef GPS_FIX_LOCATION
+                      ((uint8_t *)&m_fix.lat) [ chrCount-8 ] = chr;
+                    #else
+                      scratchpad.U1[ chrCount-8 ] = chr;
+                    #endif
+                    if (chrCount == 11) {
+                      #if defined( GPS_FIX_LOCATION ) & defined( GPS_FIX_LOCATION_DMS )
+                        m_fix.latitudeDMS .From( m_fix.lat );
+                      #elif defined( GPS_FIX_LOCATION_DMS )
+                        m_fix.latitudeDMS .From( scratchpad.U4 );
+                      #endif
                       m_fix.valid.location = true;
+                    }
                     break;
                 #endif
 

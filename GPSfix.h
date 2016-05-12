@@ -19,8 +19,15 @@
  * Lesser General Public License for more details.
  */
 
-#include "Time.h"
 #include "GPSfix_cfg.h"
+
+#if defined( GPS_FIX_DATE ) | defined( GPS_FIX_TIME )
+  #include "Time.h"
+#endif
+
+#ifdef GPS_FIX_LOCATION_DMS
+  #include "DMS.h"
+#endif
 
 /**
  * A structure for holding a GPS fix: time, position, velocity, etc.
@@ -104,6 +111,11 @@ public:
     float   longitude () const { return ((float) lon) * 1.0e-7; }; // accuracy loss
   #endif
 
+  #ifdef GPS_FIX_LOCATION_DMS
+    DMS_t latitudeDMS;
+    DMS_t longitudeDMS;    
+  #endif
+  
   #ifdef GPS_FIX_ALTITUDE
     whole_frac    alt; // .01 meters
 
@@ -234,7 +246,7 @@ public:
       bool time NEOGPS_BF(1);
     #endif
 
-    #ifdef GPS_FIX_LOCATION
+    #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
       bool location NEOGPS_BF(1);
     #endif
 
@@ -306,6 +318,11 @@ public:
   {
     #ifdef GPS_FIX_LOCATION
       lat = lon = 0;
+    #endif
+
+    #ifdef GPS_FIX_LOCATION_DMS
+      latitudeDMS.init();
+      longitudeDMS.init();
     #endif
 
     #ifdef GPS_FIX_ALTITUDE
@@ -395,6 +412,13 @@ public:
       if (r.valid.location) {
         lat = r.lat;
         lon = r.lon;
+      }
+    #endif
+
+    #ifdef GPS_FIX_LOCATION_DMS
+      if (r.valid.location) {
+        latitudeDMS  = r.latitudeDMS;
+        longitudeDMS = r.longitudeDMS;
       }
     #endif
 

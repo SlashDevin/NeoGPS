@@ -1,23 +1,22 @@
 #include "Streamers.h"
-
 #include "NMEAGPS.h"
 
 //#define USE_FLOAT
 
-Stream& operator <<( Stream &outs, const bool b )
+Print& operator <<( Print &outs, const bool b )
   { outs.print( b ? 't' : 'f' ); return outs; }
 
-Stream& operator <<( Stream &outs, const char c ) { outs.print(c); return outs; }
+Print& operator <<( Print &outs, const char c ) { outs.print(c); return outs; }
 
-Stream& operator <<( Stream &outs, const uint16_t v ) { outs.print(v); return outs; }
+Print& operator <<( Print &outs, const uint16_t v ) { outs.print(v); return outs; }
 
-Stream& operator <<( Stream &outs, const uint32_t v ) { outs.print(v); return outs; }
+Print& operator <<( Print &outs, const uint32_t v ) { outs.print(v); return outs; }
 
-Stream& operator <<( Stream &outs, const int32_t v ) { outs.print(v); return outs; }
+Print& operator <<( Print &outs, const int32_t v ) { outs.print(v); return outs; }
 
-Stream& operator <<( Stream &outs, const uint8_t v ) { outs.print(v); return outs; }
+Print& operator <<( Print &outs, const uint8_t v ) { outs.print(v); return outs; }
 
-Stream& operator <<( Stream &outs, const __FlashStringHelper *s )
+Print& operator <<( Print &outs, const __FlashStringHelper *s )
 { outs.print(s); return outs; }
 
 //------------------------------------------
@@ -47,6 +46,10 @@ const char gps_fix_header[] __PROGMEM =
 
   #ifdef GPS_FIX_LOCATION
     "Lat,Lon,"
+  #endif
+
+  #ifdef GPS_FIX_LOCATION_DMS
+    "DMS,"
   #endif
 
   #if defined(GPS_FIX_HEADING)
@@ -97,7 +100,38 @@ const char gps_fix_header[] __PROGMEM =
 
 //...............
 
-Stream & operator <<( Stream &outs, const gps_fix &fix )
+#ifdef GPS_FIX_LOCATION_DMS
+
+  static void printDMS( Print & outs, const DMS_t & dms )
+  {
+    if (dms.degrees < 10)
+      outs.write( '0' );
+    outs.print( dms.degrees );
+    outs.write( ' ' );
+
+    if (dms.minutes < 10)
+      outs.write( '0' );
+    outs.print( dms.minutes );
+    outs.print( F("\' ") );
+
+    if (dms.seconds_whole < 10)
+      outs.write( '0' );
+    outs.print( dms.seconds_whole );
+    outs.write( '.' );
+
+    if (dms.seconds_frac < 100)
+      outs.write( '0' );
+    if (dms.seconds_frac < 10)
+      outs.write( '0' );
+    outs.print( dms.seconds_frac );
+    outs.print( F("\" ") );
+
+  } // printDMS
+
+#endif
+//...............
+
+Print & operator <<( Print &outs, const gps_fix &fix )
 {
   if (fix.valid.status)
     outs << (uint8_t) fix.status;
@@ -126,7 +160,7 @@ Stream & operator <<( Stream &outs, const gps_fix &fix )
 
     //  Date/Time not enabled, just output the interval number
     static uint32_t sequence = 0L;
-    trace << sequence++ << ',';
+    outs << sequence++ << ',';
 
   #endif
 
@@ -138,6 +172,18 @@ Stream & operator <<( Stream &outs, const gps_fix &fix )
         outs.print( fix.longitude(), 6 );
       } else
         outs << ',';
+      outs << ',';
+    #endif
+    #ifdef GPS_FIX_LOCATION_DMS
+      if (fix.valid.location) {
+        printDMS( outs, fix.latitudeDMS );
+        outs.print( fix.latitudeDMS.NS() );
+        outs.write( ' ' );
+        if (fix.longitudeDMS.degrees < 100)
+          outs.write( '0' );
+        printDMS( outs, fix.longitudeDMS );
+        outs.print( fix.longitudeDMS.EW() );
+      }
       outs << ',';
     #endif
     #ifdef GPS_FIX_HEADING
@@ -203,6 +249,18 @@ Stream & operator <<( Stream &outs, const gps_fix &fix )
         outs << fix.latitudeL() << ',' << fix.longitudeL();
       else
         outs << ',';
+      outs << ',';
+    #endif
+    #ifdef GPS_FIX_LOCATION_DMS
+      if (fix.valid.location) {
+        printDMS( outs, fix.latitudeDMS );
+        outs.print( fix.latitudeDMS.NS() );
+        outs.write( ' ' );
+        if (fix.longitudeDMS.degrees < 100)
+          outs.write( '0' );
+        printDMS( outs, fix.longitudeDMS );
+        outs.print( fix.longitudeDMS.EW() );
+      }
       outs << ',';
     #endif
     #ifdef GPS_FIX_HEADING
@@ -287,48 +345,48 @@ static const char NMEAGPS_header[] __PROGMEM =
 
   "";
 
-void trace_header()
+void trace_header( Print & outs )
 {
-  trace.print( (const __FlashStringHelper *) &gps_fix_header[0] );
-  trace.print( (const __FlashStringHelper *) &NMEAGPS_header[0] );
+  outs.print( (const __FlashStringHelper *) &gps_fix_header[0] );
+  outs.print( (const __FlashStringHelper *) &NMEAGPS_header[0] );
 
-  trace << '\n';
+  outs << '\n';
 }
 
 //--------------------------
 
-void trace_all( const NMEAGPS &gps, const gps_fix &fix )
+void trace_all( Print & outs, const NMEAGPS &gps, const gps_fix &fix )
 {
-  trace << fix;
+  outs << fix;
 
   #if defined(NMEAGPS_PARSE_SATELLITES)
-    trace << '[';
+    outs << '[';
 
     for (uint8_t i=0; i < gps.sat_count; i++) {
-      trace << gps.satellites[i].id;
+      outs << gps.satellites[i].id;
 
       #if defined(NMEAGPS_PARSE_SATELLITE_INFO)
-        trace << ' ' << 
+        outs << ' ' << 
           gps.satellites[i].elevation << '/' << gps.satellites[i].azimuth;
-        trace << '@';
+        outs << '@';
         if (gps.satellites[i].tracked)
-          trace << gps.satellites[i].snr;
+          outs << gps.satellites[i].snr;
         else
-          trace << '-';
+          outs << '-';
       #endif
 
-      trace << ',';
+      outs << ',';
     }
 
-    trace << F("],");
+    outs << F("],");
   #endif
 
   #ifdef NMEAGPS_STATS
-    trace << gps.statistics.ok         << ','
+    outs << gps.statistics.ok         << ','
           << gps.statistics.crc_errors << ','
           << gps.statistics.chars      << ',';
   #endif
 
-  trace << '\n';
+  outs << '\n';
 
 } // trace_all

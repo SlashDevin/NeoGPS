@@ -2,7 +2,7 @@
 #include "NMEAGPS.h"
 
 //======================================================================
-//  Program: NMEAloc.ino
+//  Program: NMEAlocDMS.ino
 //
 //  Description:  This program only parses an RMC sentence for the lat/lon.
 //
@@ -11,7 +11,7 @@
 //     2) The RMC sentence has been enabled.
 //     3) Your device sends an RMC sentence (e.g., $GPRMC).
 //
-//  'Serial' is for debug output to the Serial Monitor window.
+//  Serial is for trace output to the Serial Monitor window.
 //
 //======================================================================
 
@@ -43,9 +43,9 @@
 
 #endif
 
-#if !defined( GPS_FIX_LOCATION )
+#if !defined( GPS_FIX_LOCATION_DMS )
 
-  #error You must uncomment GPS_FIX_LOCATION in GPSfix_cfg.h!
+  #error You must uncomment GPS_FIX_LOCATION_DMS in GPSfix_cfg.h!
 
 #endif
 
@@ -56,33 +56,28 @@ static gps_fix  fix; // This holds on to the parsed fields, like lat/lon
 
 //----------------------------------------------------------------
 
-static void printL( Print & outs, int32_t degE7 );
-static void printL( Print & outs, int32_t degE7 )
+static void printDMS( const DMS_t & dms )
 {
-  // Extract and print negative sign
-  if (degE7 < 0) {
-    degE7 = -degE7;
-    outs.print( '-' );
-  }
+  if (dms.degrees < 10)
+    DEBUG_PORT.write( '0' );
+  DEBUG_PORT.print( dms.degrees );
+  DEBUG_PORT.write( ' ' );
+  if (dms.minutes < 10)
+    DEBUG_PORT.write( '0' );
+  DEBUG_PORT.print( dms.minutes );
+  DEBUG_PORT.print( F("\' ") );
+  if (dms.seconds_whole < 10)
+    DEBUG_PORT.write( '0' );
+  DEBUG_PORT.print( dms.seconds_whole );
+  DEBUG_PORT.write( '.' );
+  if (dms.seconds_frac < 100)
+    DEBUG_PORT.write( '0' );
+  if (dms.seconds_frac < 10)
+    DEBUG_PORT.write( '0' );
+  DEBUG_PORT.print( dms.seconds_frac );
+  DEBUG_PORT.print( F("\" ") );
 
-  // Whole degrees
-  int32_t deg = degE7 / 10000000L;
-  outs.print( deg );
-  outs.print( '.' );
-
-  // Get fractional degrees
-  degE7 -= deg*10000000L;
-
-  // Print leading zeroes, if needed
-  int32_t factor = 1000000L;
-  while ((degE7 < factor) && (factor > 1L)){
-    outs.print( '0' );
-    factor /= 10L;
-  }
-  
-  // Print fractional degrees
-  outs.print( degE7 );
-}
+} // printDMS
 
 static void doSomeWork();
 static void doSomeWork()
@@ -97,22 +92,13 @@ static void doSomeWork()
 
   if (fix.valid.location) {
 
-    // DEBUG_PORT.print( fix.latitude(), 6 ); // floating-point display
-    // DEBUG_PORT.print( fix.latitudeL() ); // integer display
-    printL( DEBUG_PORT, fix.latitudeL() ); // prints int like a float
-    DEBUG_PORT.print( ',' );
-    // DEBUG_PORT.print( fix.longitude(), 6 ); // floating-point display
-    // DEBUG_PORT.print( fix.longitudeL() );  // integer display
-    printL( DEBUG_PORT, fix.longitudeL() ); // prints int like a float
-
-    DEBUG_PORT.print( ' ' );
-    if (fix.valid.satellites)
-      DEBUG_PORT.print( fix.satellites );
-
-    DEBUG_PORT.print( ' ' );
-    DEBUG_PORT.print( fix.speed(), 6 );
-    DEBUG_PORT.print( F(" = ") );
-    DEBUG_PORT.print( fix.speed_mph(), 6 );
+    printDMS( fix.latitudeDMS );
+    DEBUG_PORT.print( fix.latitudeDMS.NS() );
+    DEBUG_PORT.write( ' ' );
+    if (fix.longitudeDMS.degrees < 100)
+      DEBUG_PORT.write( '0' );
+    printDMS( fix.longitudeDMS );
+    DEBUG_PORT.print( fix.longitudeDMS.EW() );
 
   } else {
     // No valid location data yet!
@@ -146,16 +132,13 @@ void setup()
 {
   DEBUG_PORT.begin(9600);
 
-  DEBUG_PORT.print( F("NMEAloc.INO: started\n") );
+  DEBUG_PORT.print( F("NMEAlocDMS.INO: started\n") );
   DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Only displaying data from xxRMC sentences.  Other sentences may be parsed, but their data will not be displayed.") );
   DEBUG_PORT.flush();
 
-  
   // Start the UART for the GPS device
   gps_port.begin(9600);
-  
-  DEBUG_PORT.print( F("ARDUINO = ") );
-  DEBUG_PORT.println( ARDUINO );
 }
 
 //--------------------------

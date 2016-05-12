@@ -299,7 +299,7 @@ protected:
 
 }; // namespace NeoGPS
 
-class Stream;
+class Print;
 
 /**
  * Print the date/time to the given stream with the format "YYYY-MM-DD HH:MM:SS".
@@ -307,6 +307,6 @@ class Stream;
  * @param[in] t time structure.
  * @return iostream.
  */
-Stream & operator <<( Stream & outs, const NeoGPS::time_t &t );
+Print & operator <<( Print & outs, const NeoGPS::time_t &t );
 
 #endif

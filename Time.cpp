@@ -24,7 +24,9 @@
 // For strtoul declaration
 #include <stdlib.h>
 
-Stream& operator<<(Stream& outs, const NeoGPS::time_t& t)
+#include <Print.h>
+
+Print & operator<<( Print& outs, const NeoGPS::time_t& t )
 {
   outs.print( t.full_year( t.year ) );
   outs.write( '-' );

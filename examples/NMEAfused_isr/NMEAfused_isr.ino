@@ -14,13 +14,13 @@
 //     2) You have installed NeoHWSerial.
 //     3) For non-Mega boards, you have installed NeoICSerial or NeoSWSerial.
 //
-//  'NeoSerial' is for trace output to the Serial Monitor window.
+//  'Serial' is for debug output to the Serial Monitor window.
 //
 //======================================================================
 
 #if defined( UBRR1H )
   // Default is to use NeoSerial1 when available.
-  //#include <NeoHWSerial.h>
+  #include <NeoHWSerial.h>
   // NOTE: There is an issue with IDEs before 1.6.6.  The above include 
   // must be commented out for non-Mega boards, even though it is
   // conditionally included.  If you have a Mega board, uncomment 
@@ -34,24 +34,20 @@
 
 #include "Streamers.h"
 #ifdef NeoHWSerial_h
-  Stream & trace = NeoSerial;
-  #define SERIAL NeoSerial
+  #define DEBUG_PORT NeoSerial
 #else
-  Stream & trace = Serial;
-  #define SERIAL Serial
+  #define DEBUG_PORT Serial
 #endif
 
 static NMEAGPS  gps; 
 static gps_fix  fused;
-
-static const NMEAGPS::nmea_msg_t LAST_SENTENCE_IN_INTERVAL = NMEAGPS::NMEA_GLL;
 
 //----------------------------------------------------------------
 
 static void doSomeWork()
 {
   // Print all the things!
-  trace_all( gps, fused );
+  trace_all( DEBUG_PORT, gps, fused );
 
   // Clear out what we just printed.  If you need this data elsewhere,
   //   don't do this.
@@ -78,11 +74,16 @@ static void doSomeWork()
 //    of time.  Instead, set a flag here and watch for that flag to 
 //    change in loop() and call millis() there.
 
-volatile bool fix_complete = false; // a flag set by the ISR and cleared by GPSloop
+volatile bool fix_complete = false; // set by the ISR and cleared by GPSloop
+volatile bool overrun      = false; // set by the ISR when doSomeWork takes too long
 
 static void GPSisr( uint8_t c )
 {
   if (gps.decode( c ) == NMEAGPS::DECODE_COMPLETED) {
+
+    if (fix_complete)
+      // doSomeWork took too long!
+      overrun = true;
 
     fused |= gps.fix();
 
@@ -100,8 +101,9 @@ static void GPSloop()
   //   This is also the start of the GPS quiet time.
   
   if (fix_complete) {
-    fix_complete = false;
     doSomeWork();
+    // delay(900); // simulates taking too long in doSomeWork, causing overrun.
+    fix_complete = false;
 
     // NOTE: you can use the fused fix data in doSomeWork until the 
     // next quiet time interval starts. At that time, fix_data will 
@@ -120,20 +122,20 @@ static void GPSloop()
 void setup()
 {
   // Start the normal trace output
-  SERIAL.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
+  DEBUG_PORT.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
 
-  SERIAL.print( F("NMEAfused_isr.INO: started\n") );
-  SERIAL.print( F("fix object size = ") );
-  SERIAL.println( sizeof(gps.fix()) );
-  SERIAL.print( F("NMEAGPS object size = ") );
-  SERIAL.println( sizeof(gps) );
-  SERIAL.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  SERIAL.print( F("GPS quiet time begins after a ") );
-  SERIAL.print( (const __FlashStringHelper *) gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
-  SERIAL.println( F(" sentence is received.\n"
+  DEBUG_PORT.print( F("NMEAfused_isr.INO: started\n") );
+  DEBUG_PORT.print( F("fix object size = ") );
+  DEBUG_PORT.println( sizeof(gps.fix()) );
+  DEBUG_PORT.print( F("NMEAGPS object size = ") );
+  DEBUG_PORT.println( sizeof(gps) );
+  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.print( F("GPS quiet time begins after a ") );
+  DEBUG_PORT.print( gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
+  DEBUG_PORT.println( F(" sentence is received.\n"
                    "You should confirm this with NMEAorder.ino") );
-  trace_header();
-  SERIAL.flush();
+  trace_header( DEBUG_PORT );
+  DEBUG_PORT.flush();
   
   // Start the UART for the GPS device
   gps_port.attachInterrupt( GPSisr );
@@ -145,4 +147,9 @@ void setup()
 void loop()
 {
   GPSloop();
+
+  if (overrun) {
+    overrun = false;
+    DEBUG_PORT.println( F("DATA OVERRUN: doSomeWork took too long!") );
+  }
 }

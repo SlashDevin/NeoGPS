@@ -18,8 +18,9 @@
 //          See GPSport.h for the default connections.
 //     3) You know the default baud rate of your GPS device
 //          Use NMEAdiagnostic.ino to scan for the correct baud rate.
+//     4) NMEAGPS_RECOGNIZE_ALL must be enabled in NMEAGPS_cfg.h
 //
-//  'Serial' is for trace output to the Serial Monitor window.
+//  'Serial' is for debug output to the Serial Monitor window.
 //
 //======================================================================
 
@@ -36,6 +37,20 @@
 #endif
 #include "GPSport.h"
   
+#ifdef NeoHWSerial_h
+  #define DEBUG_PORT NeoSerial
+#else
+  #define DEBUG_PORT Serial
+#endif
+
+// Check configuration
+
+#ifndef NMEAGPS_RECOGNIZE_ALL
+
+  #error You must define NMEAGPS_RECOGNIZE_ALL in NMEAGPS_cfg.h!
+  
+#endif
+
 static NMEAGPS  gps         ; // This parses received characters
 static uint32_t last_rx = 0L; // The last millis() time a character was
                               // received from GPS.  This is used to
@@ -62,14 +77,14 @@ static void recordSentenceTypes()
 
 static void printSentenceOrder()
 {
-  Serial.println( F("\nSentence order in each 1-second interval:") );
+  DEBUG_PORT.println( F("\nSentence order in each 1-second interval:") );
 
   for (uint8_t i=0; i<sentence_count; i++) {
-    Serial.print( F("  ") );
-    Serial.println( (const __FlashStringHelper *) gps.string_for( sentences[i] ) );
+    DEBUG_PORT.print( F("  ") );
+    DEBUG_PORT.println( gps.string_for( sentences[i] ) );
   }
 
-  Serial.println();
+  DEBUG_PORT.println();
 
 } // printSentenceOrder
 
@@ -85,7 +100,7 @@ static void GPSloop()
       if (last_sentence_in_interval == NMEAGPS::NMEA_UNKNOWN) {
         // Still building the list
         recordSentenceTypes();
-        Serial.print( '.' );
+        DEBUG_PORT.print( '.' );
       }
     }
   }
@@ -132,20 +147,20 @@ static bool quietTimeStarted()
 
       if (!getting_chars) {
         
-        Serial.println( F("\nCheck GPS device and/or connections.  No characters received.\n") );
+        DEBUG_PORT.println( F("\nCheck GPS device and/or connections.  No characters received.\n") );
         
         allDone = true;
 
       } else if (sentence_count == 0) {
         
-        Serial.println( F("No valid sentences, but characters are being received.\n"
+        DEBUG_PORT.println( F("No valid sentences, but characters are being received.\n"
         "Check baud rate or device protocol configuration.\n" ) );
 
         allDone = true;
       }
 
       if (allDone) {
-        Serial.print( F("\nEND.\n") );
+        DEBUG_PORT.print( F("\nEND.\n") );
         for (;;)
           ; // hang!
       }
@@ -189,15 +204,15 @@ static void watchForLastSentence()
 void setup()
 {
   // Start the normal trace output
-  Serial.begin(9600);
+  DEBUG_PORT.begin(9600);
 
-  Serial.print( F("NMEAorder.INO: started\n") );
-  Serial.print( F("fix object size = ") );
-  Serial.println( sizeof(gps.fix()) );
-  Serial.print( F("NMEAGPS object size = ") );
-  Serial.println( sizeof(gps) );
-  Serial.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  Serial.flush();
+  DEBUG_PORT.print( F("NMEAorder.INO: started\n") );
+  DEBUG_PORT.print( F("fix object size = ") );
+  DEBUG_PORT.println( sizeof(gps.fix()) );
+  DEBUG_PORT.print( F("NMEAGPS object size = ") );
+  DEBUG_PORT.println( sizeof(gps) );
+  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.flush();
   
   // Start the UART for the GPS device
   gps_port.begin( 9600 );

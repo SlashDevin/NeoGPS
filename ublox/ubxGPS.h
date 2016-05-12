@@ -44,7 +44,6 @@
 #define UBLOX_PARSE_SVINFO
 //#define UBLOX_PARSE_CFGNAV5
 //#define UBLOX_PARSE_MONVER
- 
 
 
 class ubloxGPS : public ubloxNMEA
@@ -151,20 +150,6 @@ public:
     Stream *Device() const { return (Stream *)m_device; };
 
 protected:
-
-    #if defined( GPS_FIX_LAT_ERR ) | defined( GPS_FIX_LON_ERR ) | \
-        defined( GPS_FIX_ALT_ERR )
-      // Well, crud.  The NAV_POSLLH message has 4-byte received errors in mm.
-      // These must be converted to the 2-byte gps_fix errors in cm.
-      // There's no easy way to perform this conversion as the bytes are
-      // being received, especially when the LSB is received first.
-      // Hold them here, then divide.
-      union {
-        uint32_t U4;
-        uint16_t U2[2];
-        uint8_t  U1[4];
-      };
-    #endif
 
     /*
      * Some UBX messages can be larger than 256 bytes, so

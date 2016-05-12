@@ -14,7 +14,7 @@
 //  Description:  This program parses UBX binary protocal messages from
 //     ublox devices.  It is an extension of NMEAfused.ino.
 //
-//  Serial is for trace output to the Serial Monitor window.
+//  Serial is for debug output to the Serial Monitor window.
 //
 //======================================================================
 
@@ -32,7 +32,11 @@
 #include "GPSport.h"
 
 #include "Streamers.h"
-Stream & trace = Serial;
+#ifdef NeoHWSerial_h
+  #define DEBUG_PORT NeoSerial
+#else
+  #define DEBUG_PORT Serial
+#endif
 
 //------------------------------------------------------------
 // Check that the config files are set up properly
@@ -111,7 +115,7 @@ public:
       else {
         if (ok_to_process && ((ms - last_rx) > 2000L)) {
           last_rx = ms;
-          trace << F("RESTART!\n");
+          DEBUG_PORT.print( F("RESTART!\n") );
           if (state != GETTING_STATUS) {
             state = GETTING_STATUS;
             enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_STATUS );
@@ -129,20 +133,20 @@ public:
       if (fix().status == gps_fix::STATUS_NONE) {
         if (!acquiring) {
           acquiring = true;
-          trace << F("Acquiring...");
+          DEBUG_PORT.print( F("Acquiring...") );
         } else
-          trace << '.';
+          DEBUG_PORT << '.';
 
       } else {
         if (acquiring)
-          trace << '\n';
-        trace << F("Acquired status: ") << (uint8_t) fix().status << '\n';
+          DEBUG_PORT << '\n';
+        DEBUG_PORT << F("Acquired status: ") << (uint8_t) fix().status << '\n';
 
         #if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE) & \
             defined(UBLOX_PARSE_TIMEGPS)
 
           if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEGPS ))
-            trace << F("enable TIMEGPS failed!\n");
+            DEBUG_PORT.print( F("enable TIMEGPS failed!\n") );
 
           state = GETTING_LEAP_SECONDS;
         #else
@@ -160,14 +164,14 @@ public:
           defined(UBLOX_PARSE_TIMEGPS)
 
         if (GPSTime::leap_seconds != 0) {
-          trace << F("Acquired leap seconds: ") << GPSTime::leap_seconds << '\n';
+          DEBUG_PORT << F("Acquired leap seconds: ") << GPSTime::leap_seconds << '\n';
 
           if (!disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEGPS ))
-            trace << F("disable TIMEGPS failed!\n");
+            DEBUG_PORT.print( F("disable TIMEGPS failed!\n") );
 
           #if defined(UBLOX_PARSE_TIMEUTC)
             if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC ))
-              trace << F("enable TIMEUTC failed!\n");
+              DEBUG_PORT.print( F("enable TIMEUTC failed!\n") );
             state = GETTING_UTC;
           #else
             start_running();
@@ -184,8 +188,8 @@ public:
       #if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE) & \
           defined(UBLOX_PARSE_TIMEUTC)
         if (GPSTime::start_of_week() != 0) {
-          trace << F("Acquired UTC: ") << fix().dateTime << '\n';
-          trace << F("Acquired Start-of-Week: ") << GPSTime::start_of_week() << '\n';
+          DEBUG_PORT << F("Acquired UTC: ") << fix().dateTime << '\n';
+          DEBUG_PORT << F("Acquired Start-of-Week: ") << GPSTime::start_of_week() << '\n';
 
           start_running();
         }
@@ -199,10 +203,12 @@ public:
     {
       bool enabled_msg_with_time = false;
 
-      #if (defined(GPS_FIX_LOCATION) | defined(GPS_FIX_ALTITUDE)) & \
+      #if (defined(GPS_FIX_LOCATION) | \
+           defined(GPS_FIX_LOCATION_DMS) | \
+           defined(GPS_FIX_ALTITUDE)) & \
           defined(UBLOX_PARSE_POSLLH)
         if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_POSLLH ))
-          trace << F("enable POSLLH failed!\n");
+          DEBUG_PORT.print( F("enable POSLLH failed!\n") );
 
         enabled_msg_with_time = true;
       #endif
@@ -210,7 +216,7 @@ public:
       #if (defined(GPS_FIX_SPEED) | defined(GPS_FIX_HEADING)) & \
           defined(UBLOX_PARSE_VELNED)
         if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_VELNED ))
-          trace << F("enable VELNED failed!\n");
+          DEBUG_PORT.print( F("enable VELNED failed!\n") );
 
         enabled_msg_with_time = true;
       #endif
@@ -218,7 +224,7 @@ public:
       #if (defined(GPS_FIX_SATELLITES) | defined(NMEAGPS_PARSE_SATELLITES)) & \
           defined(UBLOX_PARSE_SVINFO)
         if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_SVINFO ))
-          trace << PSTR("enable SVINFO failed!\n");
+          DEBUG_PORT << PSTR("enable SVINFO failed!\n");
         
         enabled_msg_with_time = true;
       #endif
@@ -228,20 +234,20 @@ public:
         #if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
           if (enabled_msg_with_time &&
               !disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC ))
-            trace << F("disable TIMEUTC failed!\n");
+            DEBUG_PORT.print( F("disable TIMEUTC failed!\n") );
 
         #elif defined(GPS_FIX_TIME) | defined(GPS_FIX_DATE)
           // If both aren't defined, we can't convert TOW to UTC,
           // so ask for the separate UTC message.
           if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC ))
-            trace << F("enable TIMEUTC failed!\n");
+            DEBUG_PORT.print( F("enable TIMEUTC failed!\n") );
         #endif
 
       #endif
 
       state = RUNNING;
-      trace_header();
-      
+      trace_header( DEBUG_PORT );
+
     } // start_running
 
     //--------------------------
@@ -332,7 +338,7 @@ public:
     void traceIt()
     {
       if (state == RUNNING)
-        trace_all( *this, merged );
+        trace_all( DEBUG_PORT, *this, merged );
 
     } // traceIt
 
@@ -375,7 +381,7 @@ static bool quietTimeStarted()
         (!getting_chars && next_quiet_time)) {
 
       if (!getting_chars) {
-        trace.println( F("Check GPS device and/or connections.  No data received.\n") );
+        DEBUG_PORT.println( F("Check GPS device and/or connections.  No data received.\n") );
       }
 
       last_quiet_time = current_ms;  // Remember for next loop
@@ -393,14 +399,14 @@ static bool quietTimeStarted()
 void setup()
 {
   // Start the normal trace output
-  Serial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
+  DEBUG_PORT.begin(9600);
 
-  trace << F("ublox binary protocol example started.\n");
-  trace << F("fix object size = ") << sizeof(gps.fix()) << '\n';
-  trace << F("ubloxGPS object size = ") << sizeof(ubloxGPS) << '\n';
-  trace << F("MyGPS object size = ") << sizeof(gps) << '\n';
-  trace.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  trace.flush();
+  DEBUG_PORT.print( F("ublox binary protocol example started.\n") );
+  DEBUG_PORT << F("fix object size = ") << sizeof(gps.fix()) << '\n';
+  DEBUG_PORT << F("ubloxGPS object size = ") << sizeof(ubloxGPS) << '\n';
+  DEBUG_PORT << F("MyGPS object size = ") << sizeof(gps) << '\n';
+  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.flush();
 
   // Start the UART for the GPS device
   gps_port.begin(9600);
@@ -455,7 +461,7 @@ void setup()
     test.beidou_talker_id[0] = 'G';
     test.beidou_talker_id[1] = 'P';
 
-    trace << F("CFG_NMEA result = ") << gps.send( test );
+    DEBUG_PORT << F("CFG_NMEA result = ") << gps.send( test );
   #endif
 
   gps.ok_to_process = true;

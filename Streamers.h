@@ -5,23 +5,13 @@
 
 #include "Time.h"
 
-extern Stream & trace; // Forward declaration of debug output device
-
-// Note:
-//
-// If you use the trace object for debug print statements, you will also
-// need a definition somewhere, preferably in your .INO.  For example,
-//
-//   Stream & trace = Serial;  // trace goes to Serial
-//
-
-extern Stream & operator <<( Stream & outs, const bool b );
-extern Stream & operator <<( Stream & outs, const char c );
-extern Stream & operator <<( Stream & outs, const uint16_t v );
-extern Stream & operator <<( Stream & outs, const uint32_t v );
-extern Stream & operator <<( Stream & outs, const int32_t v );
-extern Stream & operator <<( Stream & outs, const uint8_t v );
-extern Stream & operator <<( Stream & outs, const __FlashStringHelper *s );
+extern Print & operator <<( Print & outs, const bool b );
+extern Print & operator <<( Print & outs, const char c );
+extern Print & operator <<( Print & outs, const uint16_t v );
+extern Print & operator <<( Print & outs, const uint32_t v );
+extern Print & operator <<( Print & outs, const int32_t v );
+extern Print & operator <<( Print & outs, const uint8_t v );
+extern Print & operator <<( Print & outs, const __FlashStringHelper *s );
 
 class gps_fix;
 
@@ -35,11 +25,11 @@ class gps_fix;
  * @param[in] fix gps_fix instance.
  * @return iostream.
  */
-extern Stream & operator <<( Stream &outs, const gps_fix &fix );
+extern Print & operator <<( Print &outs, const gps_fix &fix );
 
 class NMEAGPS;
 
-extern void trace_header();
-extern void trace_all( const NMEAGPS &gps, const gps_fix &fix );
+extern void trace_header( Print & outs );
+extern void trace_all( Print & outs, const NMEAGPS &gps, const gps_fix &fix );
 
 #endif

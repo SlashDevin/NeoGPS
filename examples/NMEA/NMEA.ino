@@ -21,9 +21,11 @@
 //          If 9600 does not work, use NMEAdiagnostic.ino to 
 //          scan for the correct baud rate.
 //     4) You know the last sentence sent in each 1-second interval.
-//          Use NMEAorder.ino to list the sentence order.
+//          Modify the '#define LAST_SENTENCE_IN_INTERVAL' in
+//          NMEAGPS_cfg.h to be the sentence identified by NMEAorder.ino.
+//          The default is RMC.
 //
-//  'Serial' is for trace output to the Serial Monitor window.
+//  'Serial' is for debug output to the Serial Monitor window.
 //
 //======================================================================
 
@@ -51,19 +53,31 @@
   #include <NeoSWSerial.h>
   //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
 #endif
+
 #include "GPSport.h"
 
 //------------------------------------------------------------
 // For the NeoGPS example programs, "Streamers" is common set 
 //   of printing and formatting routines for GPS data, in a
 //   Comma-Separated Values text format (aka CSV).  The CSV
-//   data will be printed to the "debug output device", called
-//   "trace".  It's just an alias for the debug Stream.
-//   Set "trace" to your debug output device, if it's not "Serial".
+//   data will be printed to the "debug output device".
 // If you don't need these formatters, simply delete this section.
 
 #include "Streamers.h"
-Stream & trace = Serial;
+
+//------------------------------------------------------------
+// When NeoHWSerial is used, none of the built-in HardwareSerial
+//   variables can be used: Serial, Serial1, Serial2 and Serial3
+//   *cannot* be used.  Instead, you must use the corresponding
+//   NeoSerial, NeoSerial1, NeoSerial2 or NeoSerial3.  This define
+//   is used to substitute the appropriate Serial variable in
+//   all debug prints below.
+
+#ifdef NeoHWSerial_h
+  #define DEBUG_PORT NeoSerial
+#else
+  #define DEBUG_PORT Serial
+#endif
 
 //------------------------------------------------------------
 // This object parses received characters 
@@ -78,16 +92,6 @@ static NMEAGPS  gps;
 
 static gps_fix  fix_data;
 
-//------------------------------------------------------------
-//  Identify the last sentence sent by the GPS device in each
-//    1-second interval.  After this message is sent, the GPS
-//    device will be quiet until the next 1-second interval.
-//
-//  If you're not sure what sentences are sent by your device,
-//    you should use NMEAorder.ino to list them.
-
-static const NMEAGPS::nmea_msg_t LAST_SENTENCE_IN_INTERVAL = NMEAGPS::NMEA_GLL;
-
 //----------------------------------------------------------------
 //  This function gets called about once per second, during the GPS
 //  quiet time.  It's the best place to do anything that might take 
@@ -100,7 +104,7 @@ static void doSomeWork()
 {
   // Print all the things!
 
-  trace_all( gps, fix_data );
+  trace_all( DEBUG_PORT, gps, fix_data );
 
   // Clear out what we just printed.  If you need this data elsewhere,
   //   don't do this.
@@ -118,15 +122,15 @@ static void GPSloop()
   while (gps_port.available()) {
 
     //  Are we just getting garbage?
-    static uint32_t chars_received = 0;
-    chars_received++;
-    if (chars_received > 1000) {
-      chars_received = 0;
-      Serial.println( "Invalid data received.  Use NMEAdiagnostic.INO to verify baud rate." );
+    static uint32_t bad_chars_received = 0;
+    bad_chars_received++;
+    if (bad_chars_received > 1000) {
+      bad_chars_received = 0;
+      DEBUG_PORT.println( "Invalid data received.  Use NMEAdiagnostic.INO to verify baud rate." );
     }
 
     if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
-      chars_received = 0;
+      bad_chars_received = 0;
 
       // If you have something quick to do, you can safely use gps.fix()
       //   members now.  For example, comparing the current speed
@@ -188,15 +192,18 @@ static void GPSloop()
 
         static uint8_t sentences_printed = 0;
         if (sentences_printed < 20) {
+
           sentences_printed++;
-          Serial.print( F("Received ") );
-          Serial.print( (const __FlashStringHelper *) gps.string_for( gps.nmeaMessage ) );
-          Serial.println( F("...") );
+          DEBUG_PORT.print( F("Received ") );
+          DEBUG_PORT.print( gps.string_for( gps.nmeaMessage ) );
+          DEBUG_PORT.println( F("...") );
+
         } else if (sentences_printed == 20) {
+
           sentences_printed++;
-          Serial.print( F("Warning: ") );
-          Serial.print( (const __FlashStringHelper *) gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
-          Serial.println( F(" sentence was never received and is not the LAST_SENTENCE_IN_INTERVAL.\n"
+          DEBUG_PORT.print( F("Warning: ") );
+          DEBUG_PORT.print( gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
+          DEBUG_PORT.println( F(" sentence was never received and is not the LAST_SENTENCE_IN_INTERVAL.\n"
                             "  Please use NMEAorder.ino to determine which sentences your GPS device sends, and then\n"
                             "  use the last one for the definition above.") );
         }
@@ -210,20 +217,21 @@ static void GPSloop()
 void setup()
 {
   // Start the normal trace output
-  Serial.begin(9600);  // change this to match 'trace'.  Can't do 'trace.begin'
+  DEBUG_PORT.begin(9600);
 
-  Serial.print( F("NMEA.INO: started\n") );
-  Serial.print( F("fix object size = ") );
-  Serial.println( sizeof(gps.fix()) );
-  Serial.print( F("NMEAGPS object size = ") );
-  Serial.println( sizeof(gps) );
-  Serial.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  Serial.print( F("GPS quiet time begins after a ") );
-  Serial.print( (const __FlashStringHelper *) gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
-  Serial.println( F(" sentence is received.\n"
+  DEBUG_PORT.print( F("NMEA.INO: started\n") );
+  DEBUG_PORT.print( F("fix object size = ") );
+  DEBUG_PORT.println( sizeof(gps.fix()) );
+  DEBUG_PORT.print( F("NMEAGPS object size = ") );
+  DEBUG_PORT.println( sizeof(gps) );
+  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Only displaying data from xxRMC sentences.  Other sentences may be parsed, but their data will not be displayed.") );
+  DEBUG_PORT.print( F("GPS quiet time begins after a ") );
+  DEBUG_PORT.print( gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
+  DEBUG_PORT.println( F(" sentence is received.\n"
                    "You should confirm this with NMEAorder.ino") );
-  trace_header();
-  Serial.flush();
+  trace_header( DEBUG_PORT );
+  DEBUG_PORT.flush();
   
   // Start the UART for the GPS device
   gps_port.begin( 9600 );
