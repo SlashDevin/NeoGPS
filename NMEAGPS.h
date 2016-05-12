@@ -19,7 +19,7 @@
 // Lesser General Public License for more details.
 //
 
-#include <avr/pgmspace.h>
+#include "CosaCompat.h"
 
 class __FlashStringHelper;
 class Stream;
