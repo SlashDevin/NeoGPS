@@ -12,6 +12,7 @@ The following configuration items are near the top of GPSfix_cfg.h:
 #define GPS_FIX_DATE
 #define GPS_FIX_TIME
 #define GPS_FIX_LOCATION
+#define GPS_FIX_LOCATION_DMS
 #define GPS_FIX_ALTITUDE
 #define GPS_FIX_SPEED
 #define GPS_FIX_HEADING
