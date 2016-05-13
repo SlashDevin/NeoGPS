@@ -11,10 +11,11 @@ In an attempt to be reusable in a variety of different programming styles, this 
 
 These example programs demonstrate how to use the classes in the different programming styles:
 * [NMEA](/examples/NMEA/NMEA.ino) - sync, single fix, standard NMEA only (RMC sentence only)
-* [NMEA_isr](/examples/NMEA/NMEA.ino) - **async**, single fix, standard NMEA only (RMC sentence only)
+* [NMEA_isr](/examples/NMEA_isr/NMEA_isr.ino) - **async**, single fix, standard NMEA only (RMC sentence only)
 * [NMEAblink](/examples/NMEAblink/NMEAblink.ino) - sync, single fix, standard NMEA only, minimal example, only blinks LED
-* [NMEAloc](/examples/NMEA/NMEAloc.ino) - sync, single fix, standard NMEA only, minimal example using RMC sentence only
-* [NMEAlocDMS](/examples/NMEA/NMEAloc.ino) - same as NMEAloc.ino, but displays location in Degrees, Minutes and Seconds
+* [NMEAloc](/examples/NMEAloc/NMEAloc.ino) - sync, single fix, minimal example using only standard NMEA RMC sentence
+* [NMEAlocDMS](/examples/NMEAlocDMS/NMEAlocDMS.ino) - same as NMEAloc.ino, but displays location in Degrees, Minutes and Seconds
+* [NMEAtimezone](/examples/NMEAtimezone/NMEAtimezone.ino) - same as NMEAloc.ino, but displays local time instead of UTC (GMT)
 * [NMEAfused](/examples/NMEAfused/NMEAfused.ino) - sync, fused fix, standard NMEA only
 * [NMEAfused_isr](/examples/NMEAfused_isr/NMEAfused_isr.ino) - **async**, fused fix, standard NMEA only
 * [NMEAcoherent](/examples/NMEAcoherent/NMEAcoherent.ino) - sync, coherent fix, standard NMEA only
