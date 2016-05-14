@@ -50,6 +50,21 @@ public:
       const uint32_t div_1E4_E24 = 1677; // 0.00001 * 2^24
       seconds_frac  = (((remainder >> 8) * div_1E4_E24) >> 16); // thousandths
       seconds_whole = secs;
+
+      // Carry if thousandths too big
+      if (seconds_frac >= 1000) {
+        seconds_frac -= 1000;
+        seconds_whole++;
+        if (seconds_whole >= 60) {
+          seconds_whole -= 60;
+          minutes++;
+          if (minutes >= 60) {
+            minutes -= 60;
+            degrees++;
+          }
+        }
+      }
+
     }; // From
     
 } NEOGPS_PACKED;
