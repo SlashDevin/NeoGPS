@@ -157,7 +157,6 @@ void NMEAGPS::sentenceUnrecognized()
 void NMEAGPS::headerReceived()
 {
   NMEAGPS_INIT_FIX(m_fix);
-  safe       = false;
   fieldIndex = 1;
   chrCount   = 0;
   rxState    = NMEA_RECEIVING_DATA;
@@ -1305,7 +1304,6 @@ bool NMEAGPS::parseSatellites( char chr )
     if (chrCount == 0)
       NMEAGPS_INVALIDATE( satellites );
     if (parseInt( m_fix.satellites, chr )) {
-
       m_fix.valid.satellites = true;
     }
   #endif

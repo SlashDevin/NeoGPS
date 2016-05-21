@@ -134,30 +134,34 @@ public:
     #endif
 
     //  Current fix accessor.
-    //  /fix/ will be constantly changing as characters are received.
+    //    /fix/ will be constantly changing as characters are received.
+    //
     //  For example, fix().longitude() may return nonsense data if
     //  characters for that field are currently being processed in /decode/.
-    //  /is_safe/ *must* be checked before accessing members of /fix/.
+
+    gps_fix & fix() { return m_fix; };
+
+    //  NOTE: /is_safe/ *must* be checked before accessing members of /fix/.
     //  If you need access to the current /fix/ at any time, you must
     //  take a snapshot while it is_safe, and then use the snapshot
     //  later.
-
-    gps_fix & fix() { return m_fix; };
 
     //  Determine whether the members of /fix/ are "currently" safe.
     //  It will return true when a complete sentence and the CRC characters 
     //  have been received (or after a CR if no CRC is present).
     //  It will return false after a sentence's command and comma
     //  have been received (e.g., "$GPGGA,").
-    //  If NMEAGPS processes characters in UART interrupts, /is_safe/
-    //  could change at any time (i.e., it would be /volatile/).
 
-    bool is_safe() const { return safe; }
+    bool is_safe() const { return (rxState == NMEA_IDLE) || (fieldIndex == 0); }
 
-    //  Notes regarding a volatile /fix/:
+    //  Notes regarding is_safe() and fix():
+    //
+    //  If an NMEAGPS instance is fed characters inside a UART interrupt,
+    //    is_safe() could change at any time (i.e., it should be 
+    //    considered /volatile/).
     //
     //  If an NMEAGPS instance is fed characters from a non-interrupt
-    //  context, the following method is safe:
+    //    context, the following method is safe:
     //
     //  void loop()
     //  {
@@ -217,7 +221,6 @@ public:
     void reset()
     {
       rxState = NMEA_IDLE;
-      safe    = true;
     }
 
 protected:
@@ -233,7 +236,6 @@ protected:
     uint8_t      decimal;        // digits received after the decimal point
     struct {
       bool       negative      NEOGPS_BF(1); // field had a leading '-'
-      bool       safe          NEOGPS_BF(1); // fix is safe to access
       bool       _comma_needed NEOGPS_BF(1); // field needs a comma to finish parsing
       bool       group_valid   NEOGPS_BF(1); // multi-field group valid
       #ifdef NMEAGPS_PARSE_PROPRIETARY
