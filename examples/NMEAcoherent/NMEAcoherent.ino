@@ -56,22 +56,19 @@
 
 #endif
 
-#ifdef NMEAGPS_ACCUMULATE_FIX
-  #error NMEAGPS_ACCUMULATE_FIX should not be enabled when explicit merging is used.
-  // This is an Explicit Merge: "coherent |= gps.fix()"
-  //
-  // If you don't want or need the safe copy 'coherent', you could
-  //   use NMEA.ino with NMEAGPS_ACCUMULATE_FIX enabled instead.
+#ifndef NMEAGPS_COHERENT
+  #error You must define NMEAGPS_COHERENT in NMEAGPS_cfg.h!
 #endif
 
 //------------------------------------------------------------
 
 static NMEAGPS gps;
 static gps_fix coherent;
-
+static bool    building; // true if 'coherent' is in the process of accumulating
+                         // fix pieces for the current interval.
 //----------------------------------------------------------------
 
-static void doSomeWork()
+static void doSomeWork( const gps_fix & coherent )
 {
   // Print all the things!
   trace_all( DEBUG_PORT, gps, coherent );
@@ -81,72 +78,47 @@ static void doSomeWork()
     //   do not send GST, and some GPS devices may not even
     //   respond to this poll.  Other may let you request
     //   these messages once per second by sending a 
-    //   configuration command.
+    //   configuration command in setup().
     gps.poll( &gps_port, NMEAGPS::NMEA_GST );
 
   #endif
 
 } // doSomeWork
 
-//----------------------------------------------------------------
-
-#if defined(GPS_FIX_DATE) & !defined(GPS_FIX_TIME)
-  // uncomment this to display just one pulse-per-day.
-  //#define PULSE_PER_DAY
-#endif
-
-static bool isNewInterval()
-{
-  // See if we stepped into a different time interval,
-  //   or if it has finally become valid after a cold start.
-
-  bool newInterval;
-
-  #if defined(GPS_FIX_TIME)
-    newInterval = (gps.fix().valid.time &&
-                  (!coherent.valid.time ||
-                   (coherent.dateTime.seconds != gps.fix().dateTime.seconds) ||
-                   (coherent.dateTime.minutes != gps.fix().dateTime.minutes) ||
-                   (coherent.dateTime.hours   != gps.fix().dateTime.hours)));
-
-  #elif defined(GPS_FIX_DATE) && defined(PULSE_PER_DAY)
-    newInterval = (gps.fix().valid.date &&
-                  (!coherent.valid.date ||
-                   (coherent.dateTime.date  != gps.fix().dateTime.date) ||
-                   (coherent.dateTime.month != gps.fix().dateTime.month) ||
-                   (coherent.dateTime.year  != gps.fix().dateTime.year)));
-  
-  #else
-    //  Time is not configured, so let's assume it's a new interval
-    //    if we just received a particular sentence.
-    //  Different GPS devices will send sentences in different orders.
-    //  This should be the *first* sentence sent by your device in
-    //    each 1-second interval, not the last.
-
-    newInterval = (gps.nmeaMessage == NMEAGPS::NMEA_RMC);
-  #endif
-
-} // isNewInterval
-
 //------------------------------------
 
 static void GPSloop()
-{  
-  while (gps_port.available()) {
+{
+  static bool assignNext = false; // write over 'coherent' next time instead of merging
 
-    if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
+  while (gps.available( gps_port )) {
+    const gps_fix & fix = gps.read();
 
-      if (isNewInterval())
-        // Start with fresh data ONLY
-        coherent = gps.fix();
-      else
-        // Explicitly Merge all subsequent data
-        coherent |= gps.fix();
+    if (gps.merging == NMEAGPS::IMPLICIT_MERGING) {
+      coherent = fix;
+      building = false; // all ready!
+      doSomeWork( coherent );
+    } else {
+      if (assignNext) {
+        assignNext = false;
+        building   = true;
+        coherent   = fix; // replace everything from the last interval
+      } else
+        coherent  |= fix; // merge one sentence
 
-      if (gps.nmeaMessage == LAST_SENTENCE_IN_INTERVAL)
-        doSomeWork();
+      if (gps.intervalComplete()) {
+        assignNext = true;
+        building   = false; // all ready!
+        doSomeWork( coherent );
+        // This leaves 'coherent' available for other parts of your sketch
+        //   until the next interval begins.
+      }
     }
   }
+
+  if (gps.merging == NMEAGPS::IMPLICIT_MERGING)
+    building = !gps.intervalComplete();
+
 } // GPSloop
   
 //--------------------------
@@ -155,6 +127,8 @@ void setup()
 {
   // Start the normal trace output
   DEBUG_PORT.begin(9600);
+  while (!DEBUG_PORT)
+    ;
 
   DEBUG_PORT.print( F("NMEAcoherent: started\n") );
   DEBUG_PORT.print( F("fix object size = ") );
@@ -162,6 +136,8 @@ void setup()
   DEBUG_PORT.print( F("NMEAGPS object size = ") );
   DEBUG_PORT.println( sizeof(gps) );
   DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+
+  // Check configuration
 
   #if !defined( NMEAGPS_PARSE_GGA ) & !defined( NMEAGPS_PARSE_GLL ) & \
       !defined( NMEAGPS_PARSE_GSA ) & !defined( NMEAGPS_PARSE_GSV ) & \

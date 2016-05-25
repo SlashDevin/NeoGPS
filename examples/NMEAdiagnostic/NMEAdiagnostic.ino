@@ -46,10 +46,43 @@
   #error You must define NMEAGPS_RECOGNIZE_ALL in NMEAGPS_cfg.h!
 #endif
 
+#ifdef NMEAGPS_IMPLICIT_MERGING
+  #error You must *undefine* NMEAGPS_IMPLICIT_MERGING in NMEAGPS_cfg.h! \
+   Please use EXPLICIT or NO_MERGING.
+#endif
 
-static NMEAGPS  gps         ; // This parses received characters
-static uint32_t last_rx = 0L; // The last millis() time a character was
-                              // received from GPS.
+static NMEAGPS  gps          ; // This parses received characters
+static gps_fix  all_data     ; // A composite of all GPS data fields
+static uint32_t last_rx = 0UL; // The last millis() time a character was
+                               // received from GPS.
+static uint32_t baudStartTime = 0UL;
+static uint8_t  warnings = 0;
+static uint8_t  errors   = 0;
+
+//--------------------------
+
+static void hang()
+{
+  DEBUG_PORT.println( F("\n** NMEAdiagnostic completed **\n") );
+
+  if (warnings) {
+    DEBUG_PORT.print( warnings );
+    DEBUG_PORT.print( F(" warnings") );
+  }
+  if (warnings && errors)
+    DEBUG_PORT.print( F(" and ") );
+  if (errors) {
+    DEBUG_PORT.print( errors );
+    DEBUG_PORT.print( F(" errors") );
+  }
+  if (warnings || errors)
+    DEBUG_PORT.println();
+
+  DEBUG_PORT.flush();
+
+  exit(0);
+
+} // hang
 
 //--------------------------
 // Baud rates to check
@@ -69,11 +102,13 @@ static void tryBaud()
   long baud = baud_table[baud_index];
   DEBUG_PORT.print( F("\n____________________________\n\nChecking ") );
   DEBUG_PORT.print( baud );
-  DEBUG_PORT.print( F(" baud...\n\n") );
+  DEBUG_PORT.print( F(" baud...\n") );
   DEBUG_PORT.flush();
 
   gps_port.begin( baud );
-}
+  baudStartTime = millis();
+
+} // tryBaud
 
 //--------------------------
 
@@ -94,8 +129,7 @@ static void tryAnotherBaudRate()
     if (baud_index >= num_bauds) {
       baud_index = INITIAL_BAUD_INDEX;
       DEBUG_PORT.print( F("\n  All baud rates tried!\n") );
-      for (;;)
-        ; // hang!
+      hang();
     }
   }
 
@@ -107,44 +141,45 @@ static void tryAnotherBaudRate()
 
 //------------------------------------
 
-static const uint16_t MAX_SAMPLE = 512;
+static const uint16_t MAX_SAMPLE = 256;
 static uint8_t        someChars[ MAX_SAMPLE ];
 static uint16_t       someCharsIndex = 0;
 
 static void dumpSomeChars()
 {
-  DEBUG_PORT.print( F("Received data:\n") );
+  if (someCharsIndex > 0) {
+    DEBUG_PORT.print( F("Received data:\n") );
 
-  const uint16_t  bytes_per_line = 32;
-        char      ascii[ bytes_per_line ];
-        uint8_t  *ptr            = &someChars[0];
+    const uint16_t  bytes_per_line = 32;
+          char      ascii[ bytes_per_line ];
+          uint8_t  *ptr            = &someChars[0];
 
-  for (uint16_t i=0; i<someCharsIndex; ) {
-    uint16_t j;
-    
-    for (j=0; (i<someCharsIndex) && (j<bytes_per_line); i++, j++) {
-      uint8_t c = *ptr++;
-      if (c < 0x10)
-        DEBUG_PORT.print('0');
-      DEBUG_PORT.print( c, HEX );
-      if ((' ' <= c) && (c <= '~'))
-        ascii[ j ] = c;
-      else
-        ascii[ j ] = '.';
+    for (uint16_t i=0; i<someCharsIndex; ) {
+      uint16_t j;
+      
+      for (j=0; (i<someCharsIndex) && (j<bytes_per_line); i++, j++) {
+        uint8_t c = *ptr++;
+        if (c < 0x10)
+          DEBUG_PORT.print('0');
+        DEBUG_PORT.print( c, HEX );
+        if ((' ' <= c) && (c <= '~'))
+          ascii[ j ] = c;
+        else
+          ascii[ j ] = '.';
+      }
+
+      uint16_t jmax = j;
+      while (j++ < bytes_per_line)
+        DEBUG_PORT.print( F("  ") );
+      DEBUG_PORT.print( ' ' );
+      
+      for (j=0; j<jmax; j++)
+        DEBUG_PORT.print( ascii[ j ] );
+      DEBUG_PORT.print( '\n' );
     }
 
-    uint16_t jmax = j;
-    while (j++ < bytes_per_line)
-      DEBUG_PORT.print( F("  ") );
-    DEBUG_PORT.print( ' ' );
-    
-    for (j=0; j<jmax; j++)
-      DEBUG_PORT.print( ascii[ j ] );
-    DEBUG_PORT.print( '\n' );
+    someCharsIndex = 0;
   }
-
-  someCharsIndex = 0;
-
 } // dumpSomeChars
 
 //----------------------------------------------------------------
@@ -162,7 +197,7 @@ static void listenForSomething()
     //   See if we've been getting chars sometime during the last second.
     //   If not, the GPS may not be working or connected properly.
 
-           bool     getting_chars   = (ms_since_last_rx < 1000UL);
+           bool     getting_chars   =  (ms_since_last_rx < 1000UL);
     static uint32_t last_quiet_time = 0UL;
            bool     just_went_quiet =
                             (((int32_t) (last_rx - last_quiet_time)) > 0L);
@@ -179,13 +214,11 @@ static void listenForSomething()
       
       static uint8_t tries = 1;
       if (!getting_chars) {
-      
-        DEBUG_PORT.println( F("\nCheck GPS device and/or connections.  No data received.\n") );
-      
+
         if (tries++ >= 3) {
-          DEBUG_PORT.print( F("END.\n") );
-          for (;;)
-            ; // hang!
+          errors++;
+          DEBUG_PORT.println( F("\nCheck GPS device and/or connections.  No data received.\n") );
+          hang();
         }
 
       } else {
@@ -219,21 +252,45 @@ static void GPSloop()
       someChars[ someCharsIndex++ ] = c;
 
     if (gps.decode( c ) == NMEAGPS::DECODE_COMPLETED) {
+      all_data |= gps.fix();
       valid_sentence_received = true;
 
+      static bool last_sentence_received = false;
+      if (gps.nmeaMessage == LAST_SENTENCE_IN_INTERVAL)
+        last_sentence_received = true;
+
       DEBUG_PORT.print( F("Received ") );
-      DEBUG_PORT << gps.string_for( gps.nmeaMessage );
-      DEBUG_PORT.print( F("...\n") );
+      DEBUG_PORT.println( gps.string_for( gps.nmeaMessage ) );
 
-      if (someCharsIndex >= MAX_SAMPLE) {
-        // We received a sentence, display the baud rate
-        DEBUG_PORT.print( F("\n\n**** NMEA sentence(s) detected!  ****\n") );
-        dumpSomeChars();
-        DEBUG_PORT << F("\n  SUCCESS: Your device baud rate is ") <<
-          baud_table[ baud_index ] << '\n';
+      static uint8_t sentences_printed = 0;
+             bool    long_enough       = (millis() - baudStartTime > 3000);
 
-        for (;;)
-          ; // All done!
+      if ((sentences_printed++ >= 20) || long_enough) {
+
+        if ((someCharsIndex >= MAX_SAMPLE) || long_enough) {
+
+          // We received one or more sentences, display the baud rate
+          DEBUG_PORT.print( F("\n\n**** NMEA sentence(s) detected!  ****\n") );
+          dumpSomeChars();
+          DEBUG_PORT << F("\nDevice baud rate is ") <<
+            baud_table[ baud_index ] << '\n';
+
+          DEBUG_PORT.print( F("\nGPS data fields received:\n\n  ") );
+          trace_header( DEBUG_PORT );
+          DEBUG_PORT.print( F("  ") );
+          trace_all( DEBUG_PORT, gps, all_data );
+
+          if (!last_sentence_received) {
+            warnings++;
+            DEBUG_PORT.print( F("\nWarning: LAST_SENTENCE_IN_INTERVAL defined to be ") );
+            DEBUG_PORT.print( gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
+            DEBUG_PORT.println( F(", but was never received.\n"
+                              "  Please use NMEAorder.ino to determine which sentences your GPS device sends, and then\n"
+                              "  use the last one for the definition in NMEAGPS_cfg.h.") );
+          }
+
+          hang();
+        }
       }
     }
   }
@@ -249,14 +306,32 @@ void setup()
 {
   // Start the normal trace output
   DEBUG_PORT.begin(9600);
+  while (!DEBUG_PORT)
+    ;
 
   DEBUG_PORT.print( F("NMEAdiagnostic.INO: started\n") );
   DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+
+  if (sizeof(gps_fix) <= 2) {
+    warnings++;
+    DEBUG_PORT.print( F("\nWarning: no fields are enabled in GPSfix_cfg.h.\n  Only the following information will be displayed:\n    ") );
+    trace_header( DEBUG_PORT );
+  }
+
+  #if !defined( NMEAGPS_PARSE_GGA ) & !defined( NMEAGPS_PARSE_GLL ) & \
+      !defined( NMEAGPS_PARSE_GSA ) & !defined( NMEAGPS_PARSE_GSV ) & \
+      !defined( NMEAGPS_PARSE_RMC ) & !defined( NMEAGPS_PARSE_VTG ) & \
+      !defined( NMEAGPS_PARSE_ZDA ) & !defined( NMEAGPS_PARSE_GST )
+    warnings++;
+    DEBUG_PORT.println( F("\nWarning: no messages are enabled for parsing in NMEAGPS_cfg.h.\n  No fields will be valid, including the 'status' field.") );
+  #endif
+
   DEBUG_PORT.flush();
-  
+
   // Start the UART for the GPS device
   tryBaud();
-}
+
+} // setup
 
 //--------------------------
 

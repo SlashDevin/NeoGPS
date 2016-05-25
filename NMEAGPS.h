@@ -3,10 +3,10 @@
 
 //------------------------------------------------------
 // @file NMEAGPS.h
-// @version 2.1
+// @version 3.0
 //
 // @section License
-// Copyright (C) 2014, SlashDevin
+// Copyright (C) 2016, SlashDevin
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,7 @@
 
 class __FlashStringHelper;
 class Stream;
+#include <avr/interrupt.h>
 
 #include "GPSfix.h"
 #include "NMEAGPS_cfg.h"
@@ -37,40 +38,93 @@ class Stream;
 // 1) Only these NMEA messages are parsed:
 //      GGA, GLL, GSA, GST, GSV, RMC, VTG, and ZDA.
 // 2) The current `fix` is only safe to access _after_ the complete message 
-// is parsed and _before_ the next message begins to affect the members. 
-// If you access `fix` at any other time, /is_safe()/ must be checked. 
-// Otherwise, you should make a copy of `fix` after a sentence has been
-// completely DECODED.
+//      is parsed and _before_ the next message begins to affect the members. 
+//      If you access `fix` at any other time, /is_safe()/ must be checked. 
+//      Otherwise, you should make a copy of `fix` after a sentence has been
+//      completely DECODED.
 //
 
 class NMEAGPS
 {
+    NMEAGPS & operator =( const NMEAGPS & );
     NMEAGPS( const NMEAGPS & );
 
 public:
 
-    /**
-     * Constructor
-     */
+    //.......................................................................
+    // Constructor
+
     NMEAGPS();
 
-    /**
-     * Return type for /decode/.  As bytes are processed, they can be
-     * categorized as INVALID (not part of this protocol), OK (accepted),
-     * or COMPLETED (end-of-message).
-     */
+    //.......................................................................
+    // The available(...) functions return the number of *fixes* that
+    //   are available to be "read" from the fix buffer.  The GPS port
+    //   object is passed in so a char can be read if port.available().
+
+    uint8_t available( Stream & port )
+      {
+        while (port.available())
+          _handle( port.read() );
+        return _available();
+      }
+    uint8_t available() { return _available(); };
+
+    //.......................................................................
+    // Return the next available fix.  When no more
+    //   fixes are available, it returns the current fix(), which
+    //   may not be completed yet.
+
+    const gps_fix & read();
+    
+    // The typical sketch should have something like this in loop():
+    //
+    //    while (gps.available( Serial1 )) {
+    //      gps_fix fix = gps.read();
+    //      if (fix.valid.location) {
+    //         ...
+    //      }
+    //    }
+
+    //.......................................................................
+    // Instead of using the fix-oriented available() and read() methods,
+    //   you can use the character-oriented method decode().  This may
+    //   be necessary if the source of GPS characters is not a Stream,
+    //   or if you want finer control on how fix information is filtered
+    //   or merged.
+
+    // Return type for /decode/.  As bytes are processed, they can be
+    // categorized as INVALID (not part of this protocol), OK (accepted),
+    // or COMPLETED (end-of-message).
+
     enum decode_t { DECODE_CHR_INVALID, DECODE_CHR_OK, DECODE_COMPLETED };
 
-    /**
-     * Process one character of an NMEA GPS sentence.  The internal state 
-     * machine tracks what part of the sentence has been received.  As the
-     * tracks what part of the sentence has been received so far.  As the
-     * sentence is received, members of the /fix/ structure are updated.  
-     * @return DECODE_COMPLETED when a sentence has been completely received.
-     */
+    //.......................................................................
+    // Process one character of an NMEA GPS sentence.  The internal state 
+    // machine tracks what part of the sentence has been received.  As the
+    // tracks what part of the sentence has been received so far.  As the
+    // sentence is received, members of the /fix/ structure are updated.  
+    // @return DECODE_COMPLETED when a sentence has been completely received.
+
     NMEAGPS_VIRTUAL decode_t decode( char c );
 
-    /** NMEA standard message types. */
+    //.......................................................................
+
+    enum merging_t { NO_MERGING, EXPLICIT_MERGING, IMPLICIT_MERGING };
+    static const merging_t
+      merging = NMEAGPS_MERGING; // see NMEAGPS_cfg.h
+
+    enum processing_style_t { PS_POLLING, PS_INTERRUPT };
+    static const processing_style_t 
+      processing_style = NMEAGPS_PROCESSING_STYLE;  // see NMEAGPS_cfg.h
+
+    //.......................................................................
+    //  This routine can be called from the attachInterrupt routine
+
+    void isr( uint8_t c ) { _handle( c ); };
+
+    //.......................................................................
+    // NMEA standard message types (aka "sentences")
+
     enum nmea_msg_t {
         NMEA_UNKNOWN,
 
@@ -111,19 +165,22 @@ public:
 
     CONST_CLASS_DATA nmea_msg_t NMEA_FIRST_MSG = (nmea_msg_t) 1;
     CONST_CLASS_DATA nmea_msg_t NMEA_LAST_MSG  = (nmea_msg_t) (NMEAMSG_END-1);
-    CONST_CLASS_DATA uint8_t MSGS_ENABLED = NMEAMSG_END - NMEA_FIRST_MSG;
+    CONST_CLASS_DATA uint8_t    MSGS_ENABLED   = NMEAMSG_END - NMEA_FIRST_MSG;
     
+    //.......................................................................
     //  Convert a nmea_msg_t to a PROGMEM string.
     //    Useful for printing the sentence type instead of a number.
     //    This can return NULL if the message is not a valid number.
+    
     const __FlashStringHelper *string_for( nmea_msg_t msg ) const;
 
-    /**
-     * Most recent NMEA sentence type received.
-     */
+    //.......................................................................
+    // Most recent NMEA sentence type received.
+
     enum nmea_msg_t nmeaMessage NEOGPS_BF(8);
 
-    //  Storage for IDs, if configured
+    //.......................................................................
+    //  Storage for Talker and Manufacturer IDs, if configured
 
     #ifdef NMEAGPS_SAVE_TALKER_ID
       char talker_id[2];
@@ -133,6 +190,7 @@ public:
       char mfr_id[3];
     #endif
 
+    //.......................................................................
     //  Current fix accessor.
     //    /fix/ will be constantly changing as characters are received.
     //
@@ -146,6 +204,7 @@ public:
     //  take a snapshot while it is_safe, and then use the snapshot
     //  later.
 
+    //.......................................................................
     //  Determine whether the members of /fix/ are "currently" safe.
     //  It will return true when a complete sentence and the CRC characters 
     //  have been received (or after a CR if no CRC is present).
@@ -176,6 +235,8 @@ public:
     //    // Access valid members of /safe_fix/ anywhere, any time.
     //  }
 
+    //.......................................................................
+
     #ifdef NMEAGPS_STATS
       struct statistics_t {
           uint32_t ok;         // count of successfully parsed sentences
@@ -190,21 +251,28 @@ public:
       } statistics;
     #endif
 
-    /**
-     * Request the specified NMEA sentence.  Not all devices will respond.
-     */
+    //.......................................................................
+    // Request the specified NMEA sentence.  Not all devices will respond.
 
     static void poll( Stream *device, nmea_msg_t msg );
 
-    /**
-     * Send a message to the GPS device.
-     * The '$' is optional, and the '*' and CS will be added automatically.
-     */
+    //.......................................................................
+    // Send a message to the GPS device.
+    // The '$' is optional, and the '*' and CS will be added automatically.
 
     static void send( Stream *device, const char *msg );
     static void send_P( Stream *device, const __FlashStringHelper *msg );
 
+    //.......................................................................
+    // Indicate that the next sentence should initialize the internal fix()
+    //    This is useful for coherency or custom filtering.
+    
+    bool intervalComplete() const { return _intervalComplete; }
+    void intervalComplete( bool val ) { _intervalComplete = val; }
+
+    //.......................................................................
     // Set all parsed data (fix(), satellite info, etc.) to initial values.
+
     void data_init()
     {
       fix().init();
@@ -214,32 +282,40 @@ public:
       #endif
     }
 
+    //.......................................................................
     // Reset the parsing process.
     //   This is used internally after a CS error, or could be used 
     //   externally to abort processing if it has been too long 
     //   since any data was received.
+
     void reset()
     {
       rxState = NMEA_IDLE;
     }
 
+    bool overrun() const { return _overrun; }
+    void overrun( bool val ) { _overrun = val; }
+
 protected:
     //  Current fix
     gps_fix m_fix;
 
-    /**
-     * Current parser state
-     */
+    // Current parser state
     uint8_t      crc;            // accumulated CRC in the sentence
     uint8_t      fieldIndex;     // index of current field in the sentence
     uint8_t      chrCount;       // index of current character in current field
     uint8_t      decimal;        // digits received after the decimal point
     struct {
-      bool       negative      NEOGPS_BF(1); // field had a leading '-'
-      bool       _comma_needed NEOGPS_BF(1); // field needs a comma to finish parsing
-      bool       group_valid   NEOGPS_BF(1); // multi-field group valid
+      bool     negative          NEOGPS_BF(1); // field had a leading '-'
+      bool     _comma_needed     NEOGPS_BF(1); // field needs a comma to finish parsing
+      bool     group_valid       NEOGPS_BF(1); // multi-field group valid
+      bool     _overrun          NEOGPS_BF(1); // an entire fix was dropped
+      bool     _intervalComplete NEOGPS_BF(1); // automatically set after LAST received
+      #if (NMEAGPS_FIX_MAX == 0)
+        bool   _fixesAvailable   NEOGPS_BF(1);
+      #endif
       #ifdef NMEAGPS_PARSE_PROPRIETARY
-        bool       proprietary   NEOGPS_BF(1); // receiving proprietary message
+        bool   proprietary       NEOGPS_BF(1); // receiving proprietary message
       #endif
     } NEOGPS_PACKED;
 
@@ -267,9 +343,7 @@ protected:
       #endif
     }
 
-    /*
-     * Internal FSM states
-     */
+    // Internal FSM states
     enum rxState_t {
         NMEA_IDLE,             // Waiting for initial '$'
         NMEA_RECEIVING_HEADER, // Parsing sentence type field
@@ -281,14 +355,103 @@ protected:
 
     rxState_t rxState NEOGPS_BF(8);
 
-    /*
-     * Table entry for NMEA sentence type string and its offset
-     * in enumerated nmea_msg_t.  Proprietary sentences can be implemented
-     * in derived classes by adding a second table.  Additional tables
-     * can be singly-linked through the /previous/ member.  The instantiated
-     * class's table is the head, and should be returned by the derived
-     * /msg_table/ function.  Tables should be sorted alphabetically.
-     */
+    //.......................................................................
+    //  Process one character, possibly saving a buffered fix
+
+    void _handle( uint8_t c )
+    {
+      if (decode( c ) == DECODE_COMPLETED) {
+
+        // Room for another fix?
+
+        if (((NMEAGPS_FIX_MAX == 0) &&  _available()) ||
+            ((NMEAGPS_FIX_MAX >  0) && (_available() >= NMEAGPS_FIX_MAX))) {
+
+          // NO ROOM!
+          overrun( true );
+
+        } else {
+
+          // YES, save it.
+          //   Note: If FIX_MAX == 0, this just marks _fixesAvailable = true.
+
+          #if (NMEAGPS_FIX_MAX > 0)
+            if (merging == EXPLICIT_MERGING) {
+              // Accumulate all sentences
+
+              #ifdef NMEAGPS_COHERENT
+                if (intervalComplete())
+                  buffer[ _currentFix ] = fix(); // start fresh
+                else
+              #endif
+                  buffer[ _currentFix ] |= fix();
+            }
+          #endif
+
+          intervalComplete( nmeaMessage == LAST_SENTENCE_IN_INTERVAL );
+          if ((merging == NO_MERGING) || intervalComplete()) {
+
+            #if (NMEAGPS_FIX_MAX > 0)
+
+              if (merging != EXPLICIT_MERGING)
+                buffer[ _currentFix ] = fix();
+
+              _currentFix++;
+              if (_currentFix >= NMEAGPS_FIX_MAX)
+                _currentFix = 0;
+
+              _fixesAvailable++;
+            #else
+              _fixesAvailable = true;
+            #endif
+          }
+        }
+
+      } else if ((NMEAGPS_FIX_MAX == 0) && _available() && !is_safe()) {
+        // No buffer, and m_fix is was modified by the last char
+        overrun( true );
+      }
+
+    } // _handle
+
+    //.......................................................................
+
+    uint8_t _available() const { return _fixesAvailable; };
+
+    //.......................................................................
+    //  Buffered fixes.
+
+    #if (NMEAGPS_FIX_MAX > 0)
+      gps_fix buffer[ NMEAGPS_FIX_MAX ]; // could be empty, see NMEAGPS_cfg.h
+      uint8_t _fixesAvailable;
+      uint8_t _firstFix;
+      uint8_t _currentFix;
+
+      //.......................................................................
+      //  Control access to the fix buffer.  This preserves atomicity when
+      //     the processing style is interrupt-driven.
+
+      void lock() const
+      {
+        if (processing_style == PS_INTERRUPT)
+          cli();
+      }
+
+      void unlock() const
+      {
+        if (processing_style == PS_INTERRUPT)
+          sei();
+      }
+    #endif
+
+    //.......................................................................
+    // Table entry for NMEA sentence type string and its offset
+    // in enumerated nmea_msg_t.  Proprietary sentences can be implemented
+    // in derived classes by adding a second table.  Additional tables
+    // can be singly-linked through the /previous/ member.  The instantiated
+    // class's table is the head, and should be returned by the derived
+    // /msg_table/ function.  Tables should be sorted alphabetically.
+
     struct msg_table_t {
       uint8_t             offset;  // nmea_msg_t enum starting value
       const msg_table_t  *previous;
@@ -301,13 +464,14 @@ protected:
     NMEAGPS_VIRTUAL const msg_table_t *msg_table() const
       { return &nmea_msg_table; };
 
-    /*
-     *  These virtual methods can accept or reject the talker ID (for standard sentences) 
-     *    or the manufacturer ID (for proprietary sentences).
-     *  The default is to accept *all* IDs.
-     *  Override them if you want to reject certain IDs, or you want
-     *  to handle COMPLETED sentences from certain IDs differently.
-     */
+    //.......................................................................
+    //  These virtual methods can accept or reject 
+    //    the talker ID (for standard sentences) or 
+    //    the manufacturer ID (for proprietary sentences).
+    //  The default is to accept *all* IDs.
+    //  Override them if you want to reject certain IDs, or you want
+    //    to handle COMPLETED sentences from certain IDs differently.
+
     #ifdef NMEAGPS_PARSE_TALKER_ID
       NMEAGPS_VIRTUAL bool parseTalkerID( char ) { return true; };
     #endif
@@ -318,15 +482,15 @@ protected:
       #endif
     #endif
 
-    /*
-     * Try to recognize an NMEA sentence type, after the IDs have been accepted.
-     */
+    //.......................................................................
+    // Try to recognize an NMEA sentence type, after the IDs have been accepted.
+
     decode_t parseCommand( char c );
     decode_t parseCommand( const msg_table_t *msgs, uint8_t cmdCount, char c );
 
-    /*
-     * Parse various NMEA sentences
-     */
+    //.......................................................................
+    // Parse various NMEA sentences
+
     bool parseGGA( char chr );
     bool parseGLL( char chr );
     bool parseGSA( char chr );
@@ -336,14 +500,13 @@ protected:
     bool parseVTG( char chr );
     bool parseZDA( char chr );
 
-    /*
-     * Depending on the NMEA sentence type, parse one field of an expected type.
-     */
+    //.......................................................................
+    // Depending on the NMEA sentence type, parse one field of an expected type.
+
     NMEAGPS_VIRTUAL bool parseField( char chr );
 
-    /*
-     * Parse the primary NMEA field types into /fix/ members.
-     */
+    //.......................................................................
+    // Parse the primary NMEA field types into /fix/ members.
 
     bool parseFix        ( char chr ); // aka STATUS or MODE
     bool parseTime       ( char chr );
@@ -392,22 +555,21 @@ public:
 
 protected:
 
-    /**
-     * Parse floating-point numbers into a /whole_frac/
-     * @return true when the value is fully populated.
-     */
+    //.......................................................................
+    // Parse floating-point numbers into a /whole_frac/
+    // @return true when the value is fully populated.
+
     bool parseFloat( gps_fix::whole_frac & val, char chr, uint8_t max_decimal );
 
-    /**
-     * Parse floating-point numbers into a uint16_t
-     * @return true when the value is fully populated.
-     */
+    //.......................................................................
+    // Parse floating-point numbers into a uint16_t
+    // @return true when the value is fully populated.
+
     bool parseFloat( uint16_t & val, char chr, uint8_t max_decimal );
 
-    /**
-     * Parse NMEA lat/lon dddmm.mmmm degrees
-     * @return true.
-     */
+    //.......................................................................
+    // Parse NMEA lat/lon dddmm.mmmm degrees
+
     bool parseDDDMM
       (
         #if defined( GPS_FIX_LOCATION )
@@ -419,10 +581,10 @@ protected:
         char chr
       );
 
-    /*
-     * Parse integer into 8-bit int
-     * @return true when non-empty value
-     */
+    //.......................................................................
+    // Parse integer into 8-bit int
+    // @return true when non-empty value
+
     bool parseInt( uint8_t &val, uint8_t chr )
     {
       bool is_comma = (chr == ',');
@@ -435,10 +597,10 @@ protected:
       return true;
     }
 
-    /*
-     * Parse integer into signed 8-bit int
-     * @return true when non-empty value
-     */
+    //.......................................................................
+    // Parse integer into signed 8-bit int
+    // @return true when non-empty value
+
     bool parseInt( int8_t &val, uint8_t chr )
     {
       bool is_comma = (chr == ',');
@@ -465,10 +627,10 @@ protected:
       return true;
     }
 
-    /*
-     * Parse integer into 16-bit int
-     * @return true when non-empty value
-     */
+    //.......................................................................
+    // Parse integer into 16-bit int
+    // @return true when non-empty value
+
     bool parseInt( uint16_t &val, uint8_t chr )
     {
       bool is_comma = (chr == ',');
@@ -481,10 +643,10 @@ protected:
       return true;
     }
 
-    /*
-     * Parse integer into 32-bit int
-     * @return true when non-empty value
-     */
+    //.......................................................................
+    // Parse integer into 32-bit int
+    // @return true when non-empty value
+
     bool parseInt( uint32_t &val, uint8_t chr )
     {
       bool is_comma = (chr == ',');

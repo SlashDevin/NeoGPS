@@ -400,6 +400,8 @@ void setup()
 {
   // Start the normal trace output
   DEBUG_PORT.begin(9600);
+  while (!DEBUG_PORT)
+    ;
 
   DEBUG_PORT.print( F("ublox binary protocol example started.\n") );
   DEBUG_PORT << F("fix object size = ") << sizeof(gps.fix()) << '\n';

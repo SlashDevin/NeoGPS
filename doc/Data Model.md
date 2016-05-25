@@ -1,50 +1,173 @@
 Data Model
 ==========
-Rather than holding onto individual fields, the concept of a **fix** is used to group data members of the GPS acquisition.
-This also facilitates the merging of separately received packets into a fused or coherent position.  Satellite-specific information, the latest received message type, talker IDs and manufacturer IDs are not part of a `fix`; they are stored in the main GPS object.
+Rather than holding onto individual fields, the concept of a **fix** is used to group data members of the GPS acquisition into a C structure (a `struct` type called `gps_fix`).  This also facilitates merging pieces received at different times (i.e., in separate sentences) into a single easy-to-use structure.
 
-The nested structures that your program can access are:
-* the main `NMEAGPS gps` variable you declare in your sketch (see [NMEAGPS.h](/NMEAGPS.h) and [Usage](Data%20Model.md#usage) below), which contains
-    * a gps_fix member called `gps.fix()` (see [GPSfix.h](/GPSfix.h#L39)), which contains
-        * a status
-        * a latitude and longitude
-        * a latitude and longitude in Degrees, Minutes and Seconds (see DMS.h)
-        * an altitude (above ellipsoid, not Mean Sea Level)
-        * a speed and heading
-        * HDOP, VDOP and PDOP
-        * latitude, longitude and altitude error in centimeters
-        * geoid height above ellipsoid (see [here](https://en.wikipedia.org/wiki/Geoid) for description)
-        * a satellite count
-        * a `NeoGPS::time_t` structure called `dateTime` (see [Time.h](/Time.h)), which contains
-            *  year, month, day-of-month, hours, minutes, and seconds
-        * centiseconds
-        * a collection of `valid` flags for each of the above members
-    * message type
-    * talker ID
-    * manufacturer ID
-    * a satellite array, where each element contains
-        * ID
-        * azimuth
-        * elevation
-        * signal strength
-        * tracking flag
+The main `NMEAGPS gps;` object you declare in your sketch parses received characters,  gradually assembling a `fix`.  Most programs will call `gps.read()` to obtain the completed fix structure (see [Usage](#Usage)).
 
-Some examples of accessing these values:
+Given a variable declaration of type `gps_fix`:
 ```
-fix_copy = gps.fix(); // copies all current fix data
+gps_fix fix;
+```
+...this `fix` variable (or any other variable of type `gps_fix`) contains the following members:
+  * `fix.status`, a status code
+    * `enum` values STATUS_NONE, STATUS_EST, STATUS_TIME_ONLY, STATUS_STD or STATUS_DGPS
+  * a latitude and longitude, accessed with
+    * `fix.latitudeL()` and `fix.longitudeL()` for the higher-precision integer degrees, scaled by 10,000,000 (10 significant digits)
+    * `fix.latitude()` and `fix.longitude()` for the lower-precision floating-point degrees (~7 significant digits)
+      * NOTE: Above values are positive for North or East degrees and negative for South or West degrees
+    * `fix.latitudeDMS` and `fix.latitudeDMS` are structures (see DMS.h) that each contain
+      * `fix.longitudeDMS.degrees` in integer degrees
+      * `fix.latitudeDMS.degrees`, in integer minutes
+      * `fix.longitudeDMS.seconds_whole`, in integer seconds
+      * `fix.latitudeDMS.seconds_frac`, in integer thousandths of a second
+      * `fix.latitudeDMS.secondsF()`, in floating-point seconds
+      * hemisphere indicator, accessed with
+        * `fix.longitudeDMS.hemisphere` (enum values NORTH_H, SOUTH_H, EAST_H or WEST_H)
+        * `fix.longitudeDMS.EW()` (char values `E` or `W`)
+        * `fix.latitudeDMS.NS()` (char values `N` or `S`)
+      * NOTE: An integer degree value (scaled by 10<sup>7</sup> can be used to set the DMS structure by using `fix.latitudeDMS.From( otherLatitude );`
+  * an altitude (above ellipsoid, not Mean Sea Level), accessed with
+    * `fix.altitude_cm()`, in integer centimeters
+    * `fix.altitude()`, in floating-point meters
+    * `fix.alt.whole`, in integer meters
+    * `fix.alt.frac`, in integer centimeters, to be added to the whole part
+  * a speed, accessed with
+    * `fix.speed_kph()`, in floating-point kilometers per hour
+    * `fix.speed_mph()`, in floating-point miles per hour
+    * `fix.speed()`, in floating-point knots (nautical miles per hour)
+    * `fix.speed_mkn()`, in integer knots, scaled by 1000
+    * `fix.spd.whole`, in integer knots
+    * `fix.spd.frac`, in integer thousandths of a knot, to be added to the whole part
+  * a heading, accessed with
+    * `fix.heading_cd()`, in integer hundredths of a degree
+    * `fix.heading()`, in floating-point degrees
+  * `fix.hdop`, `fix.vdop` and `fix.pdop`, in integer thousandths of the DOP
+  * latitude, longitude and altitude error, accessed with
+    * `fix.lat_err_cm`, `fix.lon_err_cm` and `fix.alt_err_cm`, in integer centimeters
+    * `fix.lat_err()`, `fix.lon_err()` and `fix.alt_err()`, in floating-point meters
+  * geoid height above ellipsoid (see [here](https://en.wikipedia.org/wiki/Geoid) for description), accessed with
+    * `fix.geoidHeight_cm`, in integer centimeters
+    * `fix.geoidHeight()`, in floating-point meters
+    * `fix.geoidHt.whole`, in integer meters
+    * `fix.geoidHt.frac`, in integer centimeters to be added to the whole part
+  * `fix.satellites`, a satellite count
+  * `fix.dateTime`, a date/time structure (see [Time.h](/Time.h)), which contains
+    * year, month, day-of-month, hours, minutes, and seconds, accessed with `fix.dateTime.year`, `fix.dateTime.month`, `fix.dateTime.date`, `fix.dateTime.hours`, etc.  Time operations allow converting to and from total seconds offset from a *de facto* starting time (e.g., an epoch date/time "origin").
+  * `fix.dateTime_cs`, in integer hundredths of a second
+  * a collection of boolean `valid` flags for each of the above members, accessed with
+    * `fix.valid.status`
+    * `fix.valid.date` for year, month, day-of-month
+    * `fix.valid.time` for hours, minutes, seconds and centiseconds
+    * `fix.valid.location` for latitude and longitude
+    * `fix.valid.altitude`
+    * `fix.valid.speed`
+    * `fix.valid.heading`
+    * `fix.valid.hdop`, `fix.valid.vdop` and `fix.valid.hpop`
+    * `fix.valid.lat_err`, `fix.valid.lon_err` and `fix.valid.alt_err`
+    * `fix.valid.geoidHeight`
 
-int32_t lat_10e7 = gps.fix().lat; // scaled integer value of latitude
+##Validity
+Because the GPS device may *not* have a fix, each member of a `gps_fix` can be marked as valid or invalid.  That is, the GPS device may not know the lat/long yet.  To check whether the  fix member has been received, test the corresponding `valid` flag (described above).  For example, to check if lat/long data has been received:
+```
+  if (my_fix.valid.location) {
+    Serial.print( my_fix.latitude() );
+    Serial.print( ',' );
+    Serial.println( my_fix.longitude() );
+  }
+```
+You should also know that, even though you have enabled a particular member (see [GPSfix_cfg.h](/GPSfix_cfg.h)), it **may not have a value** until the related NMEA sentence sets it.  And if you have not enabled that sentence for parsing in `NMEAGPS_cfg.h`, it will **never** be valid.
+
+##Other GPS-related information
+There is additional information that is not related to a fix.  Instead, it contains information about parsing or a [**G**lobal **N**avigation **S**atellite **S**ystem](https://en.wikipedia.org/wiki/Satellite_navigation).   GNSS's currently include GPS (US), GLONASS (Russia), Beidou (China) and Galileo (EU). The main `NMEAGPS gps` object you declare in your sketch contains:
+  * `gps.nmeaMessage`, the latest received message type
+    * enum values NMEA_GLL, NMEA_GSA, NMEA_GST, NMEA_GSV, NMEA_RMC, NMEA_VTG or NMEA_ZDA
+  * `gps.satellies[]`, an array of satellite-specific information, where each element contains
+    * `gps.satellies[i].id`, satellite ID
+    * `gps.satellies[i].elevation`, satellite elevation in 0-90 integer degrees
+    * `gps.satellies[i].azimuth`, satellite azimuth in 0-359 integer degrees
+    * `gps.satellies[i].snr`, satellite signal-to-noise ratio in 0-99 integer dBHz
+    * `gps.satellies[i].tracked`, satellite being tracked flag, a boolean
+  * `gps.talker_id[]`, talker ID, a two-character array (not NUL-terminated)
+  * `gps.mfr_id[]`, manufacturer ID, a three-character array (not NUL-terminated)
+  * an internal fix structure,  `gps.fix()`.  Most sketches **should not** use `gps.fix()` directly!
+
+##Usage
+First, declare an instance of `NMEAGPS`:
+```
+NMEAGPS gps;
+```
+Next, tell the `gps` object to handle any available characters on the serial port:
+```
+void loop()
+{
+  while (gps.available( gps_port )) {
+```
+The `gps` object will check if there are any characters available, and if so, read them from the port and parse them into its internal fix.  Many characters will have to be read before the current fix is complete, so `gps.available` will return `false` until the fix is complete; the body of `while` loop will be skipped many times, and the rest of `loop()` will be executed.
+
+When a fix is finally completed, `gps.available` will return `true`.  Now your sketch can "read" the completed fix structure from the `gps` object:
+```
+void loop()
+{
+  while (gps.available( gps_port )) {
+    gps_fix fix = gps.read();
+```
+The local `fix` variable now contains all the GPS fields that were parsed from the `gps_port`.  You can access them as described above:
+```
+void loop()
+{
+  while (gps.available( gps_port )) {
+    gps_fix fix = gps.read();
+    if (fix.valid.time) {
+       ...
+```
+Note that the `fix` variable is local to that `while` loop; it cannot be accessed elsewhere in your sketch.  If you need to access the fix information elsewhere, you must declare a global fix variable:
+```
+gps_fix currentFix;
+
+void loop()
+{
+  while (gps.available( gps_port )) {
+    currentFix = gps.read();
+    if (currentFix.valid.time) {
+       ...
+```
+Any part of your sketch can use the information in `currentFix`.
+
+Please note that the fix structure is much smaller than the raw character data (sentences).  A fix is nominally 1/4 the size of one sentence (~30 bytes vs ~120 bytes).  If two sentences are sent during each update interval, a fix could be 1/8 the size required for buffering two sentences.
+
+In this fix-oriented program structure, the methods `gps.available` and `gps.read` are manipulating entire `gps_fix` structures.  Multiple characters and sentences are used internally to fill out a single fix: members are "merged" from sentences into one fix structure (described [here](Merging.md)).
+
+That program structure is very similar to the typical serial port reading loop:
+```
+void loop()
+{
+  while (serial.available()) {
+    char c = serial.read();
+       ... do something with the character ...;
+  }
+```
+However, the fix-oriented methods operate on complete *fixes*, not individual characters, fields or sentences.
+
+Note: If you find that you need to filter or merge data with a finer level of control,  you may need to use a different [Merging option](Merging.md), [Coherency](Coherency.md), or the more-advanced [Character-Oriented methods](/doc/CharOriented.md).  
+
+##Examples
+Some examples of accessing fix values:
+```
+gps_fix fix_copy = gps.read();
+
+int32_t lat_10e7 = fix_copy.lat; // scaled integer value of latitude
 float lat = fix_copy.latitude(); // float value of latitude
 
-Serial.print( gps.fix().latDMS.degrees );
+Serial.print( fix_copy.latDMS.degrees );
 Serial.print( ' ' );
-Serial.print( gps.fix().latDMS.minutes );
+Serial.print( fix_copy.latDMS.minutes );
 Serial.print( F("' " );
-Serial.print( gps.fix().latDMS.seconds );
+Serial.print( fix_copy.latDMS.seconds );
 
-if (gps.fix().dateTime.month == 4) // test for the cruelest month
+if (fix_copy.dateTime.month == 4) // test for the cruelest month
   cry();
 
+// Count how satellites are being received for each GNSS
 for (uint8_t i=0; i < gps.sat_count; i++) {
   if (gps.satellites[i].tracked) {
     if (gps.satellites[i] . id <= 32)
@@ -59,200 +182,56 @@ for (uint8_t i=0; i < gps.sat_count; i++) {
 
 And some examples of accessing valid flags in a `fix` structure:
 ```
-if (gps.fix().valid.location)
+if (fix_copy.valid.location)
   // we have a lat/long!
+
 if (fix_copy.valid.time)
   // the copy has hours, minutes and seconds
 ```
-
-##Options
-Except for `status`, each of these members is conditionally compiled; any, all, or *no* members can be selected for parsing, storing and fusing.  This allows configuring an application to use the minimum amount of RAM for the particular `fix` members of interest.  See [Configurations](Configurations.md) for how to edit [GPSfix_cfg.h](/GPSfix_cfg.h) and [NMEAGPS_cfg.h](/NMEAGPS_cfg.h#L67), respectively.
-
-##Precision
-Integers are used for all members, retaining full precision of the original data.
+Here's an example for accessing the altitude
 ```
-    if (gps.fix().valid.location) {
-      // 32-bit ints have 10 significant digits, so you can detect very
-      // small changes in position:
-      d_lat = gps.fix().lat - last_lat;
-    }
-```
-
-Optional floating-point accessors are provided.
-```
-    if (gps.fix().valid.location) {
-      float lat = gps.fix().latitude();
-
-      // floats only have about 6 significant digits, so this
-      // computation is useless for detecting small movements:
-      foobar = (lat - target_lat);
-```
-
-##Usage
-First, declare an instance of `NMEAGPS`:
-
-```
-NMEAGPS gps;
-```
-Next, pass all the received bytes to the `gps` instance:
-```
-void loop()
-{
-  while (serial.available()) {
-    char c = serial.read();
-    gps.decode( c );
-  }
-  ...
-```
-As `gps` decodes those bytes, it will gradually fill out the pieces of its own `fix` data, `gps.fix()` (members described above).  When you want to use some of the fix data, you can access it like this:
-```
-  Serial.print( gps.fix().latitude() );
-  Serial.print( ',' );
-  Serial.println( gps.fix().longitude() );
-```
-However, there are two things to know *before* accessing the fix data:
-
-###(1) You must wait for the sentence to be completely decoded.
-
-As bytes are received, they will gradually fill out a `gps.fix()` member.  For example, `gps.fix().speed` may be half-formed.  You can either do all your accessing after `gps.decode()` returns `DECODE_COMPLETED`:
-```
-void loop()
-{
-  // At this point of the code, speed could be half-decoded.
-  if (gps.fix().speed <= 5)  // NOT A GOOD IDEA!
-    Serial.println( F("Too slow!") );
-
-  while (serial.available()) {
-    char c = serial.read();
-    if (gps.decode( serial.read() ) == NMEAGPS::DECODE_COMPLETED) {
-    
-      // Access any piece of gps.fix() in here...
-    
-      if (gps.fix().speed <= 5)  // OK!
-        Serial.println( F("Too slow!") );
-    
-      if (gps.fix().lat ...
-    }
-  }
-  
-```
-Or, you can copy `gps.fix()` into your own variable when `gps.decode()` returns `DECODE_COMPLETED`:
-```
-gps_fix my_fix;
-
-void loop()
-{
-  while (serial.available()) {
-    char c = serial.read();
-    if (gps.decode( serial.read() ) == NMEAGPS::DECODE_COMPLETED) {
-      my_fix = gps.fix(); // save for later...
-    }
-  }
-  
-  if (my_fix.speed <= 5)  // OK
-    DigitalWrite( UNDERSPEED_INDICATOR, HIGH );
-```
-This technique is used in the example program, [NMEA.ino](/examples/NMEA/NMEA.ino#L96).
-
-###(2) You must check that the `fix` piece is valid.
-
-Remember that the GPS device may *not* have a fix: it may not know the lat/long yet.  To check whether the a piece of fix data has been received, test the corresponding `valid` flag.  For example, to see if lat/long data has been received yet:
-```
-  if (my_fix.valid.location) {
-    Serial.print( my_fix.latitude() );
-    Serial.print( ',' );
-    Serial.println( my_fix.longitude() );
-  }
-```
-In fact, each `fix` member has its own validity flag (except lat/long, which share the `valid.location` flag as above).  See the example printing utility file, [Streamers.cpp](/Streamers.cpp#L100) for accessing all `fix` members.
-
-This means that even though you have enabled a particular member (see [GPSfix_cfg.h](/GPSfix_cfg.h)), it will not have a value until the related NMEA sentence sets it.  Here's an example for accessing the altitude
-```
-    if (gps.fix().valid.altitude) {
-      z2 = gps.fix().altitude_cm();
+    if (fix_copy.valid.altitude) {
+      z2 = fix_copy.altitude_cm();
       vz = (z2 - z1) / dt;
       z1 = z2;
 
       // Note: if you only care about meters, you could also do this:
-      //    z = gps.fix().alt.whole;
+      //    z = fix_copy.alt.whole;
     }
 ```
 You can also check a collection of flags before performing a calculation involving 
 multiple members:
 ```
-    if (gps.fix().valid.altitude && gps.fix().valid.date && gps.fix().valid.time) {
-      dt = (clock_t) gps.fix().dateTime - (clock_t) gps.fix().dateTime;
-      dz = gps.fix().alt.whole - last_alt;  // meters
+    if (fix_copy.valid.altitude && fix_copy.valid.date && fix_copy.valid.time) {
+      dt = (clock_t) fix_copy.dateTime - (clock_t) fix_copy.dateTime;
+      dz = fix_copy.alt.whole - last_alt;  // meters
       vz = dz / dt;                         // meters per second vertical velocity
     }
 ```
 Bonus: The compiler will optimize this into a single bit mask operation.
 
-##Merging
-Because different NMEA sentences contain different pieces of a fix, they have to be "merged" to determine a complete picture.  Some sentences contain only date and time.  Others contain location and altitude, but not speed and heading.
+The example printing utility file, [Streamers.cpp](/Streamers.cpp#L100) shows how to access each fix member and print its value.
 
-There are several ways to use the GPS fix data: without merging, implicit merging, and explicit merging.  NeoGPS allows you to choose how you want multiple sentences to be merged:
+##Options
+Except for `status`, each of these `gps_fix` members is conditionally compiled; any, all, or *no* members can be selected for parsing, storing and merging.  This allows you to configuring NeoGPS to use the minimum amount of RAM for the particular members of interest.  See [Configurations](Configurations.md) for how to edit [GPSfix_cfg.h](/GPSfix_cfg.h) and [NMEAGPS_cfg.h](/NMEAGPS_cfg.h#L67), respectively.
 
-###1. On a per-sentence basis (no merging)
-If you are interested in a few pieces of information, and these pieces can be obtained from one or two sentences, you can wait for that specific sentence to arrive, and then use one or more members of the `gps.fix()` at that time:
+##Precision
+Integers are used for all members, retaining full precision of the original data.
 ```
-void loop()
-{
-  while (serial.available()) {
-    char c = serial.read();
-    if (gps.decode( serial.read() ) == NMEAGPS::DECODE_COMPLETED) {
-
-      if (gps.nmeaMessage == NMEAGPS::NMEA_RMC) {
-        // All GPS-related work is performed inside this if statement
-
-        if (gps.fix().valid.speed && (gps.fix().speed <= 5))
-          Serial.println( F("Too slow!") );
-          
-        if (gps.fix().valid.location &&  ... or any gps.fix() member
-      }
+    gps_fix fix = gps.read();
+    if (fix.valid.location) {
+      // 32-bit ints have 10 significant digits, so you can detect very
+      // small changes in position:
+      d_lat = fix_copy.lat - last_lat;
     }
-  }
-  
-  // Can't access gps.fix() out here...
 ```
 
-###2. On a free-running basis (implicit merging)
-If you are interested in more pieces of information, perhaps requiring more kinds of sentences to be decoded, but don't really care about what time the pieces were received, you could enable `NMEAGPS_ACCUMULATE_FIX` (see [Configurations](Configurations.md#nmeagps) and 
-[NMEAGPS_cfg.h](/NMEAGPS_cfg.h#L112)).  The `gps.fix()` data can be accessed only after DECODE_COMPLETED, or when it `is_safe()`.  This data is not necessarily coherent.  
-
-By "coherent", I mean that the `gps.fix()` lat/long may have been set by the newest sentence, but the altitude may be from the previous time interval.  Most applications do not care that the `gps.fix()` members are not coherent.  However, if you are controlling a drone or other autonomous vehicle, you may need coherency.
-
-It is possible to achieve coherency if you detect the "quiet" time between batches of sentences.  When new data starts coming in, simply call `gps.fix.init()`; all new sentences will set the fix members.  Note that if the GPS device loses its fix on the satellites, you can be left without _any_ valid data.  If this is not acceptable, you will have to use explicit merging (see next section).
-
-[NMEA.ino](/examples/NMEA/NMEA.ino) can be used with implicit merging.  However, [NMEAfused.ino](/examples/NMEAfused/NMEAfused.ino) and [NMEAcoherent.ino](/examples/NMEAcoherent/NMEAcoherent.ino) should not be used with implicit merging, because they perform their own explicit merging.
-
-###3. In selective batches (explicit merging)
-If you are interested in pieces of information that are grouped by some criteria (e.g., coherency or satellites), you must perform explicit merging.  This also "buffers" the main loop from the constantly-changing `gps.fix()`, as described above.  The `merged' copy is safe to access at any time:
-
+Optional floating-point accessors are provided for many members.
 ```
-    gps_fix_t merged;
+    if (fix_copy.valid.location) {
+      float lat = fix_copy.latitude();
 
-    void loop()
-    {
-      while (Serial1.available())
-        if (gps.decode( Serial1.read() ) == NMEAGPS::DECODE_COMPLETED)
-          // ...and other criteria
-          merged |= gps.fix();
-
-      check_position( merged );
+      // floats only have about 6 significant digits, so this
+      // computation is useless for detecting small movements:
+      foobar = (lat - target_lat);
 ```
-Note how the `|=` operator is used to perform the explice merge.  See [NMEAfused.ino](/examples/NMEAfused/NMEAfused.ino) and [GPSfix.h](/GPSfix.h#L220).
-
-For example, you may use the Talker ID to separate the fix data into independent groups.  Obviously, explicit merging requires one or more extra `gps_fix` copies.  
-
-Explicit merging is also required to implement coherency.  Because a sentence has to be parsed to know its timestamp, invalidating old data (i.e., data from a previous update period) must be performed _before_ the sentence parsing begins.  That can only be accomplished with a second 'safe' copy of the fix data and explicit merging.    With implicit merging, new data has already been mixed with old data by the time DECODE_COMPLETED occurs and timestamps can be checked.
-
-To implement coherency, you should clear out the merged fix when a new time 
-interval begins:
-```
-    if (new_interval)
-      merged  = gps.fix(); // replace
-    else
-      merged |= gps.fix(); // merge
-```
-See [NMEAcoherent.ino](/examples/NMEAcoherent/NMEAcoherent.ino#L67)

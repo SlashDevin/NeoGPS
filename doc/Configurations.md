@@ -25,6 +25,8 @@ The following configuration items are near the top of GPSfix_cfg.h:
 #define GPS_FIX_ALT_ERR
 #define GPS_FIX_GEOID_HEIGHT
 ```
+See the [Data Model](Data%20Model.md) page and `GPSfix.h` for the corresponding members that are enabled or disabled by these defines.
+
 ========================
 #class NMEAGPS
 The following configuration items are near the top of NMEAGPS_cfg.h.
@@ -38,6 +40,35 @@ The following configuration items are near the top of NMEAGPS_cfg.h.
 #define NMEAGPS_PARSE_RMC
 #define NMEAGPS_PARSE_VTG
 #define NMEAGPS_PARSE_ZDA
+```
+####Select the last sentence in an update interval
+This is used to determine when the GPS quiet time begins and when a batch of coherent sentences have been merged.  It is crucial to know when fixes can be marked as available, and when you can perform some time-consuming operations.
+```
+#define LAST_SENTENCE_IN_INTERVAL NMEAGPS::NMEA_GLL
+```
+You can use `NMEAorder.ino` to determine the last sentence sent by your device.
+####Enable/Disable coherency
+If you need each fix to contain information that is only from the current update interval, you should uncomment this define.  At the beginning of the next interval, the accumulating fix will start out empty.  When the LAST_SENTENCE_IN_INTERVAL arrives, the valid fields will be coherent.
+```
+#define NMEAGPS_COHERENT
+```
+See [Coherency](Coherency.md) for more information.
+####Enable/Disable No, Implicit, Explicit Merging
+If you want NO merging, comment out both defines.  Otherwise, uncomment the IMPLICIT or EXPLICIT define.
+```
+#define NMEAGPS_EXPLICIT_MERGING
+//#define NMEAGPS_IMPLICIT_MERGING
+```
+See [Merging](Merging.md) for more information.
+####Define the fix buffer size.
+The NMEAGPS object will hold on to this many fixes before an overrun occurs.  The buffered fixes can be obtained by calling `gps.read()`.  You can specify zero, but you have to be sure to call `gps.read()` before the next sentence starts.
+```
+#define NMEAGPS_FIX_MAX 1
+```
+####Enable/Disable interrupt-style processing
+If you are using one of the NeoXXSerial libraries to `attachInterrupt`, this must be uncommented to guarantee safe access to the buffered fixes with `gps.read()`.  For  normal polling-style processing, it must be commented out.
+```
+//#define NMEAGPS_INTERRUPT_PROCESSING
 ```
 ####Enable/Disable the talker ID and manufacturer ID processing.
 There are two kinds of NMEA sentences:
@@ -84,16 +115,12 @@ and/or `parse_mfr_id` in a derived class.
 #define NMEAGPS_SAVE_MFR_ID
 #define NMEAGPS_PARSE_MFR_ID
 ```
-
-###Enable/Disable derived types
-Although normally disabled, this must be enabled if you derive any classes from NMEAGPS.
+####Enable/Disable parsing of NMEA proprietary messages
+If you are deriving a class from NMEAGPS to parse proprietary messages, you must uncomment this define:
 ```
-//#define NMEAGPS_DERIVED_TYPES
+//#define NMEAGPS_PARSE_PROPRIETARY
 ```
-
-The ublox-specific files require this define (see [ublox](ublox.md) section).
-
-###Enable/Disable tracking the current satellite array
+####Enable/Disable tracking the current satellite array
 You can also enable tracking the detailed information for each satellite, and how many satellites you want to track.
 Although many GPS receivers claim to have 66 channels of tracking, 16 is usually the maximum number of satellites 
 tracked at any one time.
@@ -102,15 +129,35 @@ tracked at any one time.
 #define NMEAGPS_PARSE_SATELLITE_INFO
 #define NMEAGPS_MAX_SATELLITES (20)
 ```
-
-###Enable/Disable accumulating fix data across sentences.
-When enabled, `decode` will perform implicit merging of fix data as it is parsed from a new sentence.  Each field of a new sentence will invalidate, set and then validate the corresponding member of `fix()`.  Any other fix data that was filled by a previous sentence _is not_ invalidated.  To enable implicit merging, uncomment this define:
-
+####Enable/disable gathering interface statistics:
+Uncommenting this define will allow counting the CRC errors and the number of sentences and characters received.
 ```
-#define NMEAGPS_ACCUMULATE_FIX
+#define NMEAGPS_STATS
+```
+####Enable/Disable derived types
+Although normally disabled, this must be enabled if you derive any classes from NMEAGPS.
+```
+//#define NMEAGPS_DERIVED_TYPES
 ```
 
-Implicit merging can eliminate the need for a second `fix` (i.e., reduced RAM), but it could prevent coherency.  See [Data Model - Merging](Data%20Model.md#merging) for a discussion of the different types of merging.
+The ublox-specific files require this define (see [ublox](ublox.md) section).
+####Enable/Disable guaranteed comma field separator
+Some devices may omit trailing commas at the end of some sentences.  This may prevent the last field from being parsed correctly, because the parser for some types keep the value in an intermediate state until the complete field is received (e.g., parseDDDMM, parseFloat and parseZDA).
+
+Enabling this will inject a simulated comma when the end of a sentence is received and the last field parser indicated that it still needs one.
+```
+//#define NMEAGPS_COMMA_NEEDED
+```
+####Enable/Disable recignizing all sentence types
+Some applications may want to recognize a sentence type without actually parsing any of the fields.  Uncommenting this define will allow the `gps.nmeaMessage` member to be set when *any* standard message is seen, even though that message is not enabled by a `#defineNMEAGPS_PARSE_xxx`.  No valid flags will be true for disabled sentences.
+```
+#define NMEAGPS_RECOGNIZE_ALL
+```
+####Enable/Disable parsing scratchpad
+Sometimes, a little extra space is needed to parse an intermediate form. This define enables extra space.  Parsers that require the scratchpad can either `#ifdef` an `#error` when the scratchpad is disabled, or let the compiler generate an error when attempting to use the `scratchpad` union (see NMEAGPS.h).
+```
+//#define NMEAGPS_PARSING_SCRATCHPAD
+```
 
 ========================
 #ublox-specific configuration items

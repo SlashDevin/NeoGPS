@@ -205,6 +205,8 @@ void setup()
 {
   // Start the normal trace output
   DEBUG_PORT.begin(9600);
+  while (!DEBUG_PORT)
+    ;
 
   DEBUG_PORT.print( F("NMEAorder.INO: started\n") );
   DEBUG_PORT.print( F("fix object size = ") );

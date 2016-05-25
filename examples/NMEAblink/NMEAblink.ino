@@ -31,8 +31,8 @@
 //      more reliable than using SoftwareSerial for the GPS.  Be 
 //      sure to delete all 'Serial' debug statements.  If your system 
 //      is not attached to a PC when installed, you should seriously 
-//      consider using 'Serial' for
-//      the GPS device.
+//      consider using 'Serial' for the GPS device.
+//      
 //======================================================================
 
 #if defined( UBRR1H )
@@ -57,6 +57,8 @@ void setup()
 {
   // Start the UART for the GPS device
   gps_port.begin(9600);
+  while (!gps_port)
+    ;
 
   pinMode(led, OUTPUT);
 }

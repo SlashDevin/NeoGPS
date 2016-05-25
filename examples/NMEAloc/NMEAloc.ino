@@ -38,21 +38,28 @@
 // Check that the config files are set up properly
 
 #if !defined( NMEAGPS_PARSE_RMC )
-
   #error You must uncomment NMEAGPS_PARSE_RMC in NMEAGPS_cfg.h!
+#endif
 
+#if !defined( GPS_FIX_TIME )
+  #error You must uncomment GPS_FIX_TIME in GPSfix_cfg.h!
 #endif
 
 #if !defined( GPS_FIX_LOCATION )
-
   #error You must uncomment GPS_FIX_LOCATION in GPSfix_cfg.h!
+#endif
 
+#if !defined( GPS_FIX_SPEED )
+  #error You must uncomment GPS_FIX_SPEED in GPSfix_cfg.h!
+#endif
+
+#if !defined( GPS_FIX_SATELLITES )
+  #error You must uncomment GPS_FIX_SATELLITES in GPSfix_cfg.h!
 #endif
 
 //------------------------------------------------------------
 
 static NMEAGPS  gps; // This parses the GPS characters
-static gps_fix  fix; // This holds on to the parsed fields, like lat/lon
 
 //----------------------------------------------------------------
 
@@ -85,7 +92,7 @@ static void printL( Print & outs, int32_t degE7 )
 }
 
 static void doSomeWork();
-static void doSomeWork()
+static void doSomeWork( const gps_fix & fix )
 {
   //  This is the best place to do your time-consuming work, right after
   //     the RMC sentence was received.  If you do anything in "loop()",
@@ -97,6 +104,11 @@ static void doSomeWork()
 
   if (fix.valid.location) {
 
+    if ( fix.dateTime.seconds < 10 )
+      DEBUG_PORT.print( '0' );
+    DEBUG_PORT.print( fix.dateTime.seconds );
+    DEBUG_PORT.print( ',' );
+
     // DEBUG_PORT.print( fix.latitude(), 6 ); // floating-point display
     // DEBUG_PORT.print( fix.latitudeL() ); // integer display
     printL( DEBUG_PORT, fix.latitudeL() ); // prints int like a float
@@ -105,14 +117,15 @@ static void doSomeWork()
     // DEBUG_PORT.print( fix.longitudeL() );  // integer display
     printL( DEBUG_PORT, fix.longitudeL() ); // prints int like a float
 
-    DEBUG_PORT.print( ' ' );
+    DEBUG_PORT.print( ',' );
     if (fix.valid.satellites)
       DEBUG_PORT.print( fix.satellites );
 
-    DEBUG_PORT.print( ' ' );
+    DEBUG_PORT.print( ',' );
     DEBUG_PORT.print( fix.speed(), 6 );
-    DEBUG_PORT.print( F(" = ") );
+    DEBUG_PORT.print( F(" kn = ") );
     DEBUG_PORT.print( fix.speed_mph(), 6 );
+    DEBUG_PORT.print( F(" mph") );
 
   } else {
     // No valid location data yet!
@@ -127,17 +140,10 @@ static void doSomeWork()
 
 static void GPSloop();
 static void GPSloop()
-{  
-  while (gps_port.available()) {
+{
+  while (gps.available( gps_port ))
+    doSomeWork( gps.read() );
 
-    if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
-
-      if (gps.nmeaMessage == NMEAGPS::NMEA_RMC) {
-        fix = gps.fix(); // fetch the latest fix data...
-        doSomeWork();    // ... and do some serious work with it.
-      }
-    }
-  }
 } // GPSloop
   
 //--------------------------
@@ -145,17 +151,25 @@ static void GPSloop()
 void setup()
 {
   DEBUG_PORT.begin(9600);
+  while (!DEBUG_PORT)
+    ;
 
   DEBUG_PORT.print( F("NMEAloc.INO: started\n") );
+  DEBUG_PORT.print( F("fix object size = ") );
+  DEBUG_PORT.println( sizeof(gps.fix()) );
+  DEBUG_PORT.print( F("NMEAGPS object size = ") );
+  DEBUG_PORT.println( sizeof(gps) );
   DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+
+  #ifdef NMEAGPS_NO_MERGING
+    DEBUG_PORT.println( F("Only displaying data from xxRMC sentences.\n  Other sentences may be parsed, but their data will not be displayed.") );
+  #endif
+
   DEBUG_PORT.flush();
 
   
   // Start the UART for the GPS device
   gps_port.begin(9600);
-  
-  DEBUG_PORT.print( F("ARDUINO = ") );
-  DEBUG_PORT.println( ARDUINO );
 }
 
 //--------------------------

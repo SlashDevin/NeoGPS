@@ -51,6 +51,10 @@
 
 #endif
 
+#ifndef NMEAGPS_EXPLICIT_MERGING
+  #error You must define NMEAGPS_EXPLICIT_MERGING in NMEAGPS_cfg.h
+#endif
+
 //------------------------------------------------------------
 
 static ubloxNMEA gps         ; // This parses received characters
@@ -60,8 +64,8 @@ static gps_fix   fused;
 
 static void poll()
 {
-  gps.send_P( &gps_port, PSTR("PUBX,00") );
-  gps.send_P( &gps_port, PSTR("PUBX,04") );
+  gps.send_P( &gps_port, F("PUBX,00") );
+  gps.send_P( &gps_port, F("PUBX,04") );
 }
 
 //----------------------------------------------------------------
@@ -70,11 +74,6 @@ static void doSomeWork()
 {
   // Print all the things!
   trace_all( DEBUG_PORT, gps, fused );
-
-  // Clear out what we just printed.  If you need this data elsewhere,
-  //   don't do this.
-  gps.data_init();
-  fused.init();
 
   //  Ask for the proprietary messages again
   poll();
@@ -85,15 +84,10 @@ static void doSomeWork()
 
 static void GPSloop()
 {  
-  while (gps_port.available()) {
+  while (gps.available( gps_port )) {
+    fused = gps.read();
 
-    if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
-
-      fused |= gps.fix();
-
-      if (gps.nmeaMessage == (NMEAGPS::nmea_msg_t) ubloxNMEA::PUBX_04)
-        doSomeWork();
-    }
+    doSomeWork();
   }
 } // GPSloop
   
@@ -103,6 +97,8 @@ void setup()
 {
   // Start the normal trace output
   DEBUG_PORT.begin(9600);
+  while (!DEBUG_PORT)
+    ;
 
   DEBUG_PORT.print( F("PUBX: started\n") );
   DEBUG_PORT.print( F("fix object size = ") );

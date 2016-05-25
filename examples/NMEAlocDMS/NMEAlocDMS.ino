@@ -38,49 +38,19 @@
 // Check that the config files are set up properly
 
 #if !defined( NMEAGPS_PARSE_RMC )
-
   #error You must uncomment NMEAGPS_PARSE_RMC in NMEAGPS_cfg.h!
-
 #endif
 
 #if !defined( GPS_FIX_LOCATION_DMS )
-
   #error You must uncomment GPS_FIX_LOCATION_DMS in GPSfix_cfg.h!
-
 #endif
 
 //------------------------------------------------------------
 
 static NMEAGPS  gps; // This parses the GPS characters
-static gps_fix  fix; // This holds on to the parsed fields, like lat/lon
-
-//----------------------------------------------------------------
-
-static void printDMS( const DMS_t & dms )
-{
-  if (dms.degrees < 10)
-    DEBUG_PORT.write( '0' );
-  DEBUG_PORT.print( dms.degrees );
-  DEBUG_PORT.write( ' ' );
-  if (dms.minutes < 10)
-    DEBUG_PORT.write( '0' );
-  DEBUG_PORT.print( dms.minutes );
-  DEBUG_PORT.print( F("\' ") );
-  if (dms.seconds_whole < 10)
-    DEBUG_PORT.write( '0' );
-  DEBUG_PORT.print( dms.seconds_whole );
-  DEBUG_PORT.write( '.' );
-  if (dms.seconds_frac < 100)
-    DEBUG_PORT.write( '0' );
-  if (dms.seconds_frac < 10)
-    DEBUG_PORT.write( '0' );
-  DEBUG_PORT.print( dms.seconds_frac );
-  DEBUG_PORT.print( F("\" ") );
-
-} // printDMS
 
 static void doSomeWork();
-static void doSomeWork()
+static void doSomeWork( const gps_fix & fix )
 {
   //  This is the best place to do your time-consuming work, right after
   //     the RMC sentence was received.  If you do anything in "loop()",
@@ -92,12 +62,12 @@ static void doSomeWork()
 
   if (fix.valid.location) {
 
-    printDMS( fix.latitudeDMS );
+    DEBUG_PORT << fix.latitudeDMS;
     DEBUG_PORT.print( fix.latitudeDMS.NS() );
     DEBUG_PORT.write( ' ' );
     if (fix.longitudeDMS.degrees < 100)
       DEBUG_PORT.write( '0' );
-    printDMS( fix.longitudeDMS );
+    DEBUG_PORT << fix.longitudeDMS;
     DEBUG_PORT.print( fix.longitudeDMS.EW() );
 
   } else {
@@ -114,16 +84,9 @@ static void doSomeWork()
 static void GPSloop();
 static void GPSloop()
 {  
-  while (gps_port.available()) {
+  while (gps.available( gps_port ))
+    doSomeWork( gps.read() );
 
-    if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
-
-      if (gps.nmeaMessage == NMEAGPS::NMEA_RMC) {
-        fix = gps.fix(); // fetch the latest fix data...
-        doSomeWork();    // ... and do some serious work with it.
-      }
-    }
-  }
 } // GPSloop
   
 //--------------------------
@@ -131,10 +94,11 @@ static void GPSloop()
 void setup()
 {
   DEBUG_PORT.begin(9600);
+  while (!DEBUG_PORT)
+    ;
 
   DEBUG_PORT.print( F("NMEAlocDMS.INO: started\n") );
   DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  DEBUG_PORT.println( F("Only displaying data from xxRMC sentences.  Other sentences may be parsed, but their data will not be displayed.") );
   DEBUG_PORT.flush();
 
   // Start the UART for the GPS device
@@ -146,9 +110,4 @@ void setup()
 void loop()
 {
   GPSloop();
-  
-  // If the GPS has been sending data, then the "fix" structure may have
-  //   valid data.  Remember, you must check the valid flags before you
-  //   use any of the data inside "fix".  See "doSomeWork" for an example
-  //   of checking whether any lat/lon data has been received yet.
 }

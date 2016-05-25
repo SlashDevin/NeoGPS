@@ -3,10 +3,10 @@
 
 /**
  * @file GPSfix.h
- * @version 2.1
+ * @version 3.0
  *
  * @section License
- * Copyright (C) 2014, SlashDevin
+ * Copyright (C) 2016, SlashDevin
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@
  * Lesser General Public License for more details.
  */
 
+#include "NeoGPS_cfg.h"
 #include "GPSfix_cfg.h"
 
 #if defined( GPS_FIX_DATE ) | defined( GPS_FIX_TIME )

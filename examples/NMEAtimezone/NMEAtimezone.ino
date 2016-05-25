@@ -52,11 +52,11 @@ static gps_fix  fix_data;
 
 //----------------------------------------------------------------
 
-static void doSomeWork()
+static void doSomeWork( const gps_fix & fix )
 {
   // Display the local time
 
-  if (fix_data.valid.time) {
+  if (fix.valid.time) {
     // Set these values to the offset of your timezone from GMT
     static const int32_t         zone_hours   = -4L; // EST
     static const int32_t         zone_minutes =  0L; // usually zero
@@ -64,14 +64,11 @@ static void doSomeWork()
                       zone_hours   * NeoGPS::SECONDS_PER_HOUR +
                       zone_minutes * NeoGPS::SECONDS_PER_MINUTE;
 
-    DEBUG_PORT << NeoGPS::time_t( fix_data.dateTime + zone_offset );
+    NeoGPS::time_t localTime( fix.dateTime + zone_offset );
+
+    DEBUG_PORT << localTime;
   }
   DEBUG_PORT.println();
-
-  // Clear out what we just printed.  If you need this data elsewhere,
-  //   don't do this.
-  gps.data_init();
-  fix_data.init();
 
 } // doSomeWork
 
@@ -79,17 +76,9 @@ static void doSomeWork()
 
 static void GPSloop()
 {  
-  while (gps_port.available()) {
+  while (gps.available( gps_port ))
+    doSomeWork( gps.read() );
 
-    if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
-
-      if (gps.nmeaMessage == NMEAGPS::NMEA_RMC) // or your favorite...
-        fix_data = gps.fix();
-
-      if (gps.nmeaMessage == LAST_SENTENCE_IN_INTERVAL)
-        doSomeWork();
-    }
-  }
 } // GPSloop
 
 //--------------------------
@@ -98,6 +87,8 @@ void setup()
 {
   // Start the normal trace output
   DEBUG_PORT.begin(9600);
+  while (!DEBUG_PORT)
+    ;
 
   DEBUG_PORT.print( F("NMEAtimezone.INO: started\n") );
   DEBUG_PORT.print( F("fix object size = ") );

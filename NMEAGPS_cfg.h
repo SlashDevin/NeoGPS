@@ -28,10 +28,129 @@
 
 #define LAST_SENTENCE_IN_INTERVAL NMEAGPS::NMEA_RMC
 
+// If the NMEA_LAST_SENTENCE_IN_INTERVAL is not chosen 
+// correctly, GPS data may be lost because the sketch
+// takes too long elsewhere when this sentence is received.
+// Also, fix members may contain information from different 
+// time intervals (i.e., they are not coherent).
+//
 // If you don't know which sentence is the last one,
 // use NMEAorder.ino to list them.  You do not have to select
 // the last sentence the device sends if you have disabled
 // it.  Just select the last sentence that you have *enabled*.
+
+//------------------------------------------------------
+// Enable/Disable coherency:
+//
+// If you need each fix to contain information that is only
+// from the current update interval, you should uncomment
+// this define.  At the beginning of the next interval,
+// the accumulating fix will start out empty.  When
+// the LAST_SENTENCE_IN_INTERVAL arrives, the valid
+// fields will be coherent.
+
+//#define NMEAGPS_COHERENT
+
+// With IMPLICIT merging, fix() will be emptied when the
+// next sentence begins.
+//
+// With EXPLICIT or NO merging, the fix() was already
+// being initialized.
+//
+// If you use the fix-oriented methods available() and read(),
+// they will empty the current fix for you automatically.
+//
+// If you use the character-oriented method decode(), you should
+// empty the accumulating fix by testing and clearing the
+// 'intervalComplete' flag in the same way that available() does.
+
+//------------------------------------------------------
+// Choose how multiple sentences are merged:
+//   1) No merging
+//        Each sentence fills out its own fix; there could be 
+//        multiple sentences per interval.
+//   2) EXPLICIT_MERGING
+//        All sentences in an interval are *safely* merged into one fix.
+//        NMEAGPS_FIX_MAX must be >= 1.
+//        An interval is defined by NMEA_LAST_SENTENCE_IN_INTERVAL.
+//   3) IMPLICIT_MERGING
+//        All sentences in an interval are merged into one fix, with 
+//        possible data loss.  If a received sentence is rejected for 
+//        any reason (e.g., a checksum error), all the values are suspect.
+//        The fix will be cleared; no members will be valid until new 
+//        sentences are received and accepted.  This uses less RAM.
+//        An interval is defined by NMEA_LAST_SENTENCE_IN_INTERVAL.
+// Uncomment zero or one:
+
+#define NMEAGPS_EXPLICIT_MERGING
+//#define NMEAGPS_IMPLICIT_MERGING
+
+#ifdef NMEAGPS_IMPLICIT_MERGING
+  #define NMEAGPS_MERGING NMEAGPS::IMPLICIT_MERGING
+
+  // When accumulating, nothing is done to the fix at the 
+  // beginning of every sentence...
+  #ifdef NMEAGPS_COHERENT
+    // ...unless COHERENT is enabled and a new interval is starting
+    #define NMEAGPS_INIT_FIX(m) \
+      if (intervalComplete()) { intervalComplete( false ); m.valid.init(); }
+  #else
+    #define NMEAGPS_INIT_FIX(m)
+  #endif
+
+  // ...but we invalidate one part when it starts to get parsed.  It *may* get
+  // validated when the parsing is finished.
+  #define NMEAGPS_INVALIDATE(m) m_fix.valid.m = false
+
+#else
+
+  #ifdef NMEAGPS_EXPLICIT_MERGING
+    #define NMEAGPS_MERGING NMEAGPS::EXPLICIT_MERGING
+  #else
+    #define NMEAGPS_MERGING NMEAGPS::NO_MERGING
+    #define NMEAGPS_NO_MERGING
+  #endif
+
+  // When NOT accumulating, invalidate the entire fix at the 
+  // beginning of every sentence
+  #define NMEAGPS_INIT_FIX(m) m.valid.init()
+
+  // ...so the individual parts do not need to be invalidated as they are parsed
+  #define NMEAGPS_INVALIDATE(m)
+
+#endif
+
+#if ( defined(NMEAGPS_NO_MERGING) + \
+    defined(NMEAGPS_IMPLICIT_MERGING) + \
+    defined(NMEAGPS_EXPLICIT_MERGING) )  > 1
+  #error Only one MERGING technique should be enabled in NMEAGPS_cfg.h!
+#endif
+
+//------------------------------------------------------
+// Define the fix buffer size.  The NMEAGPS object will hold on to
+// this many fixes before an overrun occurs.  This can be zero,
+// but you have to be more careful about using gps.fix() structure,
+// because it will be modified as characters are received.
+
+#define NMEAGPS_FIX_MAX 1
+
+#if defined(NMEAGPS_EXPLICIT_MERGING) && (NMEAGPS_FIX_MAX == 0)
+  #error You must define FIX_MAX >= 1 to allow EXPLICIT merging in NMEAGPS_cfg.h
+#endif
+
+//------------------------------------------------------
+// Enable/Disable interrupt-style processing of GPS characters
+// If you are using one of the NeoXXSerial libraries,
+//   to attachInterrupt, this must be defined.
+// Otherwise, it must be commented out.
+
+//#define NMEAGPS_INTERRUPT_PROCESSING
+
+#ifdef  NMEAGPS_INTERRUPT_PROCESSING
+  #define NMEAGPS_PROCESSING_STYLE NMEAGPS::PS_INTERRUPT
+#else
+  #define NMEAGPS_PROCESSING_STYLE NMEAGPS::PS_POLLING
+#endif
 
 //------------------------------------------------------
 // Enable/disable the talker ID, manufacturer ID and proprietary message processing.
@@ -108,49 +227,6 @@
 #endif
 
 //------------------------------------------------------
-// Enable/disable accumulating fix data across sentences.
-//
-// If not defined, the fix will contain data from only the last decoded sentence.
-//
-// If defined, the fix will contain data from all received sentences.  Each
-// fix member will contain the last value received from any sentence that
-// contains that information.  This means that fix members may contain
-// information from different time intervals (i.e., they are not coherent).
-//
-// ALSO NOTE:  If a received sentence is rejected for any reason (e.g., CRC
-//   error), all the values are suspect.  The fix will be cleared; no members
-//   will be valid until new sentences are received and accepted.
-//
-//   This is an application tradeoff between keeping a merged copy of received
-//   fix data (more RAM) vs. accommodating "gaps" in fix data (more code).
-//
-// SEE ALSO: NMEAfused.ino and NMEAcoherent.ino
-
-//#define NMEAGPS_ACCUMULATE_FIX
-
-#ifdef NMEAGPS_ACCUMULATE_FIX
-
-  // When accumulating, nothing is done to the fix at the 
-  // beginning of every sentence
-  #define NMEAGPS_INIT_FIX(m)
-
-  // ...but we invalidate one part when it starts to get parsed.  It *may* get
-  // validated when the parsing is finished.
-  #define NMEAGPS_INVALIDATE(m) m_fix.valid.m = false
-
-#else
-
-  // When NOT accumulating, invalidate the entire fix at the 
-  // beginning of every sentence
-  #define NMEAGPS_INIT_FIX(m) m.valid.init()
-
-  // ...so the individual parts do not need to be invalidated as they are parsed
-  #define NMEAGPS_INVALIDATE(m)
-
-#endif
-
-
-//------------------------------------------------------
 // Enable/disable gathering interface statistics:
 // CRC errors and number of sentences received
 
@@ -205,6 +281,6 @@
 // Sometimes, a little extra space is needed to parse an intermediate form.
 // This config items enables extra space.
 
-#define NMEAGPS_PARSING_SCRATCHPAD
+//#define NMEAGPS_PARSING_SCRATCHPAD
 
 #endif

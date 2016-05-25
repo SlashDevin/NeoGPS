@@ -16,9 +16,8 @@ These example programs demonstrate how to use the classes in the different progr
 * [NMEAloc](/examples/NMEAloc/NMEAloc.ino) - sync, single fix, minimal example using only standard NMEA RMC sentence
 * [NMEAlocDMS](/examples/NMEAlocDMS/NMEAlocDMS.ino) - same as NMEAloc.ino, but displays location in Degrees, Minutes and Seconds
 * [NMEAtimezone](/examples/NMEAtimezone/NMEAtimezone.ino) - same as NMEAloc.ino, but displays local time instead of UTC (GMT)
-* [NMEAfused](/examples/NMEAfused/NMEAfused.ino) - sync, fused fix, standard NMEA only
-* [NMEAfused_isr](/examples/NMEAfused_isr/NMEAfused_isr.ino) - **async**, fused fix, standard NMEA only
 * [NMEAcoherent](/examples/NMEAcoherent/NMEAcoherent.ino) - sync, coherent fix, standard NMEA only
+* [NMEASDlog](/examples/NMEASDlog/NMEASDlog.ino) - **async**, buffered fixes, standard NMEA only (RMC sentence only), logging to SD card
 * [PUBX](/examples/PUBX/PUBX.ino) - sync, coherent fix, standard NMEA + ublox proprietary NMEA
 * [ublox](/examples/ublox/ublox.ino) - sync, coherent fix, ublox binary protocol UBX
 
@@ -33,33 +32,9 @@ Several programs are provided to help diagnose GPS device problems:
 
 * [NMEAdiagnostic](/examples/NMEAdiagnostic/NMEAdiagnostic.ino)
  
-This program listens for sentences and, if none are detected, tries a different baud rate.  When sentences are detected, the correct baud rate is displayed:
-```
-NMEAdiagnostic.INO: started
-Looking for GPS device on Serial1
+This program listens for sentences and, if none are detected, tries a different baud rate.  When sentences are detected, the correct baud rate is displayed.  The received data may help you determine the problem (e.g., dropped characters or binary protocol).
 
-
-**** NMEA sentence detected!  Your device baud rate is 9600  ****
-```
-If the wrong baud rate is used, you will see a section like the following for each baud rate that is tried:
-```
-Checking 2400 baud...
-
-
-Check GPS device and/or connections.  No data received.
-
-No valid sentences, but characters are being received.
-Check baud rate or device protocol configuration.
-
-Received data:
-B9CE044808480E888008480E0C88CC49 ...H.H....H....I
-7A4A494A8882C80A8A0C0A08888CC04A zJIJ...........J
-C4B9EEBF292FB949595BA949692186C0 ....)/.IY[.Ii!..
-4AC4B9BE674808480E8808480E0C88CC J...gH.H...H....
-497A4A494A88828A480C4E880ACA8A84 IzJIJ...H.N.....
-4CCA8C840C08C88AC4B9BE00808A884C L..............L
-```
-The received data may help you determine the problem (e.g., dropped characters or binary protocol).
+See the [Troubleshooting](Troubleshooting.md) section for more details.
 
 ###Sentence order
 

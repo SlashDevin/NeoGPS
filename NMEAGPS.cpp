@@ -1,9 +1,9 @@
 /**
  * @file NMEAGPS.cpp
- * @version 2.1
+ * @version 3.0
  *
  * @section License
- * Copyright (C) 2014, SlashDevin
+ * Copyright (C) 2016, SlashDevin
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -738,13 +738,13 @@ bool NMEAGPS::parseRMC( char chr )
 {
   #ifdef NMEAGPS_PARSE_RMC
     switch (fieldIndex) {
-        case 1:  return parseTime   ( chr );
-        case 2:  return parseFix    ( chr );
-        PARSE_LOC(3);
-        case 7:  return parseSpeed  ( chr );
-        case 8:  return parseHeading( chr );
-        case 9:  return parseDDMMYY ( chr );
-        case 12: return parseFix    ( chr );
+      case 1:  return parseTime   ( chr );
+      case 2:  return parseFix    ( chr );
+      PARSE_LOC(3);
+      case 7:  return parseSpeed  ( chr );
+      case 8:  return parseHeading( chr );
+      case 9:  return parseDDMMYY ( chr );
+      case 12: return parseFix    ( chr );
     }
   #endif
 
@@ -758,9 +758,9 @@ bool NMEAGPS::parseVTG( char chr )
 {
   #ifdef NMEAGPS_PARSE_VTG
     switch (fieldIndex) {
-        case 1: return parseHeading( chr );
-        case 5: return parseSpeed( chr );
-        case 9: return parseFix( chr );
+      case 1: return parseHeading( chr );
+      case 5: return parseSpeed( chr );
+      case 9: return parseFix( chr );
     }
   #endif
 
@@ -811,17 +811,17 @@ bool NMEAGPS::parseTime(char chr)
 {
   #ifdef GPS_FIX_TIME
     switch (chrCount) {
-        case 0: NMEAGPS_INVALIDATE( time );
-                m_fix.dateTime.hours    = (chr - '0')*10; break;
-        case 1: m_fix.dateTime.hours   += (chr - '0');    break;
-        case 2: m_fix.dateTime.minutes  = (chr - '0')*10; break;
-        case 3: m_fix.dateTime.minutes += (chr - '0');    break;
-        case 4: m_fix.dateTime.seconds  = (chr - '0')*10; break;
-        case 5: m_fix.dateTime.seconds += (chr - '0');    break;
-        case 7: m_fix.dateTime_cs       = (chr - '0')*10; break;
-        case 8: m_fix.dateTime_cs      += (chr - '0');
-                m_fix.valid.time = true;
-                break;
+      case 0: NMEAGPS_INVALIDATE( time );
+              m_fix.dateTime.hours    = (chr - '0')*10; break;
+      case 1: m_fix.dateTime.hours   += (chr - '0');    break;
+      case 2: m_fix.dateTime.minutes  = (chr - '0')*10; break;
+      case 3: m_fix.dateTime.minutes += (chr - '0');    break;
+      case 4: m_fix.dateTime.seconds  = (chr - '0')*10; break;
+      case 5: m_fix.dateTime.seconds += (chr - '0');    break;
+      case 7: m_fix.dateTime_cs       = (chr - '0')*10; break;
+      case 8: m_fix.dateTime_cs      += (chr - '0');
+              m_fix.valid.time = true;
+              break;
     }
   #endif
 
@@ -1057,8 +1057,8 @@ bool NMEAGPS::parseDDDMM
         val = (deg * 60) + min;
       #endif
       #ifdef GPS_FIX_LOCATION_DMS
-        dms.degrees = deg;
-        dms.minutes = min;
+        dms.degrees   = deg;
+        dms.minutes   = min;
         scratchpad.U4 = 0;
       #endif
 
@@ -1404,6 +1404,29 @@ bool NMEAGPS::parse_alt_err( char chr )
 
 //---------------------------------
 
+const gps_fix & NMEAGPS::read()
+{
+  if (_fixesAvailable) {
+
+    #if (NMEAGPS_FIX_MAX > 0)
+      lock();
+        _fixesAvailable--;
+        uint8_t i = _firstFix++;
+        if (_firstFix >= NMEAGPS_FIX_MAX)
+          _firstFix = 0;
+      unlock();
+      return buffer[i];
+    #else
+      _fixesAvailable = false;
+      return m_fix;
+    #endif
+
+  } else
+    return m_fix;
+} // read
+
+//---------------------------------
+
 void NMEAGPS::poll( Stream *device, nmea_msg_t msg )
 {
   if (MSGS_ENABLED > 0) {
@@ -1491,6 +1514,7 @@ static void send_trailer( Stream *device, uint8_t crc )
   device->print( LF );
 }
 
+//---------------------------------
 
 void NMEAGPS::send( Stream *device, const char *msg )
 {

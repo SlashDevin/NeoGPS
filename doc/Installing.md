@@ -21,6 +21,8 @@ This creates an `Arduino/NMEA` sketch subdirectory containing `NMEA.INO`.
 **3.**  Copy all the .H and .CPP files from the top directory of NeoGPS-master into `Arduino/NMEA`.  Your application subdirectory should now contain these files:
 ```
     CosaCompat.h
+    DMS.cpp
+    DMS.h
     GPSfix.h
     GPSfix_cfg.h
     GPSport.h
@@ -65,70 +67,47 @@ To select one of the non-default types, simply include their header before inclu
 
 The above will cause `GPSport.h` to declare `gps_port` using the class `NeoICSerial`.
 
-Modify these defaults if necessary, or if you know what serial port to use, you can declare it in `NMEA.ino`.  Be sure to delete the line `#include "GPSport.h"`, and delete the file `GPSport.h`.
+Modify these defaults if necessary, or if you know what serial port to use, you can declare it yourself.  Be sure to delete the line `#include "GPSport.h"`, and delete the file `GPSport.h`.
 <br>
 <br>
 **5.**  Start the IDE by double-clicking on the `NMEA.INO` file and upload the example sketch.
 
 **Note:**  If the sketch does not compile, please see the [Troubleshooting](Troubleshooting.md#configuration-errors) section.
 
-When the sketch begins, you should see a few lines of startup text:
+When the sketch begins, you should see this:
 ```
-NMEA.ino: started
-fix object size = 34
-NMEAGPS object size = 53
+NMEA.INO: started
+  fix object size = 31
+  gps object size = 84
 Looking for GPS device on Serial1
-GPS quiet time begins after a GLL sentence is received.
-You should confirm this with NMEAorder.ino
-```
-If the GPS device is correctly wired but running at the wrong baud rate, you may see:
 
-    Invalid data received.  Use NMEAdiagnostic.INO to verify baud rate.
+GPS quiet time is assumed to begin after a RMC sentence is received.
+  You should confirm this with NMEAorder.ino
 
-If it is running at the specified baud rate, you should see the header for the GPS data fields, and a few messages that report which NMEA sentences are being received.  Depending on when the Arduino resets within the GPS reporting interval, and your specific GPS device, you may see different sentence reports:
-```
-Status,UTC Date/Time,Lat,Lon,Hdg,Spd,Alt,HDOP,Sats,Rx ok,Rx err,Rx chars,
-Received RMC...
-Received VTG...
-Received GGA...
-Received GSA...
-Received GSV...
-Received GSV...
-Received GSV...
-```
-When the LAST_SENTENCE_IN_INTERVAL is received (default is a GLL), it begins printing the GPS data fields in a CSV format.  If the GPS device has a fix on several satellites, you will see something like this:
-```
-3,2015-09-14 19:07:30.00,472852332,85652650,,1262,,,,8,0,501,
-3,2015-09-14 19:07:31.00,472852338,85652646,,1678,,,,16,0,1004,
+Status,UTC Date/Time,Lat,Lon,Hdg,Spd,Alt,Sats,Rx ok,Rx err,Rx chars,
+3,2016-05-24 01:21:29.00,472852332,85652650,,138,,,1,0,66,
+3,2016-05-24 01:21:30.00,472852311,85652653,,220,24040,7,9,0,557,
+3,2016-05-24 01:21:31.00,472852315,85652647,,449,24080,7,17,0,1048,
   etc.
 ```
-If your device does not send the expected LAST_SENTENCE_IN_INTERVAL, you will receive a warning:
-```
-Warning: GLL sentence was never received and is not the LAST_SENTENCE_IN_INTERVAL.
-  Please use NMEAorder.ino to determine which sentences your GPS device sends, and then
-  use the last one for the definition above.
-```
-As described in the [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section, you should run the NMEAorder.ino sketch to determine which sentence is last.  You may be able to see a slight pause in the "Received XXX" messages above, which would also identify the last sentence.  Edit NMEA.ino and change this line:
-```
-static const NMEAGPS::nmea_msg_t LAST_SENTENCE_IN_INTERVAL = NMEAGPS::NMEA_GLL;
-```
-
 The default NeoGPS configuration is **Nominal**, as described [here](Configurations.md#typical-configurations).  This output can be copy & pasted into a spreadsheet for graphing or analysis, or into a text editor for saving as a CSV file.
 
-If you do not see this output, please see the [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section.
+If you do not see this output, please review the  [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section.
 
 #The NMEA.ino example works!
 Once you have verified the GPS device connection and build process with this first example, you should also verify your device's behavior with `NMEAorder.ino` (see [this section](Troubleshooting.md#quiet-time-interval)).  This can avoid problems later on, when you start adding/merging other functions to do your "work".
 
-Next, you should try `NMEAfused.ino`.
+[Other examples](Examples.md) include `NMEAloc.ino`, which shows how to use just the location fields of a fix, or `NMEAtimezone.ino`, which shows how to adjust the GPS time for your local time zone.
 
-If you are working on a drone or other autonomous system, you should then try `NMEAcoherent.ino`.
+If you are logging information to an SD card, you should next try `NMEA_isr.ino`.  It is identical to `NMEA.ino`, except that it handles the GPS characters during the RX char interrupt.  Interrupt handling will require one of the NeoXXSerial libraries to be installed (e.g. [NeoHWSerial](https://github.com/SlashDevin/NeoHWSerial)).
+
+If you are working on a drone or other autonomous system, you should then try `NMEAcoherent.ino`.  Although this is a polling example, you should eventually use the interrupt-driven technique.
 
 You can also try other configurations.  Please see [Choosing Your Configuration](Choosing.md) for more information, and then simply edit `GPSfix_cfg.h` and/or `NMEAGPS_cfg.h`, or select an [example configuration](../configs) and copy these three files into your application directory: `NeoGPS_cfg.h`, `GPSfix_cfg.h`, and `NMEAGPS_cfg.h`.
 
 You can review and edit each of the copied configuration files to add or remove messages or fields, at any time.
 
-**Note:**  Not all configurations will work with all example applications.
+**Note:**  Not all configurations will work with all example applications.  Compiler error messages are emitted for incompatible settings, or if an example requires certain configurations.
 
 #I have a ublox GPS device
 After you have tried all the standard NMEA examples, and you need the ublox-specific capabilities of NeoGPS, please see the [ublox](ublox.md) section.  Try `PUBX.ino` first, then try `ublox.ino` if you *really* need the binary protocol.
