@@ -42,4 +42,42 @@
 
 #endif
 
+/*
+ *  Accommodate C++ compiler and IDE changes.
+ *
+ *  Declaring constants as class data instead of instance data helps avoid
+ *  collisions with #define names, and allows the compiler to perform more
+ *  checks on their usage.
+ *
+ *  Until C++ 10 and IDE 1.6.8, initialized class data constants 
+ *  were declared like this:
+ *
+ *      static const <valued types> = <constant-value>;
+ *
+ *  Now, non-simple types (e.g., float) must be declared as
+ *
+ *      static constexpr <nonsimple-types> = <expression-treated-as-const>;
+ *
+ *  The good news is that this allows the compiler to optimize out an
+ *  expression that is "promised" to be "evaluatable" as a constant.
+ *  The bad news is that it introduces a new language keyword, and the old
+ *  code raises an error.
+ *
+ *  TODO: Evaluate the requirement for the "static" keyword.
+ *  TODO: Evaluate using a C++ version preprocessor symbol for the #if.
+ *
+ *  The CONST_CLASS_DATA define will expand to the appropriate keywords.
+ *
+ */
+
+#if ARDUINO < 10606
+
+  #define CONST_CLASS_DATA static const
+  
+#else
+
+  #define CONST_CLASS_DATA static constexpr
+  
+#endif
+
 #endif
