@@ -22,7 +22,7 @@
 #include "CosaCompat.h"
 
 class __FlashStringHelper;
-class Stream;
+#include <Stream.h>
 #include <avr/interrupt.h>
 
 #include "GPSfix.h"
@@ -120,7 +120,9 @@ public:
     //.......................................................................
     //  This routine can be called from the attachInterrupt routine
 
-    void isr( uint8_t c ) { _handle( c ); };
+    #ifdef NMEAGPS_INTERRUPT_PROCESSING
+      void isr( uint8_t c ) { _handle( c ); };
+    #endif
 
     //.......................................................................
     // NMEA standard message types (aka "sentences")
