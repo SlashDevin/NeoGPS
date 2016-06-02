@@ -167,7 +167,6 @@ public:
 
     CONST_CLASS_DATA nmea_msg_t NMEA_FIRST_MSG = (nmea_msg_t) 1;
     CONST_CLASS_DATA nmea_msg_t NMEA_LAST_MSG  = (nmea_msg_t) (NMEAMSG_END-1);
-    CONST_CLASS_DATA uint8_t    MSGS_ENABLED   = NMEAMSG_END - NMEA_FIRST_MSG;
     
     //.......................................................................
     //  Convert a nmea_msg_t to a PROGMEM string.
@@ -360,9 +359,11 @@ protected:
     //.......................................................................
     //  Process one character, possibly saving a buffered fix
 
-    void _handle( uint8_t c )
+    decode_t _handle( uint8_t c )
     {
-      if (decode( c ) == DECODE_COMPLETED) {
+      decode_t res = decode( c );
+
+      if (res == DECODE_COMPLETED) {
 
         // Room for another fix?
 
@@ -413,6 +414,8 @@ protected:
         // No buffer, and m_fix is was modified by the last char
         overrun( true );
       }
+
+      return res;
 
     } // _handle
 

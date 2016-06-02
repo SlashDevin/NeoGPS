@@ -188,7 +188,7 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
 
         crc ^= c;  // accumulate CRC as the chars come in...
 
-        if (!parseField( c ) && (MSGS_ENABLED > 0))
+        if (!parseField( c ))
           sentenceInvalid();
         else if (c == ',') {
           // Start the next field
@@ -225,7 +225,7 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
       chrCount++;
     } else if (cmd_res == DECODE_COMPLETED) {
       headerReceived();
-    } else if (MSGS_ENABLED > 0) // DECODE_CHR_INVALID
+    } else // DECODE_CHR_INVALID
       sentenceUnrecognized();
 
 
@@ -331,7 +331,7 @@ NMEAGPS::decode_t NMEAGPS::parseCommand( char c )
   if (c == ',') {
     // End of field, did we get a sentence type yet?
     return
-      ((nmeaMessage == NMEA_UNKNOWN) && (MSGS_ENABLED > 0)) ?
+      (nmeaMessage == NMEA_UNKNOWN) ?
         DECODE_CHR_INVALID :
         DECODE_COMPLETED;
   }
@@ -951,11 +951,11 @@ bool NMEAGPS::parseFloat( uint16_t & val, char chr, uint8_t max_decimal )
 
   static void finalizeDMS( uint32_t min_frac, DMS_t & dms )
   {
-    // To convert from fractional minutes (ten thousandths) to 
+    // To convert from fractional minutes (hundred thousandths) to 
     //   seconds_whole and seconds_frac,
     //
-    //   seconds = min_frac * 60/10000
-    //           = min_frac * 0.006
+    //   seconds = min_frac * 60/100000
+    //           = min_frac * 0.0006
 
     #ifdef __AVR__
       // Fixed point conversion factor 0.0006 * 2^26 = 40265
@@ -1429,71 +1429,68 @@ const gps_fix & NMEAGPS::read()
 
 void NMEAGPS::poll( Stream *device, nmea_msg_t msg )
 {
-  if (MSGS_ENABLED > 0) {
+  //  Only the ublox documentation references talker ID "EI".  
+  //  Other manufacturer's devices use "II" and "GP" talker IDs for the GPQ sentence.
+  //  However, "GP" is reserved for the GPS device, so it seems inconsistent
+  //  to use that talker ID when requesting something from the GPS device.
 
-    //  Only the ublox documentation references talker ID "EI".  
-    //  Other manufacturer's devices use "II" and "GP" talker IDs for the GPQ sentence.
-    //  However, "GP" is reserved for the GPS device, so it seems inconsistent
-    //  to use that talker ID when requesting something from the GPS device.
+  #if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
+    static const char gga[] __PROGMEM = "EIGPQ,GGA";
+  #endif
+  #if defined(NMEAGPS_PARSE_GLL) | defined(NMEAGPS_RECOGNIZE_ALL)
+    static const char gll[] __PROGMEM = "EIGPQ,GLL";
+  #endif
+  #if defined(NMEAGPS_PARSE_GSA) | defined(NMEAGPS_RECOGNIZE_ALL)
+    static const char gsa[] __PROGMEM = "EIGPQ,GSA";
+  #endif
+  #if defined(NMEAGPS_PARSE_GST) | defined(NMEAGPS_RECOGNIZE_ALL)
+    static const char gst[] __PROGMEM = "EIGPQ,GST";
+  #endif
+  #if defined(NMEAGPS_PARSE_GSV) | defined(NMEAGPS_RECOGNIZE_ALL)
+    static const char gsv[] __PROGMEM = "EIGPQ,GSV";
+  #endif
+  #if defined(NMEAGPS_PARSE_RMC) | defined(NMEAGPS_RECOGNIZE_ALL)
+    static const char rmc[] __PROGMEM = "EIGPQ,RMC";
+  #endif
+  #if defined(NMEAGPS_PARSE_VTG) | defined(NMEAGPS_RECOGNIZE_ALL)
+    static const char vtg[] __PROGMEM = "EIGPQ,VTG";
+  #endif
+  #if defined(NMEAGPS_PARSE_ZDA) | defined(NMEAGPS_RECOGNIZE_ALL)
+    static const char zda[] __PROGMEM = "EIGPQ,ZDA";
+  #endif
 
-    #if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
-      static const char gga[] __PROGMEM = "EIGPQ,GGA";
-    #endif
-    #if defined(NMEAGPS_PARSE_GLL) | defined(NMEAGPS_RECOGNIZE_ALL)
-      static const char gll[] __PROGMEM = "EIGPQ,GLL";
-    #endif
-    #if defined(NMEAGPS_PARSE_GSA) | defined(NMEAGPS_RECOGNIZE_ALL)
-      static const char gsa[] __PROGMEM = "EIGPQ,GSA";
-    #endif
-    #if defined(NMEAGPS_PARSE_GST) | defined(NMEAGPS_RECOGNIZE_ALL)
-      static const char gst[] __PROGMEM = "EIGPQ,GST";
-    #endif
-    #if defined(NMEAGPS_PARSE_GSV) | defined(NMEAGPS_RECOGNIZE_ALL)
-      static const char gsv[] __PROGMEM = "EIGPQ,GSV";
-    #endif
-    #if defined(NMEAGPS_PARSE_RMC) | defined(NMEAGPS_RECOGNIZE_ALL)
-      static const char rmc[] __PROGMEM = "EIGPQ,RMC";
-    #endif
-    #if defined(NMEAGPS_PARSE_VTG) | defined(NMEAGPS_RECOGNIZE_ALL)
-      static const char vtg[] __PROGMEM = "EIGPQ,VTG";
-    #endif
-    #if defined(NMEAGPS_PARSE_ZDA) | defined(NMEAGPS_RECOGNIZE_ALL)
-      static const char zda[] __PROGMEM = "EIGPQ,ZDA";
-    #endif
+  static const char * const poll_msgs[] __PROGMEM =
+    {
+      #if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
+        gga,
+      #endif
+      #if defined(NMEAGPS_PARSE_GLL) | defined(NMEAGPS_RECOGNIZE_ALL)
+        gll,
+      #endif
+      #if defined(NMEAGPS_PARSE_GSA) | defined(NMEAGPS_RECOGNIZE_ALL)
+        gsa,
+      #endif
+      #if defined(NMEAGPS_PARSE_GST) | defined(NMEAGPS_RECOGNIZE_ALL)
+        gst,
+      #endif
+      #if defined(NMEAGPS_PARSE_GSV) | defined(NMEAGPS_RECOGNIZE_ALL)
+        gsv,
+      #endif
+      #if defined(NMEAGPS_PARSE_RMC) | defined(NMEAGPS_RECOGNIZE_ALL)
+        rmc,
+      #endif
+      #if defined(NMEAGPS_PARSE_VTG) | defined(NMEAGPS_RECOGNIZE_ALL)
+        vtg,
+      #endif
+      #if defined(NMEAGPS_PARSE_ZDA) | defined(NMEAGPS_RECOGNIZE_ALL)
+        zda
+      #endif
+    };
 
-    static const char * const poll_msgs[] __PROGMEM =
-      {
-        #if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
-          gga,
-        #endif
-        #if defined(NMEAGPS_PARSE_GLL) | defined(NMEAGPS_RECOGNIZE_ALL)
-          gll,
-        #endif
-        #if defined(NMEAGPS_PARSE_GSA) | defined(NMEAGPS_RECOGNIZE_ALL)
-          gsa,
-        #endif
-        #if defined(NMEAGPS_PARSE_GST) | defined(NMEAGPS_RECOGNIZE_ALL)
-          gst,
-        #endif
-        #if defined(NMEAGPS_PARSE_GSV) | defined(NMEAGPS_RECOGNIZE_ALL)
-          gsv,
-        #endif
-        #if defined(NMEAGPS_PARSE_RMC) | defined(NMEAGPS_RECOGNIZE_ALL)
-          rmc,
-        #endif
-        #if defined(NMEAGPS_PARSE_VTG) | defined(NMEAGPS_RECOGNIZE_ALL)
-          vtg,
-        #endif
-        #if defined(NMEAGPS_PARSE_ZDA) | defined(NMEAGPS_RECOGNIZE_ALL)
-          zda
-        #endif
-      };
-
-    if ((NMEA_FIRST_MSG <= msg) && (msg <= NMEA_LAST_MSG)) {
-      const __FlashStringHelper * pollCmd =
-        (const __FlashStringHelper *) pgm_read_word(&poll_msgs[msg-NMEA_FIRST_MSG]);
-      send_P( device, pollCmd );
-    }
+  if ((NMEA_FIRST_MSG <= msg) && (msg <= NMEA_LAST_MSG)) {
+    const __FlashStringHelper * pollCmd =
+      (const __FlashStringHelper *) pgm_read_word(&poll_msgs[msg-NMEA_FIRST_MSG]);
+    send_P( device, pollCmd );
   }
 
 } // poll

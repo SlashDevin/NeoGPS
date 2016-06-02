@@ -4,14 +4,24 @@
 
 bool ubloxNMEA::parseField(char chr)
 {
-  switch (nmeaMessage) {
+  if (nmeaMessage >= (nmea_msg_t) PUBX_FIRST_MSG) {
 
-    case PUBX_00: return parsePUBX_00( chr );
-    case PUBX_04: return parsePUBX_04( chr );
-    default:
-      // Delegate
-      return NMEAGPS::parseField(chr);
-  }
+    switch (nmeaMessage) {
+
+      case PUBX_00: return parsePUBX_00( chr );
+
+      #if defined(NMEAGPS_PARSE_PUBX_04) | defined(NMEAGPS_RECOGNIZE_ALL)
+        case PUBX_04: return parsePUBX_04( chr );
+      #endif
+
+      default: break;
+    }
+
+  } else
+
+    // Delegate
+    return NMEAGPS::parseField(chr);
+
 
   return true;
 
@@ -21,20 +31,34 @@ bool ubloxNMEA::parseField(char chr)
 
 bool ubloxNMEA::parsePUBX_00( char chr )
 {
+  bool ok = true;
+
   switch (fieldIndex) {
     case 1:
       // The first field is actually a message subtype
       if (chrCount == 0)
-        return (chr == '0');
-      else if (chrCount == 1)
-        nmeaMessage = (nmea_msg_t) (nmeaMessage + chr - '0');
+        ok = (chr == '0');
+
+      else if (chrCount == 1) {
+        switch (chr) {
+          #if defined(NMEAGPS_PARSE_PUBX_00) | defined(NMEAGPS_RECOGNIZE_ALL)
+            case '0': break;
+          #endif
+          #if defined(NMEAGPS_PARSE_PUBX_04) | defined(NMEAGPS_RECOGNIZE_ALL)
+            case '4': nmeaMessage = (nmea_msg_t) PUBX_04; break;
+          #endif
+          default : ok = false;
+        }
+
+      } else // chrCount > 1
+        ok = (chr == ',');
       break;
 
     #ifdef NMEAGPS_PARSE_PUBX_00
       case  2: return parseTime( chr );
       PARSE_LOC(3);
       case  7: return parseAlt( chr );
-      case  8: return parseFix( chr ); break;
+      case  8: return parseFix( chr );
       case 11: return parseSpeed( chr ); // kph!
       case 12: return parseHeading( chr );
       case 15: return parseHDOP( chr );
@@ -42,7 +66,7 @@ bool ubloxNMEA::parsePUBX_00( char chr )
     #endif
   }
 
-  return true;
+  return ok;
 
 } // parsePUBX_00
 

@@ -22,14 +22,13 @@
 #include "NMEAGPS.h"
 #include "Streamers.h"
 
-/**
- * Enable/disable the parsing of specific NMEA sentences.
- *
- * Configuring out a sentence prevents its fields from being parsed.
- * However, the sentence type will still be recognized by /decode/ and 
- * stored in member /nmeaMessage/.  No valid flags would be available.
- *
- */
+//------------------------------------------------------------
+// Enable/disable the parsing of specific proprietary NMEA sentences.
+//
+// Configuring out a sentence prevents its fields from being parsed.
+// However, the sentence type may still be recognized by /decode/ and 
+// stored in member /nmeaMessage/.  No valid flags would be available.
+
 #define NMEAGPS_PARSE_PUBX_00
 #define NMEAGPS_PARSE_PUBX_04
 
@@ -41,7 +40,7 @@
 // field is completed by /parseField/, it may change /nmeamessage/ to one 
 // of the other PUBX message types.
 
-#if (defined(NMEAGPS_PARSE_PUBX_00) | defined(NMEAGPS_PARSE_PUBX_00))
+#if (defined(NMEAGPS_PARSE_PUBX_00) | defined(NMEAGPS_PARSE_PUBX_04))
 
   #if !defined(NMEAGPS_PARSE_PROPRIETARY)
     #error NMEAGPS_PARSE_PROPRIETARY must be defined in NMEAGPS_cfg.h in order to parse PUBX messages!
@@ -56,13 +55,13 @@
   #error You must "#define NMEAGPS_DERIVED_TYPES" in NMEAGPS_cfg.h!
 #endif
 
-/**
- * NMEA 0183 Parser for ublox Neo-6 GPS Modules.
- *
- * @section Limitations
- * Very limited support for ublox proprietary NMEA messages.
- * Only NMEA messages of types PUBX,00 and PUBX,04 are parsed.
- */
+//=============================================================
+// NMEA 0183 Parser for ublox Neo-6 GPS Modules.
+//
+// @section Limitations
+// Very limited support for ublox proprietary NMEA messages.
+// Only NMEA messages of types PUBX,00 and PUBX,04 are parsed.
+//
 
 class ubloxNMEA : public NMEAGPS
 {
@@ -75,10 +74,13 @@ public:
     /** ublox proprietary NMEA message types. */
     enum pubx_msg_t {
         PUBX_00 = NMEA_LAST_MSG+1,
-        PUBX_04 = PUBX_00+4
+        #if defined(NMEAGPS_PARSE_PUBX_04) | defined(NMEAGPS_RECOGNIZE_ALL)
+          PUBX_04,
+        #endif
+        PUBX_END
     };
     static const nmea_msg_t PUBX_FIRST_MSG = (nmea_msg_t) PUBX_00;
-    static const nmea_msg_t PUBX_LAST_MSG  = (nmea_msg_t) PUBX_04;
+    static const nmea_msg_t PUBX_LAST_MSG  = (nmea_msg_t) (PUBX_END-1);
 
 protected:
     bool parseMfrID( char chr )
