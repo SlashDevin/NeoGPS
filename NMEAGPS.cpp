@@ -162,9 +162,8 @@ void NMEAGPS::headerReceived()
   rxState    = NMEA_RECEIVING_DATA;
 }
 
-/**
- * Process one character of an NMEA GPS sentence. 
- */
+//----------------------------------------------------------------
+// Process one character of an NMEA GPS sentence. 
 
 NMEAGPS::decode_t NMEAGPS::decode( char c )
 {
@@ -259,11 +258,14 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
   }
 
   return res;
-}
 
-/*
- * NMEA Sentence strings (alphabetical)
- */
+} // decode
+
+
+
+//----------------------------------------------------------------
+// NMEA Sentence strings (alphabetical)
+
 #if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
   static const char gga[] __PROGMEM =  "GGA";
 #endif

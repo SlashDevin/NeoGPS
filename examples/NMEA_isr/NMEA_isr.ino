@@ -16,6 +16,10 @@
 #if defined( UBRR1H )
   // Default is to use NeoSerial1 when available.  You could also
   #include <NeoHWSerial.h>
+  // NOTE: There is an issue with IDEs before 1.6.6.  The above include 
+  // must be commented out for non-Mega boards, even though it is
+  // conditionally included.  If you are using an earlier IDEs, 
+  // comment the above include.
 #else  
   // Only one serial port is available, uncomment one of the following:
   //#include <NeoICSerial.h>

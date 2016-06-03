@@ -40,7 +40,7 @@ namespace ublox {
       struct msg_hdr_t {
           msg_class_t msg_class;
           msg_id_t    msg_id;
-          bool same_kind( const msg_hdr_t & msg ) const volatile
+          bool same_kind( const msg_hdr_t & msg ) const
             { return (msg_class == msg.msg_class) && (msg_id == msg.msg_id); }
       }  __attribute__((packed));
 
@@ -49,15 +49,20 @@ namespace ublox {
 #define UBX_MSG_LEN(msg) (sizeof(msg) - sizeof(ublox::msg_t))
 
           msg_t()
-          {
-            length    = 0;
-          };
+            {
+              length    = 0;
+            };
           msg_t( enum msg_class_t m, enum msg_id_t i, uint16_t l = 0 )
-          {
-              msg_class = m;
-              msg_id    = i;
-              length    = l;
-          }
+            {
+                msg_class = m;
+                msg_id    = i;
+                length    = l;
+            }
+          void init()
+            {
+              uint8_t *mem = (uint8_t *) this;
+              memset( &mem[ sizeof(msg_t) ], 0, length );
+            }
       } __attribute__((packed));
 
     /**

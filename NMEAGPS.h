@@ -32,7 +32,10 @@ class __FlashStringHelper;
 //
 // NMEA 0183 Parser for generic GPS Modules.  As bytes are received from
 // the device, they affect the internal FSM and set various members
-// of the current /fix/.
+// of the current /fix/.  As multiple sentences are received, they are 
+// (optionally) merged into a single fix.  When the last sentence in a 
+// time interval (usually 1 second) is received, the fix is stored in the 
+// (optional) buffer of fixes.
 //
 // @section Limitations
 // 1) Only these NMEA messages are parsed:
@@ -50,9 +53,6 @@ class NMEAGPS
     NMEAGPS( const NMEAGPS & );
 
 public:
-
-    //.......................................................................
-    // Constructor
 
     NMEAGPS();
 
@@ -293,6 +293,11 @@ public:
     {
       rxState = NMEA_IDLE;
     }
+
+    //.......................................................................
+    //  The OVERRUN flag is set whenever a fix is not read by the time
+    //  the next update interval starts.  You must clear it when you
+    //  detect the condition.
 
     bool overrun() const { return _overrun; }
     void overrun( bool val ) { _overrun = val; }

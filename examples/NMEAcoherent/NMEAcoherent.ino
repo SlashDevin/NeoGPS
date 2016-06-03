@@ -31,6 +31,7 @@
 #else  
   // Only one serial port is available, uncomment one of the following:
   //#include <NeoICSerial.h>
+  //#include <AltSoftSerial.h>
   #include <NeoSWSerial.h>
   //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
 #endif

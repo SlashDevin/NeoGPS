@@ -30,8 +30,6 @@ void ubloxGPS::rxBegin()
 
 bool ubloxGPS::rxEnd()
 {
-  safe = true;
-
   bool visible_msg = false;
 
   if (rx().msg_class == UBX_ACK) {
@@ -70,7 +68,9 @@ bool ubloxGPS::rxEnd()
   }
 
   return visible_msg;
-}
+} // rxEnd
+
+//---------------------------------------------------------
 
 static char toHexDigit( uint8_t val )
 {
@@ -78,6 +78,7 @@ static char toHexDigit( uint8_t val )
   return (val >= 10) ? ((val - 10) + 'A') : (val + '0');
 }
 
+//---------------------------------------------------------
 
 ubloxGPS::decode_t ubloxGPS::decode( char c )
 {
@@ -139,7 +140,6 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
               rxState = (rxState_t) UBX_RECEIVING_DATA;
               
               NMEAGPS_INIT_FIX(m_fix);
-              safe = false;
               
               if (rx().msg_class == UBX_ACK) {
                 if (ack_expected)
@@ -226,6 +226,7 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
     return res;
 }
 
+//---------------------------------------------------------
 
 void ubloxGPS::wait_for_idle()
 {
@@ -235,8 +236,10 @@ void ubloxGPS::wait_for_idle()
     if (!receiving() || !waiting())
       break;
   }
-}
 
+} // wait_for_idle
+
+//---------------------------------------------------------
 
 bool ubloxGPS::wait_for_ack()
 {
@@ -291,7 +294,10 @@ bool ubloxGPS::wait_for_ack()
   //Serial.println( removed_idle_time );
 
   return false;
-}
+
+} // wait_for_ack
+
+//---------------------------------------------------------
 
 void ubloxGPS::write( const msg_t & msg )
 {
@@ -345,12 +351,11 @@ void ubloxGPS::write_P( const msg_t & msg )
 
   sent.msg_class = msg.msg_class;
   sent.msg_id    = msg.msg_id;
-}
 
-/**
- * send( msg_t & msg )
- * Sends UBX command and optionally waits for the ack.
- */
+} // write
+
+//---------------------------------------------------------
+// Sends UBX command and optionally waits for the ack.
 
 bool ubloxGPS::send( const msg_t & msg, msg_t *reply_msg )
 {
@@ -389,13 +394,16 @@ bool ubloxGPS::send( const msg_t & msg, msg_t *reply_msg )
   }
 
   return ok;
-}
 
+} // send
+
+//---------------------------------------------------------
 
 bool ubloxGPS::send_P( const msg_t & msg, msg_t *reply_msg )
 {
     return false;
-}
+
+} // send_P
 
 //---------------------------------------------
 
@@ -786,8 +794,10 @@ bool ubloxGPS::parseField( char c )
     }
 
     return ok;
-}
 
+} // parseField
+
+//---------------------------------------------------------
 
 bool ubloxGPS::parseFix( uint8_t c )
 {
@@ -808,7 +818,8 @@ bool ubloxGPS::parseFix( uint8_t c )
   m_fix.valid.status = true;
 
   return true;
-}
+
+} // parseFix
 
 #if 0
   static const uint8_t cfg_msg_data[] __PROGMEM =
