@@ -279,6 +279,13 @@ private:
 
     Stream *m_device;
 
+    bool parseNavStatus ( uint8_t chr );
+    bool parseNavPosLLH ( uint8_t chr );
+    bool parseNavVelNED ( uint8_t chr );
+    bool parseNavTimeGPS( uint8_t chr );
+    bool parseNavTimeUTC( uint8_t chr );
+    bool parseNavSVInfo ( uint8_t chr );
+
     bool parseFix( uint8_t c );
 
     bool parseTOW( uint8_t chr )

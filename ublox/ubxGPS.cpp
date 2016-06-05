@@ -424,393 +424,444 @@ bool ubloxGPS::send_P( const msg_t & msg, msg_t *reply_msg )
 
 bool ubloxGPS::parseField( char c )
 {
-    uint8_t chr = c;
-    bool ok = true;
+  uint8_t chr = c;
 
-    switch (rx().msg_class) {
+  switch (rx().msg_class) {
 
-      case UBX_NAV: //=================================================
+    case UBX_NAV: //=================================================
 //if (chrCount == 0) trace << F( " NAV ") << (uint8_t) rx().msg_id;
-        switch (rx().msg_id) {
+      switch (rx().msg_id) {
+        case UBX_NAV_STATUS : return parseNavStatus ( chr );
+        case UBX_NAV_POSLLH : return parseNavPosLLH ( chr );
+        case UBX_NAV_VELNED : return parseNavVelNED ( chr );
+        case UBX_NAV_TIMEGPS: return parseNavTimeGPS( chr );
+        case UBX_NAV_TIMEUTC: return parseNavTimeUTC( chr );
+        case UBX_NAV_SVINFO : return parseNavSVInfo ( chr );
+        default             : break;
+      }
+      break;
+    case UBX_RXM: //=================================================
+    case UBX_INF: //=================================================
+    case UBX_ACK: //=================================================
+      break;
+    case UBX_CFG: //=================================================
+      switch (rx().msg_id) {
+        case UBX_CFG_MSG: //--------------------------------------
+          #ifdef UBLOX_PARSE_CFGMSG
+          #endif
+          break;
+        case UBX_CFG_RATE: //--------------------------------------
+          #ifdef UBLOX_PARSE_CFGRATE
+          #endif
+          break;
+        case UBX_CFG_NAV5: //--------------------------------------
+          #ifdef UBLOX_PARSE_CFGNAV5
+          #endif
+          break;
+        default:
+          break;
+      }
+      break;
+    case UBX_MON: //=================================================
+      switch (rx().msg_id) {
+        case UBX_MON_VER:
+          #ifdef UBLOX_PARSE_MONVER
+          #endif
+          break;
+        default:
+          break;
+      }
+      break;
+    case UBX_AID: //=================================================
+    case UBX_TIM: //=================================================
+    case UBX_NMEA: //=================================================
+      break;
+    default:
+      break;
+  }
 
-          case UBX_NAV_STATUS: //--------------------------------------
+  return true;
+
+} // parseField
+
+//---------------------------------------------------------
+
+bool ubloxGPS::parseNavStatus( uint8_t chr )
+{
+  bool ok = true;
+
 //if (chrCount == 0) trace << F( "stat ");
-            #ifdef UBLOX_PARSE_STATUS
-              switch (chrCount) {
-                case 0: case 1: case 2: case 3:
-                  ok = parseTOW( chr );
-                  break;
-                case 4:
-                  ok = parseFix( chr );
-                  break;
-                case 5:
-                  {
-                    ublox::nav_status_t::flags_t flags =
-                      *((ublox::nav_status_t::flags_t *) &chr);
-                    m_fix.status =
-                      ublox::nav_status_t::to_status
-                        ( (ublox::nav_status_t::status_t) m_fix.status, flags );
-  //trace << m_fix.status << ' ';
-                  }
-                  break;
-              }
-            #endif
-            break;
+  #ifdef UBLOX_PARSE_STATUS
+    switch (chrCount) {
+      case 0: case 1: case 2: case 3:
+        ok = parseTOW( chr );
+        break;
+      case 4:
+        ok = parseFix( chr );
+        break;
+      case 5:
+        {
+          ublox::nav_status_t::flags_t flags =
+            *((ublox::nav_status_t::flags_t *) &chr);
+          m_fix.status =
+            ublox::nav_status_t::to_status
+              ( (ublox::nav_status_t::status_t) m_fix.status, flags );
+//trace << m_fix.status << ' ';
+        }
+        break;
+    }
+  #endif
 
-          case UBX_NAV_POSLLH: //--------------------------------------
+  return ok;
+
+} // parseNavStatus
+
+//---------------------------------------------------------
+
+bool ubloxGPS::parseNavPosLLH( uint8_t chr )
+{
+  bool ok = true;
+
 //if (chrCount == 0) trace << F( "velned ");
-            #ifdef UBLOX_PARSE_POSLLH
-              switch (chrCount) {
+  #ifdef UBLOX_PARSE_POSLLH
+    switch (chrCount) {
 
-                case 0: case 1: case 2: case 3:
-                  ok = parseTOW( chr );
-                  break;
+      case 0: case 1: case 2: case 3:
+        ok = parseTOW( chr );
+        break;
 
-                #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
-                  case 4:
-                    NMEAGPS_INVALIDATE( location );
-                  case 5: case 6: case 7:
-                    #ifdef GPS_FIX_LOCATION
-                      ((uint8_t *)&m_fix.lon) [ chrCount-4 ] = chr;
-                    #else
-                      scratchpad.U1[ chrCount-4 ] = chr;
-                    #endif
-                    if (chrCount == 7) {
-                      #if defined( GPS_FIX_LOCATION ) & defined( GPS_FIX_LOCATION_DMS )
-                        m_fix.longitudeDMS.From( m_fix.lon );
-                      #elif defined( GPS_FIX_LOCATION_DMS )
-                        m_fix.longitudeDMS.From( scratchpad.U4 );
-                      #endif
-                    }
-                    break;
-                  case 8: case 9: case 10: case 11:
-                    #ifdef GPS_FIX_LOCATION
-                      ((uint8_t *)&m_fix.lat) [ chrCount-8 ] = chr;
-                    #else
-                      scratchpad.U1[ chrCount-8 ] = chr;
-                    #endif
-                    if (chrCount == 11) {
-                      #if defined( GPS_FIX_LOCATION ) & defined( GPS_FIX_LOCATION_DMS )
-                        m_fix.latitudeDMS .From( m_fix.lat );
-                      #elif defined( GPS_FIX_LOCATION_DMS )
-                        m_fix.latitudeDMS .From( scratchpad.U4 );
-                      #endif
-                      m_fix.valid.location = true;
-                    }
-                    break;
-                #endif
+      #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
+        case 4:
+          NMEAGPS_INVALIDATE( location );
+        case 5: case 6: case 7:
+          #ifdef GPS_FIX_LOCATION
+            ((uint8_t *)&m_fix.lon) [ chrCount-4 ] = chr;
+          #else
+            scratchpad.U1[ chrCount-4 ] = chr;
+          #endif
+          if (chrCount == 7) {
+            #if defined( GPS_FIX_LOCATION ) & defined( GPS_FIX_LOCATION_DMS )
+              m_fix.longitudeDMS.From( m_fix.lon );
+            #elif defined( GPS_FIX_LOCATION_DMS )
+              m_fix.longitudeDMS.From( scratchpad.U4 );
+            #endif
+          }
+          break;
+        case 8: case 9: case 10: case 11:
+          #ifdef GPS_FIX_LOCATION
+            ((uint8_t *)&m_fix.lat) [ chrCount-8 ] = chr;
+          #else
+            scratchpad.U1[ chrCount-8 ] = chr;
+          #endif
+          if (chrCount == 11) {
+            #if defined( GPS_FIX_LOCATION ) & defined( GPS_FIX_LOCATION_DMS )
+              m_fix.latitudeDMS .From( m_fix.lat );
+            #elif defined( GPS_FIX_LOCATION_DMS )
+              m_fix.latitudeDMS .From( scratchpad.U4 );
+            #endif
+            m_fix.valid.location = true;
+          }
+          break;
+      #endif
 
-                #ifdef GPS_FIX_ALTITUDE
-                  case 16:
-                    NMEAGPS_INVALIDATE( altitude );
-                  case 17: case 18: case 19:
-                    ((uint8_t *)&m_fix.alt) [ chrCount-16 ] = chr;
-                    if (chrCount == 19) {
-                      gps_fix::whole_frac *altp = &m_fix.alt;
-                      int32_t height_MSLmm = *((int32_t *)altp);
+      #ifdef GPS_FIX_ALTITUDE
+        case 16:
+          NMEAGPS_INVALIDATE( altitude );
+        case 17: case 18: case 19:
+          ((uint8_t *)&m_fix.alt) [ chrCount-16 ] = chr;
+          if (chrCount == 19) {
+            gps_fix::whole_frac *altp = &m_fix.alt;
+            int32_t height_MSLmm = *((int32_t *)altp);
 //trace << F(" alt = ") << height_MSLmm;
-                      m_fix.alt.whole = height_MSLmm / 1000UL;
-                      m_fix.alt.frac  = ((uint16_t)(height_MSLmm - (m_fix.alt.whole * 1000UL)))/10;
+            m_fix.alt.whole = height_MSLmm / 1000UL;
+            m_fix.alt.frac  = ((uint16_t)(height_MSLmm - (m_fix.alt.whole * 1000UL)))/10;
 //trace << F(" = ") << m_fix.alt.whole << F(".");
 //if (m_fix.alt.frac < 10) trace << '0';
 //trace << m_fix.alt.frac;
-                      m_fix.valid.altitude = true;
-                    }
-                    break;
-                #endif
+            m_fix.valid.altitude = true;
+          }
+          break;
+      #endif
 
-                #if defined( GPS_FIX_LAT_ERR ) | defined( GPS_FIX_LON_ERR )
-                  case 20:
-                    #ifdef GPS_FIX_LAT_ERR
-                      NMEAGPS_INVALIDATE( lat_err );
-                    #endif
+      #if defined( GPS_FIX_LAT_ERR ) | defined( GPS_FIX_LON_ERR )
+        case 20:
+          #ifdef GPS_FIX_LAT_ERR
+            NMEAGPS_INVALIDATE( lat_err );
+          #endif
 
-                    #ifdef GPS_FIX_LON_ERR
-                      NMEAGPS_INVALIDATE( lon_err );
-                    #endif
-                    // fall through...
-                  case 21: case 22: case 23:
-                    U1[ chrCount-20 ] = chr;
-                    if (chrCount == 23) {
-                      uint16_t err_cm = U4/100;
+          #ifdef GPS_FIX_LON_ERR
+            NMEAGPS_INVALIDATE( lon_err );
+          #endif
+          // fall through...
+        case 21: case 22: case 23:
+          U1[ chrCount-20 ] = chr;
+          if (chrCount == 23) {
+            uint16_t err_cm = U4/100;
 
-                      #ifdef GPS_FIX_LAT_ERR
-                        m_fix.lat_err_cm = err_cm;
-                        m_fix.valid.lat_err = true;
-                      #endif
-
-                      #ifdef GPS_FIX_LON_ERR
-                        m_fix.lon_err_cm = err_cm;
-                        m_fix.valid.lon_err = true;
-                      #endif
-                    }
-                    break;
-                #endif
-
-                #ifdef GPS_FIX_ALT_ERR
-                  case 24:
-                    NMEAGPS_INVALIDATE( alt_err );
-                  case 25: case 26: case 27:
-                    U1[ chrCount-24 ] = chr;
-                    if (chrCount == 27) {
-                      m_fix.alt_err_cm = U4/100;
-                      m_fix.valid.alt_err = true;
-                    }
-                    break;
-                #endif
-              }
+            #ifdef GPS_FIX_LAT_ERR
+              m_fix.lat_err_cm = err_cm;
+              m_fix.valid.lat_err = true;
             #endif
-            break;
 
-          case UBX_NAV_VELNED: //--------------------------------------
+            #ifdef GPS_FIX_LON_ERR
+              m_fix.lon_err_cm = err_cm;
+              m_fix.valid.lon_err = true;
+            #endif
+          }
+          break;
+      #endif
+
+      #ifdef GPS_FIX_ALT_ERR
+        case 24:
+          NMEAGPS_INVALIDATE( alt_err );
+        case 25: case 26: case 27:
+          U1[ chrCount-24 ] = chr;
+          if (chrCount == 27) {
+            m_fix.alt_err_cm = U4/100;
+            m_fix.valid.alt_err = true;
+          }
+          break;
+      #endif
+    }
+  #endif
+
+  return ok;
+
+} // parseNavPosLLH
+
+//---------------------------------------------------------
+
+bool ubloxGPS::parseNavVelNED( uint8_t chr )
+{
+  bool ok = true;
+
 //if (chrCount == 0) trace << F( "velned ");
-            #ifdef UBLOX_PARSE_VELNED
-              switch (chrCount) {
+  #ifdef UBLOX_PARSE_VELNED
+    switch (chrCount) {
 
-                case 0: case 1: case 2: case 3:
-                  ok = parseTOW( chr );
-                  break;
+      case 0: case 1: case 2: case 3:
+        ok = parseTOW( chr );
+        break;
 
-                #ifdef GPS_FIX_SPEED
-                  //  Use the speed_3D field at offset 20
-                  case 20:
-                    NMEAGPS_INVALIDATE( speed );
-                  case 21: case 22: case 23:
-                    // Temporarily store the 32-bit cm/s in the spd member
-                    ((uint8_t *)&m_fix.spd) [ chrCount-20 ] = chr;
+      #ifdef GPS_FIX_SPEED
+        //  Use the speed_3D field at offset 20
+        case 20:
+          NMEAGPS_INVALIDATE( speed );
+        case 21: case 22: case 23:
+          // Temporarily store the 32-bit cm/s in the spd member
+          ((uint8_t *)&m_fix.spd) [ chrCount-20 ] = chr;
 
-                    if (chrCount == 23) {
-                      gps_fix::whole_frac *spdp = &m_fix.spd;
+          if (chrCount == 23) {
+            gps_fix::whole_frac *spdp = &m_fix.spd;
 //trace << F("spd = ");
 //trace << (*((uint32_t *)spdp));
 //trace << F(" cm/s, ");
-                      // Convert the 32-bit cm/s to nautical miles per hour
-                      //   (actually, 1000nmi/h limit is 51444, a 16-bit cm/s)
-                      // Conversion factor:
-                      //     = cm/s * (3600s/1hr) * (1m/100cm) * (1nmi/1852m)
-                      //     = cm/s * 36/1852
-                      //     = cm/s * 0.0194384449
-                      //   Fixed point math:
-                      //     0.0194384449 * 2^19 = 10191.343 (14 bits)
+            // Convert the 32-bit cm/s to nautical miles per hour
+            //   (actually, 1000nmi/h limit is 51444, a 16-bit cm/s)
+            // Conversion factor:
+            //     = cm/s * (3600s/1hr) * (1m/100cm) * (1nmi/1852m)
+            //     = cm/s * 36/1852
+            //     = cm/s * 0.0194384449
+            //   Fixed point math:
+            //     0.0194384449 * 2^19 = 10191.343 (14 bits)
 
-                      const uint32_t FACTOR_E19 = 10191UL;
-                      uint32_t nmiph_E19 = (*((uint32_t *)spdp) * FACTOR_E19);
-                      m_fix.spd.whole = (nmiph_E19 >> 19);
+            const uint32_t FACTOR_E19 = 10191UL;
+            uint32_t nmiph_E19 = (*((uint32_t *)spdp) * FACTOR_E19);
+            m_fix.spd.whole = (nmiph_E19 >> 19);
 
-                      // remove whole part, leaving fractional part
-                      nmiph_E19 -= ((uint32_t)m_fix.spd.whole) << 19;
+            // remove whole part, leaving fractional part
+            nmiph_E19 -= ((uint32_t)m_fix.spd.whole) << 19;
 
-                      //m_fix.spd.frac = (nmiph_E19 * 1000UL) >> 19;
-                      m_fix.spd.frac   = (nmiph_E19 * 125)    >> 16;
+            //m_fix.spd.frac = (nmiph_E19 * 1000UL) >> 19;
+            m_fix.spd.frac   = (nmiph_E19 * 125)    >> 16;
 
-                      m_fix.valid.speed = true;
+            m_fix.valid.speed = true;
 //trace << m_fix.speed_mkn() << F(" nmi/h ");
-                    }
-                    break;
-                #endif
+          }
+          break;
+      #endif
 
-                #ifdef GPS_FIX_HEADING
-                  case 24:
-                    NMEAGPS_INVALIDATE( heading );
-                  case 25: case 26: case 27:
-                    ((uint8_t *)&m_fix.hdg) [ chrCount-24 ] = chr;
-                    if (chrCount == 27) {
-                      gps_fix::whole_frac *hdgp = &m_fix.hdg;
-                      uint32_t ui = *((uint32_t *)hdgp);
+      #ifdef GPS_FIX_HEADING
+        case 24:
+          NMEAGPS_INVALIDATE( heading );
+        case 25: case 26: case 27:
+          ((uint8_t *)&m_fix.hdg) [ chrCount-24 ] = chr;
+          if (chrCount == 27) {
+            gps_fix::whole_frac *hdgp = &m_fix.hdg;
+            uint32_t ui = *((uint32_t *)hdgp);
 //trace << F("hdg ");
 //trace << ui;
 //trace << F("E-5, ");
 
-                      m_fix.hdg.whole = ui / 100000UL;
-                      ui -= ((uint32_t)m_fix.hdg.whole) * 100000UL;
-                      m_fix.hdg.frac  = (ui/1000UL);  // hundredths
-                      m_fix.valid.heading = true;
+            m_fix.hdg.whole = ui / 100000UL;
+            ui -= ((uint32_t)m_fix.hdg.whole) * 100000UL;
+            m_fix.hdg.frac  = (ui/1000UL);  // hundredths
+            m_fix.valid.heading = true;
 //trace << m_fix.heading_cd() << F("E-2 ");
-                    }
-                    break;
-                #endif
-              }
-            #endif
-            break;
+          }
+          break;
+      #endif
+    }
+  #endif
+  
+  return ok;
 
-          case UBX_NAV_TIMEGPS: //--------------------------------------
+} // parseVelNED
+
+//---------------------------------------------------------
+
+bool ubloxGPS::parseNavTimeGPS( uint8_t chr )
+{
+  bool ok = true;
+
 //if (chrCount == 0) trace << F( "timegps ");
-            #ifdef UBLOX_PARSE_TIMEGPS
-              switch (chrCount) {
+  #ifdef UBLOX_PARSE_TIMEGPS
+    switch (chrCount) {
 
-                #if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
-                  case 0: case 1: case 2: case 3:
-                    ok = parseTOW( chr );
-                    break;
-                  case 10:
-                    GPSTime::leap_seconds = (int8_t) chr;
-                    break;
-                  case 11:
-                    {
-                      ublox::nav_timegps_t::valid_t &v =
-                        *((ublox::nav_timegps_t::valid_t *) &chr);
-                      if (!v.leap_seconds)
-                        GPSTime::leap_seconds = 0; // oops!
+      #if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
+        case 0: case 1: case 2: case 3:
+          ok = parseTOW( chr );
+          break;
+        case 10:
+          GPSTime::leap_seconds = (int8_t) chr;
+          break;
+        case 11:
+          {
+            ublox::nav_timegps_t::valid_t &v =
+              *((ublox::nav_timegps_t::valid_t *) &chr);
+            if (!v.leap_seconds)
+              GPSTime::leap_seconds = 0; // oops!
 //else trace << F("leap ") << GPSTime::leap_seconds << ' ';
-                      if (GPSTime::leap_seconds != 0) {
-                        if (!v.time_of_week) {
-                          m_fix.valid.date =
-                          m_fix.valid.time = false;
-                        } else if ((GPSTime::start_of_week() == 0) &&
-                                   m_fix.valid.date && m_fix.valid.time) {
-                          GPSTime::start_of_week( m_fix.dateTime );
+            if (GPSTime::leap_seconds != 0) {
+              if (!v.time_of_week) {
+                m_fix.valid.date =
+                m_fix.valid.time = false;
+              } else if ((GPSTime::start_of_week() == 0) &&
+                         m_fix.valid.date && m_fix.valid.time) {
+                GPSTime::start_of_week( m_fix.dateTime );
 //trace << m_fix.dateTime << '.' << m_fix.dateTime_cs;
-                        }
-                      }
-                    }
-                    break;
-                #endif
               }
-            #endif
-            break;
+            }
+          }
+          break;
+      #endif
+    }
+  #endif
+  
+  return ok;
 
-          case UBX_NAV_TIMEUTC: //--------------------------------------
+} // parseNavTimeGPS
+
+//---------------------------------------------------------
+
+bool ubloxGPS::parseNavTimeUTC( uint8_t chr )
+{
+  bool ok = true;
+
 //if (chrCount == 0) trace << F( " timeUTC ");
-            #ifdef UBLOX_PARSE_TIMEUTC
-              #if defined(GPS_FIX_TIME) | defined(GPS_FIX_DATE)
-                switch (chrCount) {
+  #ifdef UBLOX_PARSE_TIMEUTC
+    #if defined(GPS_FIX_TIME) | defined(GPS_FIX_DATE)
+      switch (chrCount) {
 
-                  #if defined(GPS_FIX_DATE)
-                    case 12: NMEAGPS_INVALIDATE( date );
-                             m_fix.dateTime.year   = chr; break;
-                    case 13: m_fix.dateTime.year   =
-                              ((((uint16_t)chr) << 8) + m_fix.dateTime.year) % 100;
-                      break;
-                    case 14: m_fix.dateTime.month  = chr; break;
-                    case 15: m_fix.dateTime.date   = chr; break;
-                  #endif
+        #if defined(GPS_FIX_DATE)
+          case 12: NMEAGPS_INVALIDATE( date );
+                   m_fix.dateTime.year   = chr; break;
+          case 13: m_fix.dateTime.year   =
+                    ((((uint16_t)chr) << 8) + m_fix.dateTime.year) % 100;
+            break;
+          case 14: m_fix.dateTime.month  = chr; break;
+          case 15: m_fix.dateTime.date   = chr; break;
+        #endif
 
-                  #if defined(GPS_FIX_TIME)
-                    case 16: NMEAGPS_INVALIDATE( time );
-                             m_fix.dateTime.hours   = chr; break;
-                    case 17: m_fix.dateTime.minutes = chr; break;
-                    case 18: m_fix.dateTime.seconds = chr; break;
-                  #endif
+        #if defined(GPS_FIX_TIME)
+          case 16: NMEAGPS_INVALIDATE( time );
+                   m_fix.dateTime.hours   = chr; break;
+          case 17: m_fix.dateTime.minutes = chr; break;
+          case 18: m_fix.dateTime.seconds = chr; break;
+        #endif
 
-                  case 19:
-                    {
-                      ublox::nav_timeutc_t::valid_t &v =
-                        *((ublox::nav_timeutc_t::valid_t *) &chr);
+        case 19:
+          {
+            ublox::nav_timeutc_t::valid_t &v =
+              *((ublox::nav_timeutc_t::valid_t *) &chr);
 
-                      #if defined(GPS_FIX_DATE)
-                        m_fix.valid.date = (v.UTC & v.time_of_week);
-                      #endif
-                      #if defined(GPS_FIX_TIME)
-                        m_fix.valid.time = (v.UTC & v.time_of_week);
-                      #endif
+            #if defined(GPS_FIX_DATE)
+              m_fix.valid.date = (v.UTC & v.time_of_week);
+            #endif
+            #if defined(GPS_FIX_TIME)
+              m_fix.valid.time = (v.UTC & v.time_of_week);
+            #endif
 
-                      #if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
-                        if (m_fix.valid.date &&
-                            (GPSTime::start_of_week() == 0) &&
-                            (GPSTime::leap_seconds    != 0))
-                          GPSTime::start_of_week( m_fix.dateTime );
-                      #endif
+            #if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
+              if (m_fix.valid.date &&
+                  (GPSTime::start_of_week() == 0) &&
+                  (GPSTime::leap_seconds    != 0))
+                GPSTime::start_of_week( m_fix.dateTime );
+            #endif
 //trace << m_fix.dateTime << F(".") << m_fix.dateTime_cs;
 //trace << ' ' << v.UTC << ' ' << v.time_of_week << ' ' << start_of_week();
-                    }
-                    break;
-                }
-              #endif
-            #endif
-            break;
+          }
+          break;
+      }
+    #endif
+  #endif
+  
+  return ok;
 
-          case UBX_NAV_SVINFO: //--------------------------------------
+} // parseNavTimeUTC
+
+//---------------------------------------------------------
+
+bool ubloxGPS::parseNavSVInfo( uint8_t chr )
+{
+  bool ok = true;
+
 //if (chrCount == 0) trace << F("svinfo ");
-            #ifdef UBLOX_PARSE_SVINFO
-              switch (chrCount) {
+  #ifdef UBLOX_PARSE_SVINFO
+    switch (chrCount) {
 
-                case 0: case 1: case 2: case 3:
-                  ok = parseTOW( chr );
+      case 0: case 1: case 2: case 3:
+        ok = parseTOW( chr );
+        break;
+
+      #ifdef GPS_FIX_SATELLITES
+        case 4:
+          m_fix.satellites = chr;
+          m_fix.valid.satellites = true;
+
+          #ifdef NMEAGPS_PARSE_SATELLITES
+            sat_count = 0;
+            break;
+        default:
+          if ((chrCount >= 8) && (sat_count < NMEAGPS_MAX_SATELLITES)) {
+            uint8_t i =
+              (uint8_t) (chrCount - 8 - (12 * (uint16_t)sat_count));
+
+            switch (i) {
+              case 1: satellites[sat_count].id        = chr; break;
+              
+              #ifdef NMEAGPS_PARSE_SATELLITE_INFO
+                case 0: satellites[sat_count].tracked   = (chr != 255); break;
+                case 4: satellites[sat_count].snr       = chr; break;
+                case 5: satellites[sat_count].elevation = chr; break;
+                case 6: satellites[sat_count].azimuth   = chr; break;
+                case 7:
+                  satellites[sat_count].azimuth += (chr << 8);
                   break;
-
-                #ifdef GPS_FIX_SATELLITES
-                  case 4:
-                    m_fix.satellites = chr;
-                    m_fix.valid.satellites = true;
-
-                    #ifdef NMEAGPS_PARSE_SATELLITES
-                      sat_count = 0;
-                      break;
-                  default:
-                    if ((chrCount >= 8) && (sat_count < NMEAGPS_MAX_SATELLITES)) {
-                      uint8_t i =
-                        (uint8_t) (chrCount - 8 - (12 * (uint16_t)sat_count));
-
-                      switch (i) {
-                        case 1: satellites[sat_count].id        = chr; break;
-                        
-                        #ifdef NMEAGPS_PARSE_SATELLITE_INFO
-                          case 0: satellites[sat_count].tracked   = (chr != 255); break;
-                          case 4: satellites[sat_count].snr       = chr; break;
-                          case 5: satellites[sat_count].elevation = chr; break;
-                          case 6: satellites[sat_count].azimuth   = chr; break;
-                          case 7:
-                            satellites[sat_count].azimuth += (chr << 8);
-                            break;
-                        #endif
-                        
-                        case 11: sat_count++; break;
-                      }
-                    }
-                    #endif
-                    break;
-                #endif
-              }
-            #endif
-            break;
-
-          default:
-            break;
-        }
-        break;
-      case UBX_RXM: //=================================================
-      case UBX_INF: //=================================================
-      case UBX_ACK: //=================================================
-        break;
-      case UBX_CFG: //=================================================
-        switch (rx().msg_id) {
-          case UBX_CFG_MSG: //--------------------------------------
-            #ifdef UBLOX_PARSE_CFGMSG
-            #endif
-            break;
-          case UBX_CFG_RATE: //--------------------------------------
-            #ifdef UBLOX_PARSE_CFGRATE
-            #endif
-            break;
-          case UBX_CFG_NAV5: //--------------------------------------
-            #ifdef UBLOX_PARSE_CFGNAV5
-            #endif
-            break;
-          default:
-            break;
-        }
-        break;
-      case UBX_MON: //=================================================
-        switch (rx().msg_id) {
-          case UBX_MON_VER:
-            #ifdef UBLOX_PARSE_MONVER
-            #endif
-            break;
-          default:
-            break;
-        }
-        break;
-      case UBX_AID: //=================================================
-      case UBX_TIM: //=================================================
-      case UBX_NMEA: //=================================================
-        break;
-      default:
-        break;
+              #endif
+              
+              case 11: sat_count++; break;
+            }
+          }
+          #endif
+          break;
+      #endif
     }
+  #endif
+  
+  return ok;
 
-    return ok;
-
-} // parseField
+} // parseNavSVInfo
 
 //---------------------------------------------------------
 
