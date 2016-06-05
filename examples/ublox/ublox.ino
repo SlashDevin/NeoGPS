@@ -260,6 +260,25 @@ static MyGPS gps( &gps_port );
 
 //--------------------------
 
+static void configNMEA( uint8_t rate )
+{
+  for (uint8_t i=NMEAGPS::NMEA_FIRST_MSG; i<=NMEAGPS::NMEA_LAST_MSG; i++) {
+    ublox::configNMEA( gps, (NMEAGPS::nmea_msg_t) i, rate );
+  }
+}
+
+//--------------------------
+
+static void disableUBX()
+{
+  gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEGPS );
+  gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC );
+  gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_VELNED );
+  gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_POSLLH );
+}
+
+//--------------------------
+
 void setup()
 {
   // Start the normal trace output
@@ -281,15 +300,10 @@ void setup()
   gps_port.begin(9600);
 
   // Turn off the preconfigured NMEA standard messages
-  for (uint8_t i=NMEAGPS::NMEA_FIRST_MSG; i<=NMEAGPS::NMEA_LAST_MSG; i++) {
-    ublox::configNMEA( gps, (NMEAGPS::nmea_msg_t) i, 0 );
-  }
+  configNMEA( 0 );
 
   // Turn off things that may be left on by a previous build
-  gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEGPS );
-  gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC );
-  gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_VELNED );
-  gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_POSLLH );
+  disableUBX();
 
   #if 0
     // Test a Neo M8 message -- should be rejected by Neo-6 and Neo7
@@ -339,4 +353,23 @@ void loop()
 {
   if (gps.available( gps_port ))
     trace_all( DEBUG_PORT, gps, gps.read() );
+
+  // If the user types something, reset the message configuration
+  //   back to a normal set of NMEA messages.  This makes it
+  //   convenient to switch to another example program that
+  //   expects a typical set of messages.  This also saves
+  //   putting those config messages in every other example.
+
+  if (Serial.available()) {
+    do { Serial.read(); } while (Serial.available());
+    DEBUG_PORT.println( F("Stopping...") );
+
+    configNMEA( 1 );
+    disableUBX();
+    gps_port.flush();
+    gps_port.end();
+
+    DEBUG_PORT.println( F("STOPPED.") );
+    for (;;);
+  }
 }
