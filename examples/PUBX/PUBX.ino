@@ -52,8 +52,16 @@
 
 #endif
 
+#if !defined( NMEAGPS_PARSE_PUBX_00 ) & !defined( NMEAGPS_PARSE_PUBX_04 )
+ // #error No PUBX messages enabled!  You must enable one or more in ubxNMEA.h!
+#endif
+
 #ifndef NMEAGPS_EXPLICIT_MERGING
   #error You must define NMEAGPS_EXPLICIT_MERGING in NMEAGPS_cfg.h
+#endif
+
+#ifdef NMEAGPS_INTERRUPT_PROCESSING
+  #error You must *NOT* define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
 #endif
 
 //------------------------------------------------------------
@@ -107,6 +115,21 @@ void setup()
   DEBUG_PORT.print( F("ubloxNMEA object size = ") );
   DEBUG_PORT.println( sizeof(gps) );
   DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+
+  #ifndef NMEAGPS_PARSE_PUBX_00
+    if (LAST_SENTENCE_IN_INTERVAL == (NMEAGPS::nmea_msg_t) ubloxNMEA::PUBX_00) {
+      DEBUG_PORT.println( F("ERROR! LAST_SENTENCE_IN_INTERVAL PUBX_00 not enabled!\n"
+                            "  Either change LAST_SENTENCE or enable PUBX_00")      );
+      for(;;);
+    }
+  #endif
+  #ifndef NMEAGPS_PARSE_PUBX_04
+    if (LAST_SENTENCE_IN_INTERVAL == (NMEAGPS::nmea_msg_t) ubloxNMEA::PUBX_04) {
+      DEBUG_PORT.println( F("ERROR! LAST_SENTENCE_IN_INTERVAL PUBX_04 not enabled!\n"
+                            "  Either change LAST_SENTENCE or enable PUBX_04")      );
+      for(;;);
+    }
+  #endif
 
   trace_header( DEBUG_PORT );
 

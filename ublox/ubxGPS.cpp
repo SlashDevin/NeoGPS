@@ -26,6 +26,7 @@ void ubloxGPS::rxBegin()
   m_rx_msg.init();
   storage = (msg_t *) NULL;
   chrCount = 0;
+  nmeaMessage = (nmea_msg_t) UBX_MSG;
 }
 
 bool ubloxGPS::rxEnd()
@@ -68,6 +69,7 @@ bool ubloxGPS::rxEnd()
   }
 
   return visible_msg;
+
 } // rxEnd
 
 //---------------------------------------------------------
@@ -85,7 +87,12 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
     decode_t res = DECODE_CHR_OK;
     uint8_t chr = c;
 
-//trace << '-' << rxState;
+//Serial.print( '-' );
+//Serial.print( rxState );
+//Serial.print( 'x' );
+//Serial.print( toHexDigit(c >> 4) );
+//Serial.print( toHexDigit(c) );
+
     switch ((ubxState_t) rxState) {
 
       case UBX_IDLE:
@@ -98,8 +105,9 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
 
 
       case UBX_SYNC2:
-//if ((c != '\r') && (c != '\n')) trace << '+' << toHexDigit(c >> 4) << toHexDigit(c);
         if (chr == SYNC_2) {
+//Serial.print( '+' );
+//Serial.print( chr, HEX );
           rxBegin();
           rxState = (rxState_t) UBX_HEAD;
         } else {
@@ -115,17 +123,17 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
           switch (chrCount++) {
             case 0:
               rx().msg_class = (msg_class_t) chr;
-              //if ((uint8_t) chr < 0x10)
-              //  Serial.print( '0' );
-              //Serial.print( (uint8_t) chr, HEX );
+//if ((uint8_t) chr < 0x10)
+//  Serial.print( '0' );
+//Serial.print( chr, HEX );
               break;
             case 1:
               rx().msg_id = (msg_id_t) chr;
-              //Serial.print( '/' );
-              //if ((uint8_t) chr < 0x10)
-              //  Serial.print( '0' );
-              //Serial.print( (uint8_t) chr, HEX );
-              //Serial.write( ' ' );
+//Serial.print( '/' );
+//if ((uint8_t) chr < 0x10)
+//  Serial.print( '0' );
+//Serial.print( (uint8_t) chr, HEX );
+//Serial.write( ' ' );
               break;
             case 2:
               rx().length = chr;
@@ -195,12 +203,12 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
               statistics.crc_errors++;
             #endif
           } else if (rxEnd()) {
-//trace << '!';
             res = ubloxGPS::DECODE_COMPLETED;
             #ifdef NMEAGPS_STATS
               statistics.ok++;
             #endif
           }
+//Serial.print( '!' );
           rxState = (rxState_t) UBX_IDLE;
           break;
 
@@ -210,7 +218,11 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
     }
 
     if (res == DECODE_CHR_INVALID) {
-//if ((c != '\r') && (c != '\n')) trace << 'x' << toHexDigit(c >> 4) << toHexDigit(c);
+//if ((c != '\r') && (c != '\n')) {
+//  Serial.print( 'x' );
+//  Serial.print( toHexDigit(c >> 4) );
+//  Serial.print( toHexDigit(c) );
+//}
       if (rx().msg_class != UBX_UNK)
         m_rx_msg.init();
 
@@ -224,7 +236,8 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
     }
 
     return res;
-}
+
+} // decode
 
 //---------------------------------------------------------
 
@@ -319,6 +332,8 @@ void ubloxGPS::write( const msg_t & msg )
 //trace << F("::write ") << msg.msg_class << F("/") << msg.msg_id << endl;
 }
 
+//---------------------------------------------------------
+
 void ubloxGPS::write_P( const msg_t & msg )
 {
   m_device->print( (char) SYNC_1 );
@@ -365,10 +380,10 @@ bool ubloxGPS::send( const msg_t & msg, msg_t *reply_msg )
   write( msg );
 
   if (msg.msg_class == UBX_CFG) {
-    ack_received = false;
-    nak_received = false;
+    ack_received     = false;
+    nak_received     = false;
     ack_same_as_sent = false;
-    ack_expected = true;
+    ack_expected     = true;
   }
 
   if (reply_msg) {
@@ -379,18 +394,18 @@ bool ubloxGPS::send( const msg_t & msg, msg_t *reply_msg )
 
   if (waiting()) {
     ok = wait_for_ack();
-/*
-    if (ok) {
-      if (ack_received) {
-        trace << F("ACK!\n");
-      } else if (nak_received) {
-        trace << F("NAK!\n");
-      } else {
-        trace << F("ok!\n");
-      }
-    } else
-      trace << F("wait_for_ack failed!\n");
-*/
+
+    #if 0
+      Serial.print( F("wait_for_ack ") );
+      if (ok)
+        Serial.print( F("ok! ") );
+      else
+        Serial.print( F("failed! ") );
+      if (ack_received)
+        Serial.println( F("ACK!") );
+      else if (nak_received)
+        Serial.println( F("NAK!") );
+    #endif
   }
 
   return ok;

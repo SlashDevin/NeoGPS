@@ -82,6 +82,18 @@ public:
     static const nmea_msg_t PUBX_FIRST_MSG = (nmea_msg_t) PUBX_00;
     static const nmea_msg_t PUBX_LAST_MSG  = (nmea_msg_t) (PUBX_END-1);
 
+    #if (defined(NMEAGPS_PARSE_PUBX_00) | defined(NMEAGPS_PARSE_PUBX_04))
+      NMEAGPS_VIRTUAL bool intervalCompleted() const
+        {
+          return
+            #if defined(NMEAGPS_PARSE_PUBX_04)
+              (nmeaMessage == PUBX_04);
+            #else
+              (nmeaMessage == PUBX_00);
+            #endif
+      }
+    #endif
+
 protected:
     bool parseMfrID( char chr )
       { bool ok;

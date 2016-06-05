@@ -47,7 +47,8 @@ static NMEAGPS   gps;
 
 static void GPSisr( uint8_t c )
 {
-  gps.isr( c );
+  gps.handle( c );
+
 } // GPSisr
 
 //--------------------------
@@ -79,7 +80,7 @@ void setup()
 
 void loop()
 {
-  
+
   while (gps.available()) {
     // Print all the things!
     trace_all( DEBUG_PORT, gps, gps.read() );

@@ -296,7 +296,8 @@ static void GPSloop()
 
 void GPSisr( uint8_t c )
 {
-  gps.isr( c );
+  gps.handle( c );
+
 } // GPSisr
 
 //----------------------------------------------------------------

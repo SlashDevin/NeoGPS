@@ -21,19 +21,21 @@ namespace ublox {
 
     enum msg_id_t
       {
-        UBX_ACK_NAK     = 0x00, // Reply to CFG messages
-        UBX_ACK_ACK     = 0x01, // Reply to CFG messages
-        UBX_CFG_MSG     = 0x01, // Configure which messages to send
-        UBX_CFG_RATE    = 0x08, // Configure message rate
-        UBX_CFG_NMEA    = 0x17, // Configure NMEA protocol
-        UBX_CFG_NAV5    = 0x24, // Configure navigation engine settings
-        UBX_MON_VER     = 0x04, // Monitor Receiver/Software version
-        UBX_NAV_POSLLH  = 0x02, // Current Position
-        UBX_NAV_STATUS  = 0x03, // Receiver Navigation Status
-        UBX_NAV_VELNED  = 0x12, // Current Velocity
-        UBX_NAV_TIMEGPS = 0x20, // Current GPS Time
-        UBX_NAV_TIMEUTC = 0x21, // Current UTC Time
-        UBX_NAV_SVINFO  = 0x30, // Space Vehicle Information
+        UBX_ACK_NAK      = 0x00, // Reply to CFG messages
+        UBX_ACK_ACK      = 0x01, // Reply to CFG messages
+        UBX_CFG_MSG      = 0x01, // Configure which messages to send
+        UBX_CFG_RATE     = 0x08, // Configure message rate
+        UBX_CFG_NMEA     = 0x17, // Configure NMEA protocol
+        UBX_CFG_NAV5     = 0x24, // Configure navigation engine settings
+        UBX_MON_VER      = 0x04, // Monitor Receiver/Software version
+        UBX_NAV_POSLLH   = 0x02, // Current Position
+        UBX_NAV_STATUS   = 0x03, // Receiver Navigation Status
+        UBX_NAV_ODO      = 0x09, // Odometer Solution (NEO-M8 only)
+        UBX_NAV_RESETODO = 0x10, // Reset Odometer (NEO-M8 only)
+        UBX_NAV_VELNED   = 0x12, // Current Velocity
+        UBX_NAV_TIMEGPS  = 0x20, // Current GPS Time
+        UBX_NAV_TIMEUTC  = 0x21, // Current UTC Time
+        UBX_NAV_SVINFO   = 0x30, // Space Vehicle Information
         UBX_ID_UNK   = 0xFF
       }  __attribute__((packed));
 
@@ -247,6 +249,25 @@ namespace ublox {
         uint32_t uptime; // ms since startup/reset
 
         nav_status_t() : msg_t( UBX_NAV, UBX_NAV_STATUS, UBX_MSG_LEN(*this) ) {};
+    }  __attribute__((packed));
+
+    // Odometer Solution (NEO-M8 only)
+    struct nav_odo_t : msg_t {
+        uint8_t   version;
+        uint8_t   reserved[3];
+        uint32_t  time_of_week;   // mS
+        uint32_t  distance;       // m
+        uint32_t  total_distance; // m
+        uint32_t  distanceSTD;    // m (1-sigma)
+
+        nav_odo_t() : msg_t( UBX_NAV, UBX_NAV_ODO, UBX_MSG_LEN(*this) ) {};
+    }  __attribute__((packed));
+
+    // Reset Odometer (NEO-M8 only)
+    struct nav_resetodo_t : msg_t {
+        // no payload, it's just a command
+
+        nav_resetodo_t() : msg_t( UBX_NAV, UBX_NAV_RESETODO, UBX_MSG_LEN(*this) ) {};
     }  __attribute__((packed));
 
     // Velocity Solution in North/East/Down

@@ -146,6 +146,10 @@ void setup()
     #error You must define NMEAGPS_RECOGNIZE_ALL in NMEAGPS_cfg.h!
   #endif
 
+  #ifdef NMEAGPS_INTERRUPT_PROCESSING
+    #error You must *NOT* define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
+  #endif
+
   #if !defined( NMEAGPS_PARSE_GGA ) & !defined( NMEAGPS_PARSE_GLL ) & \
       !defined( NMEAGPS_PARSE_GSA ) & !defined( NMEAGPS_PARSE_GSV ) & \
       !defined( NMEAGPS_PARSE_RMC ) & !defined( NMEAGPS_PARSE_VTG ) & \

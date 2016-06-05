@@ -22,7 +22,9 @@
   // Default is to use Serial1 when available.  You could also
   // use NeoHWSerial, especially if you want to handle GPS characters
   // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
+  #ifdef NMEAGPS_INTERRUPT_PROCESSING
+    #include <NeoHWSerial.h>
+  #endif
 #else  
   // Only one serial port is available, uncomment one of the following:
   //#include <NeoICSerial.h>
@@ -63,8 +65,6 @@ class MyGPS : public ubloxGPS
 {
 public:
 
-    gps_fix merged;
-
     enum
       {
         GETTING_STATUS, 
@@ -74,56 +74,10 @@ public:
       }
         state NEOGPS_BF(8);
 
-    uint32_t last_rx;
-    uint32_t last_sentence;
-
-    // Prevent recursive sentence processing while waiting for ACKs
-    bool ok_to_process;
-    
     MyGPS( Stream *device ) : ubloxGPS( device )
     {
       state = GETTING_STATUS;
-      last_rx = 0L;
-      ok_to_process = false;
     }
-
-    //--------------------------
-
-    void begin()
-    {
-      last_rx = millis();
-    }
-
-    //--------------------------
-
-    void run()
-    {
-      bool rx = false;
-
-      while (Device()->available()) {
-        rx = true;
-        if (decode( Device()->read() ) == DECODE_COMPLETED) {
-          if (ok_to_process)
-            processSentence();
-        }
-      }
-
-      uint32_t ms = millis();
-
-      if (rx)
-        last_rx = ms;
-
-      else {
-        if (ok_to_process && ((ms - last_rx) > 2000L)) {
-          last_rx = ms;
-          DEBUG_PORT.print( F("RESTART!\n") );
-          if (state != GETTING_STATUS) {
-            state = GETTING_STATUS;
-            enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_STATUS );
-          }
-        }
-      }
-    } // run
 
     //--------------------------
 
@@ -132,11 +86,27 @@ public:
       static bool acquiring = false;
 
       if (fix().status == gps_fix::STATUS_NONE) {
+        static uint32_t dotPrint;
+        bool            requestNavStatus = false;
+
         if (!acquiring) {
           acquiring = true;
+          dotPrint = millis();
           DEBUG_PORT.print( F("Acquiring...") );
-        } else
+          requestNavStatus = true;
+
+        } else if (millis() - dotPrint > 1000UL) {
+          dotPrint = millis();
           DEBUG_PORT << '.';
+
+          static uint8_t requestPeriod;
+          if ((++requestPeriod & 0x07) == 0)
+            requestNavStatus = true;
+        }
+
+        if (requestNavStatus)
+          // Turn on the UBX status message
+          enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_STATUS );
 
       } else {
         if (acquiring)
@@ -188,9 +158,16 @@ public:
     {
       #if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE) & \
           defined(UBLOX_PARSE_TIMEUTC)
-        if (GPSTime::start_of_week() != 0) {
-          DEBUG_PORT << F("Acquired UTC: ") << fix().dateTime << '\n';
-          DEBUG_PORT << F("Acquired Start-of-Week: ") << GPSTime::start_of_week() << '\n';
+
+        lock();
+          bool            safe = is_safe();
+          NeoGPS::clock_t sow  = GPSTime::start_of_week();
+          NeoGPS::time_t  utc  = fix().dateTime;
+        unlock();
+
+        if (safe && (sow != 0)) {
+          DEBUG_PORT << F("Acquired UTC: ") << utc << '\n';
+          DEBUG_PORT << F("Acquired Start-of-Week: ") << sow << '\n';
 
           start_running();
         }
@@ -253,147 +230,29 @@ public:
 
     //--------------------------
 
-    bool is_new_interval()
+    bool running()
     {
-      // See if we stepped into a different time interval,
-      //   or if it has finally become valid after a cold start.
-
-      bool new_interval;
-
-      #if defined(GPS_FIX_TIME)
-        new_interval = (fix().valid.time &&
-                      (!merged.valid.time ||
-                       (merged.dateTime.seconds != fix().dateTime.seconds) ||
-                       (merged.dateTime.minutes != fix().dateTime.minutes) ||
-                       (merged.dateTime.hours   != fix().dateTime.hours)));
-
-      #elif defined(GPS_FIX_DATE) && defined(PULSE_PER_DAY)
-        new_interval = (fix().valid.date &&
-                      (!merged.valid.date ||
-                       (merged.dateTime.date  != fix().dateTime.date) ||
-                       (merged.dateTime.month != fix().dateTime.month) ||
-                       (merged.dateTime.year  != fix().dateTime.year)));
-      
-      #else
-        //  Time is not configured, so let's assume it's a new interval
-        //    if we just received a particular sentence.
-        //  Different GPS devices will send sentences in different orders.
-
-        new_interval = (rx().msg_class == ublox::UBX_NAV) &&
-                       (rx().msg_id    == ublox::UBX_NAV_STATUS);
-      
-      #endif
-      
-      return new_interval;
-
-    } // is_new_interval
-
-    //--------------------------
-
-    bool processSentence()
-    {
-      bool old_otp = ok_to_process;
-      ok_to_process = false;
-
-      bool ok = false;
-
-      if (!ok && (nmeaMessage >= (nmea_msg_t)ubloxGPS::PUBX_00))
-        ok = true;
-
-      if (!ok && (rx().msg_class != ublox::UBX_UNK))
-        ok = true;
-
-      if (ok) {
-
-        switch (state) {
-          case GETTING_STATUS      : get_status      (); break;
-
-          case GETTING_LEAP_SECONDS: get_leap_seconds(); break;
-
-          case GETTING_UTC         : get_utc         (); break;
-
-          case RUNNING:
-            if (is_new_interval()) {
-
-              //  Since we're into the next time interval, we throw away
-              //     all of the previous fix and start with what we
-              //     just received.
-              merged = fix();
-
-            } else {
-              // Accumulate all the reports in this time interval
-              merged |= fix();
-            }
-            break;
-        }
+      switch (state) {
+        case GETTING_STATUS      : get_status      (); break;
+        case GETTING_LEAP_SECONDS: get_leap_seconds(); break;
+        case GETTING_UTC         : get_utc         (); break;
       }
 
-      ok_to_process = old_otp;
+      return (state == RUNNING);
 
-      return ok;
-      
-    } // processSentence
-
-    //--------------------------
-
-    void traceIt()
-    {
-      if (state == RUNNING)
-        trace_all( DEBUG_PORT, *this, merged );
-
-    } // traceIt
-
+    } // running
 
 } NEOGPS_PACKED;
 
 // Construct the GPS object and hook it to the appropriate serial device
 static MyGPS gps( &gps_port );
 
-//----------------------------------------------------------------
-//  Determine whether the GPS quiet time has started, using the
-//    current time, the last time a character was received,
-//    and the last time a GPS quiet time started.
-
-static bool quietTimeStarted()
-{
-  // As was shown in NMEAfused.ino, this could be replaced by a 
-  //   test for the last UBX binary message that is sent in each
-  //   one-second interval: NAV_VELNED.
-  // For now, the timing technique is used.
-
-  uint32_t current_ms       = millis();
-  uint32_t ms_since_last_rx = current_ms - gps.last_rx;
-
-  if (ms_since_last_rx > 5) {
-
-    // The GPS device has not sent any characters for at least 5ms.
-    //   See if we've been getting chars sometime during the last second.
-    //   If not, the GPS may not be working or connected properly.
-
-    bool getting_chars = (ms_since_last_rx < 1000UL);
-
-    static uint32_t last_quiet_time = 0UL;
-
-    bool just_went_quiet = (((int32_t) (gps.last_rx - last_quiet_time)) > 0L);
-    bool next_quiet_time = ((current_ms - last_quiet_time) >= 1000UL);
-
-    if ((getting_chars && just_went_quiet)
-          ||
-        (!getting_chars && next_quiet_time)) {
-
-      if (!getting_chars) {
-        DEBUG_PORT.println( F("Check GPS device and/or connections.  No data received.\n") );
-      }
-
-      last_quiet_time = current_ms;  // Remember for next loop
-
-      return true;
-    }
+#ifdef NMEAGPS_INTERRUPT_PROCESSING
+  static void GPSisr( uint8_t c )
+  {
+    gps.handle( c );
   }
-
-  return false;
-
-} // quietTimeStarted
+#endif
 
 //--------------------------
 
@@ -412,17 +271,15 @@ void setup()
   DEBUG_PORT.flush();
 
   // Start the UART for the GPS device
+  #ifdef NMEAGPS_INTERRUPT_PROCESSING
+    gps_port.attachInterrupt( GPSisr );
+  #endif
   gps_port.begin(9600);
-
-  gps.begin();
 
   // Turn off the preconfigured NMEA standard messages
   for (uint8_t i=NMEAGPS::NMEA_FIRST_MSG; i<=NMEAGPS::NMEA_LAST_MSG; i++) {
     ublox::configNMEA( gps, (NMEAGPS::nmea_msg_t) i, 0 );
   }
-
-  // Turn on the UBX status message
-  gps.enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_STATUS );
 
   // Turn off things that may be left on by a previous build
   gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEGPS );
@@ -467,15 +324,15 @@ void setup()
     DEBUG_PORT << F("CFG_NMEA result = ") << gps.send( test );
   #endif
 
-  gps.ok_to_process = true;
+  while (!gps.running())
+    if (gps.available( gps_port ))
+      gps.read();
 }
 
 //--------------------------
 
 void loop()
 {
-  gps.run();
-
-  if (quietTimeStarted())
-    gps.traceIt();
+  if (gps.available( gps_port ))
+    trace_all( DEBUG_PORT, gps, gps.read() );
 }

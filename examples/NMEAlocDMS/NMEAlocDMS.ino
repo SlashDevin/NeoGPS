@@ -46,6 +46,10 @@
   #error You must uncomment GPS_FIX_LOCATION_DMS in GPSfix_cfg.h!
 #endif
 
+#ifdef NMEAGPS_INTERRUPT_PROCESSING
+  #error You must *NOT* define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
+#endif
+
 //------------------------------------------------------------
 
 static NMEAGPS  gps; // This parses the GPS characters

@@ -44,12 +44,15 @@
   #define DEBUG_PORT Serial
 #endif
 
+//------------------------------------------------------------
 // Check configuration
 
 #ifndef NMEAGPS_RECOGNIZE_ALL
-
   #error You must define NMEAGPS_RECOGNIZE_ALL in NMEAGPS_cfg.h!
-  
+#endif
+
+#ifdef NMEAGPS_INTERRUPT_PROCESSING
+  #error You must *NOT* define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
 #endif
 
 static NMEAGPS  gps         ; // This parses received characters
@@ -132,7 +135,7 @@ static bool quietTimeStarted()
            bool     getting_chars   = (ms_since_last_rx < 1000UL);
     static uint32_t last_quiet_time = 0UL;
            bool     just_went_quiet =
-                            (((int32_t) (last_rx - last_quiet_time)) > 0L);
+                            (((int32_t) (last_rx - last_quiet_time)) > 10L);
            bool     next_quiet_time =
                                ((current_ms - last_quiet_time) >= 1000UL);
 

@@ -52,6 +52,10 @@
    Please use EXPLICIT or NO_MERGING.
 #endif
 
+#ifdef NMEAGPS_INTERRUPT_PROCESSING
+  #error You must *NOT* define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
+#endif
+
 static NMEAGPS  gps          ; // This parses received characters
 static gps_fix  all_data     ; // A composite of all GPS data fields
 static uint32_t last_rx = 0UL; // The last millis() time a character was

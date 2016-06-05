@@ -51,6 +51,10 @@ static gps_fix  fix_data;
   #error You must define NMEAGPS_PARSE_RMC in NMEAGPS_cfg.h!
 #endif
 
+#ifdef NMEAGPS_INTERRUPT_PROCESSING
+  #error You must *NOT* define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
+#endif
+
 //----------------------------------------------------------------
 
 static void doSomeWork( const gps_fix & fix )

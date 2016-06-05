@@ -55,75 +55,7 @@ class NMEAGPS
 public:
 
     NMEAGPS();
-
-    //.......................................................................
-    // The available(...) functions return the number of *fixes* that
-    //   are available to be "read" from the fix buffer.  The GPS port
-    //   object is passed in so a char can be read if port.available().
-
-    uint8_t available( Stream & port )
-      {
-        while (port.available())
-          _handle( port.read() );
-        return _available();
-      }
-    uint8_t available() { return _available(); };
-
-    //.......................................................................
-    // Return the next available fix.  When no more
-    //   fixes are available, it returns the current fix(), which
-    //   may not be completed yet.
-
-    const gps_fix & read();
     
-    // The typical sketch should have something like this in loop():
-    //
-    //    while (gps.available( Serial1 )) {
-    //      gps_fix fix = gps.read();
-    //      if (fix.valid.location) {
-    //         ...
-    //      }
-    //    }
-
-    //.......................................................................
-    // Instead of using the fix-oriented available() and read() methods,
-    //   you can use the character-oriented method decode().  This may
-    //   be necessary if the source of GPS characters is not a Stream,
-    //   or if you want finer control on how fix information is filtered
-    //   or merged.
-
-    // Return type for /decode/.  As bytes are processed, they can be
-    // categorized as INVALID (not part of this protocol), OK (accepted),
-    // or COMPLETED (end-of-message).
-
-    enum decode_t { DECODE_CHR_INVALID, DECODE_CHR_OK, DECODE_COMPLETED };
-
-    //.......................................................................
-    // Process one character of an NMEA GPS sentence.  The internal state 
-    // machine tracks what part of the sentence has been received.  As the
-    // tracks what part of the sentence has been received so far.  As the
-    // sentence is received, members of the /fix/ structure are updated.  
-    // @return DECODE_COMPLETED when a sentence has been completely received.
-
-    NMEAGPS_VIRTUAL decode_t decode( char c );
-
-    //.......................................................................
-
-    enum merging_t { NO_MERGING, EXPLICIT_MERGING, IMPLICIT_MERGING };
-    static const merging_t
-      merging = NMEAGPS_MERGING; // see NMEAGPS_cfg.h
-
-    enum processing_style_t { PS_POLLING, PS_INTERRUPT };
-    static const processing_style_t 
-      processing_style = NMEAGPS_PROCESSING_STYLE;  // see NMEAGPS_cfg.h
-
-    //.......................................................................
-    //  This routine can be called from the attachInterrupt routine
-
-    #ifdef NMEAGPS_INTERRUPT_PROCESSING
-      void isr( uint8_t c ) { _handle( c ); };
-    #endif
-
     //.......................................................................
     // NMEA standard message types (aka "sentences")
 
@@ -165,9 +97,73 @@ public:
         NMEAMSG_END // a bookend that tells how many enums there were
       };
 
-    CONST_CLASS_DATA nmea_msg_t NMEA_FIRST_MSG = (nmea_msg_t) 1;
+    CONST_CLASS_DATA nmea_msg_t NMEA_FIRST_MSG = (nmea_msg_t) (NMEA_UNKNOWN+1);
     CONST_CLASS_DATA nmea_msg_t NMEA_LAST_MSG  = (nmea_msg_t) (NMEAMSG_END-1);
+
+    //=======================================================================
+    // FIX-ORIENTED methods: available, read and handle
+    //=======================================================================
+
+    //.......................................................................
+    // The available(...) functions return the number of *fixes* that
+    //   are available to be "read" from the fix buffer.  The GPS port
+    //   object is passed in so a char can be read if port.available().
+
+    uint8_t available( Stream & port )
+      {
+        if (processing_style == PS_POLLING)
+          while (port.available())
+            handle( port.read() );
+        return _available();
+      }
+    uint8_t available() const volatile { return _available(); };
+
+    //.......................................................................
+    // Return the next available fix.  When no more fixes 
+    //   are available, it returns the current fix(), which
+    //   may not be completed yet.
+
+    const gps_fix & read();
     
+    // The typical sketch should have something like this in loop():
+    //
+    //    while (gps.available( Serial1 )) {
+    //      gps_fix fix = gps.read();
+    //      if (fix.valid.location) {
+    //         ...
+    //      }
+    //    }
+
+    //.......................................................................
+    // As characters are processed, they can be categorized as 
+    // INVALID (not part of this protocol), OK (accepted),
+    // or COMPLETED (end-of-message).
+
+    enum decode_t { DECODE_CHR_INVALID, DECODE_CHR_OK, DECODE_COMPLETED };
+
+    //.......................................................................
+    //  Process one character, possibly saving a buffered fix.
+    //    It implements merging and coherency.
+    //    This can be called from an ISR.
+
+    decode_t handle( uint8_t c );
+
+    //=======================================================================
+    // CHARACTER-ORIENTED "decode" method
+    //
+    //    Using this method may be necessary if the source of GPS
+    //    characters is not a Stream, or if you want finer control 
+    //    on how fix information is filtered and merged.
+    //
+    // Process one character of an NMEA GPS sentence.  The internal state 
+    // machine tracks what part of the sentence has been received.  As the
+    // tracks what part of the sentence has been received so far.  As the
+    // sentence is received, members of the /fix/ structure are updated.
+    // This character-oriented method does not buffer any fixes.
+    // @return DECODE_COMPLETED when a sentence has been completely received.
+
+    NMEAGPS_VIRTUAL decode_t decode( char c );
+
     //.......................................................................
     //  Convert a nmea_msg_t to a PROGMEM string.
     //    Useful for printing the sentence type instead of a number.
@@ -209,15 +205,14 @@ public:
     //  Determine whether the members of /fix/ are "currently" safe.
     //  It will return true when a complete sentence and the CRC characters 
     //  have been received (or after a CR if no CRC is present).
-    //  It will return false after a sentence's command and comma
-    //  have been received (e.g., "$GPGGA,").
+    //  It will return false after a new sentence starts.
 
-    bool is_safe() const { return (rxState == NMEA_IDLE) || (fieldIndex == 0); }
+    bool is_safe() const volatile { return (rxState == NMEA_IDLE); }
 
     //  Notes regarding is_safe() and fix():
     //
     //  If an NMEAGPS instance is fed characters inside a UART interrupt,
-    //    is_safe() could change at any time (i.e., it should be 
+    //    is_safe() and fix() could change at any time (i.e., they should be 
     //    considered /volatile/).
     //
     //  If an NMEAGPS instance is fed characters from a non-interrupt
@@ -302,6 +297,32 @@ public:
     bool overrun() const { return _overrun; }
     void overrun( bool val ) { _overrun = val; }
 
+    //.......................................................................
+
+    enum merging_t { NO_MERGING, EXPLICIT_MERGING, IMPLICIT_MERGING };
+    static const merging_t
+      merging = NMEAGPS_MERGING; // see NMEAGPS_cfg.h
+
+    enum processing_style_t { PS_POLLING, PS_INTERRUPT };
+    static const processing_style_t 
+      processing_style = NMEAGPS_PROCESSING_STYLE;  // see NMEAGPS_cfg.h
+
+    //.......................................................................
+    //  Control access to this object.  This preserves atomicity when
+    //     the processing style is interrupt-driven.
+
+    void lock() const
+      {
+        if (processing_style == PS_INTERRUPT)
+          cli();
+      }
+
+    void unlock() const
+      {
+        if (processing_style == PS_INTERRUPT)
+          sei();
+      }
+
 protected:
     //  Current fix
     gps_fix m_fix;
@@ -362,71 +383,8 @@ protected:
     rxState_t rxState NEOGPS_BF(8);
 
     //.......................................................................
-    //  Process one character, possibly saving a buffered fix
 
-    decode_t _handle( uint8_t c )
-    {
-      decode_t res = decode( c );
-
-      if (res == DECODE_COMPLETED) {
-
-        // Room for another fix?
-
-        if (((NMEAGPS_FIX_MAX == 0) &&  _available()) ||
-            ((NMEAGPS_FIX_MAX >  0) && (_available() >= NMEAGPS_FIX_MAX))) {
-
-          // NO ROOM!
-          overrun( true );
-
-        } else {
-
-          // YES, save it.
-          //   Note: If FIX_MAX == 0, this just marks _fixesAvailable = true.
-
-          #if (NMEAGPS_FIX_MAX > 0)
-            if (merging == EXPLICIT_MERGING) {
-              // Accumulate all sentences
-
-              #ifdef NMEAGPS_COHERENT
-                if (intervalComplete())
-                  buffer[ _currentFix ] = fix(); // start fresh
-                else
-              #endif
-                  buffer[ _currentFix ] |= fix();
-            }
-          #endif
-
-          intervalComplete( nmeaMessage == LAST_SENTENCE_IN_INTERVAL );
-          if ((merging == NO_MERGING) || intervalComplete()) {
-
-            #if (NMEAGPS_FIX_MAX > 0)
-
-              if (merging != EXPLICIT_MERGING)
-                buffer[ _currentFix ] = fix();
-
-              _currentFix++;
-              if (_currentFix >= NMEAGPS_FIX_MAX)
-                _currentFix = 0;
-
-              _fixesAvailable++;
-            #else
-              _fixesAvailable = true;
-            #endif
-          }
-        }
-
-      } else if ((NMEAGPS_FIX_MAX == 0) && _available() && !is_safe()) {
-        // No buffer, and m_fix is was modified by the last char
-        overrun( true );
-      }
-
-      return res;
-
-    } // _handle
-
-    //.......................................................................
-
-    uint8_t _available() const { return _fixesAvailable; };
+    uint8_t _available() const volatile { return _fixesAvailable; };
 
     //.......................................................................
     //  Buffered fixes.
@@ -436,23 +394,24 @@ protected:
       uint8_t _fixesAvailable;
       uint8_t _firstFix;
       uint8_t _currentFix;
-
-      //.......................................................................
-      //  Control access to the fix buffer.  This preserves atomicity when
-      //     the processing style is interrupt-driven.
-
-      void lock() const
-      {
-        if (processing_style == PS_INTERRUPT)
-          cli();
-      }
-
-      void unlock() const
-      {
-        if (processing_style == PS_INTERRUPT)
-          sei();
-      }
     #endif
+
+    //.......................................................................
+    //  Identify when an update interval is completed, according to the
+    //  most recently-received sentence.  In this base class, it just
+    //  looks at the nmeaMessage member.  Derived classes may have
+    //  more complex, specific conditions.
+
+    NMEAGPS_VIRTUAL bool intervalCompleted() const
+      { return (nmeaMessage == LAST_SENTENCE_IN_INTERVAL); } // see NMEAGPS_cfg.h
+
+    //.......................................................................
+    //  When a fix has been fully assembled from a batch of sentences, as
+    //  determined by the configured merging technique and ending with the
+    //  LAST_SENTENCE_IN_INTERVAL, it is stored in the (optional) buffer
+    //  of fixes.  They are removed with /read()/.
+
+    void storeFix();
 
     //.......................................................................
     // Table entry for NMEA sentence type string and its offset

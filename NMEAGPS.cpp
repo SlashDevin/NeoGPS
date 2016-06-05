@@ -261,7 +261,75 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
 
 } // decode
 
+//----------------------------------------------------------------
 
+NMEAGPS::decode_t NMEAGPS::handle( uint8_t c )
+{
+  decode_t res = decode( c );
+
+  if (res == DECODE_COMPLETED) {
+    storeFix();
+
+  } else if ((NMEAGPS_FIX_MAX == 0) && _available() && !is_safe()) {
+    // No buffer, and m_fix is was modified by the last char
+    overrun( true );
+  }
+
+  return res;
+
+} // handle
+
+//----------------------------------------------------------------
+
+void NMEAGPS::storeFix()
+{
+  // Room for another fix?
+
+  if (((NMEAGPS_FIX_MAX == 0) &&  _available()) ||
+      ((NMEAGPS_FIX_MAX >  0) && (_available() >= NMEAGPS_FIX_MAX))) {
+
+    // NO ROOM!
+    overrun( true );
+
+  } else {
+    // YES, save it.
+    //   Note: If FIX_MAX == 0, this just marks _fixesAvailable = true.
+
+    #if (NMEAGPS_FIX_MAX > 0)
+      if (merging == EXPLICIT_MERGING) {
+        // Accumulate all sentences
+
+        #ifdef NMEAGPS_COHERENT
+          if (intervalComplete())
+            buffer[ _currentFix ] = fix(); // start fresh
+          else
+        #endif
+            buffer[ _currentFix ] |= fix();
+      }
+    #endif
+
+    intervalComplete( intervalCompleted() );
+
+    if ((merging == NO_MERGING) || intervalComplete()) {
+
+      #if (NMEAGPS_FIX_MAX > 0)
+
+        if (merging != EXPLICIT_MERGING)
+          buffer[ _currentFix ] = fix();
+
+        _currentFix++;
+        if (_currentFix >= NMEAGPS_FIX_MAX)
+          _currentFix = 0;
+
+        _fixesAvailable++;
+
+      #else
+        _fixesAvailable = true;
+      #endif
+    }
+  }
+
+} // storeFix
 
 //----------------------------------------------------------------
 // NMEA Sentence strings (alphabetical)

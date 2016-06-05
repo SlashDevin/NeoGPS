@@ -58,8 +58,6 @@ void setup()
 {
   // Start the UART for the GPS device
   gps_port.begin(9600);
-  while (!gps_port)
-    ;
 
   pinMode(led, OUTPUT);
 }

@@ -5,16 +5,17 @@
 //  Program: NMEAcoherent.ino
 //
 //  Prerequisites:
-//     1) NMEAfused.ino works with your device
-//     2) At least one NMEA sentence has been enabled.
-//     3) Implicit Merging is disabled.
+//     1) NMEA.ino works with your device
+//     2) At least one NMEA sentence has been enabled in NMEAGPS_cfg.h
+//     3) NMEAGPS_COHERENT is enabled in NMEAGPS_cfg.h
+//     3) Explicit or Implicit merging is enabled in NMEAGPS_cfg.h
 //
 //  Description:  This program guarantees coherency in the fix data.  
 //     When a sentence is received with a new time interval, 
 //     the 'coherent' fix will start with just that new data.  
 //     All data from the previous interval is replaced or deleted.  
 //     As new sentences are received, data from this new interval 
-//     are Explicitly Merged into the 'coherent' fix.
+//     are merged into the 'coherent' fix.
 //     
 //     This program also shows how to 'poll' for a specific message 
 //     if it is not sent by default.
@@ -61,18 +62,25 @@
   #error You must define NMEAGPS_COHERENT in NMEAGPS_cfg.h!
 #endif
 
+#ifdef NMEAGPS_NO_MERGING
+  #error You must define EXPLICIT or IMPLICIT merging in NMEAGPS_cfg.h!
+#endif
+
+#ifdef NMEAGPS_INTERRUPT_PROCESSING
+  #error You must *NOT* define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
+#endif
+
 //------------------------------------------------------------
 
 static NMEAGPS gps;
 static gps_fix coherent;
-static bool    building; // true if 'coherent' is in the process of accumulating
-                         // fix pieces for the current interval.
+
 //----------------------------------------------------------------
 
-static void doSomeWork( const gps_fix & coherent )
+static void doSomeWork( const gps_fix & fix )
 {
   // Print all the things!
-  trace_all( DEBUG_PORT, gps, coherent );
+  trace_all( DEBUG_PORT, gps, fix );
 
   #ifdef NMEAGPS_PARSE_GST
     // Now is a good time to ask for a GST.  Most GPS devices
@@ -90,35 +98,10 @@ static void doSomeWork( const gps_fix & coherent )
 
 static void GPSloop()
 {
-  static bool assignNext = false; // write over 'coherent' next time instead of merging
-
   while (gps.available( gps_port )) {
-    const gps_fix & fix = gps.read();
-
-    if (gps.merging == NMEAGPS::IMPLICIT_MERGING) {
-      coherent = fix;
-      building = false; // all ready!
-      doSomeWork( coherent );
-    } else {
-      if (assignNext) {
-        assignNext = false;
-        building   = true;
-        coherent   = fix; // replace everything from the last interval
-      } else
-        coherent  |= fix; // merge one sentence
-
-      if (gps.intervalComplete()) {
-        assignNext = true;
-        building   = false; // all ready!
-        doSomeWork( coherent );
-        // This leaves 'coherent' available for other parts of your sketch
-        //   until the next interval begins.
-      }
-    }
+    coherent = gps.read();
+    doSomeWork( coherent );
   }
-
-  if (gps.merging == NMEAGPS::IMPLICIT_MERGING)
-    building = !gps.intervalComplete();
 
 } // GPSloop
   
@@ -146,7 +129,7 @@ void setup()
       !defined( NMEAGPS_PARSE_ZDA ) & !defined( NMEAGPS_PARSE_GST ) & \
       defined( NMEAGPS_RECOGNIZE_ALL )
 
-    DEBUG_PORT.println( F("Warning: no sentences are enabled, so no fix data is available for fusing.") );
+    DEBUG_PORT.println( F("\nWARNING: No NMEA sentences are enabled: no fix data will be displayed.") );
   #endif
 
   trace_header( DEBUG_PORT );
