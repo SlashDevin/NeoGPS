@@ -41,7 +41,7 @@ If you want to handle the UBX binary protocol from a ublox Neo GPS device, you m
 
 You may also want to change the configured UBX messages in `ubx_cfg.h`.  It is currently configured to work with the example application `ublox.ino`.
 
-The configuration file `ubx_cfg.h` has the following configuration items near the top of ubxGPS.h:
+The configuration file `ubx_cfg.h` has the following configuration items near the top of the file:
 ```
 #define UBLOX_PARSE_STATUS
 #define UBLOX_PARSE_TIMEGPS
