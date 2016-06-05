@@ -97,6 +97,47 @@ namespace ublox {
 
     extern bool configNMEA( ubloxGPS &gps, NMEAGPS::nmea_msg_t msgType, uint8_t rate );
     
+    // Reset command
+    struct cfg_reset_t : msg_t {
+
+      struct bbr_section_t
+        {
+          bool ephermeris            :1;
+          bool almanac               :1;
+          bool health                :1;
+          bool klobuchard            :1;
+          bool position              :1;
+          bool clock_drift           :1;
+          bool osc_param             :1;
+          bool utc_param             :1;
+          bool rtc                   :1;
+          bool reserved1             :2;
+          bool sfdr_param            :1;
+          bool sfdr_veh_mon_param    :1;
+          bool tct_param             :1;
+          bool reserved2             :1;
+          bool autonomous_orbit_param:1;
+        } __attribute__((packed));
+
+      enum reset_mode_t
+        {
+          HW_RESET                     = 0x00,
+          CONTROLLED_SW_RESET          = 0x01,
+          CONTROLLED_SW_RESET_GPS_ONLY = 0x02,
+          HW_RESET_AFTER_SHUTDOWN      = 0x04,
+          CONTROLLED_GPS_STOP          = 0x08,
+          CONTROLLED_GPS_START         = 0x09
+        } __attribute__((packed));
+
+      bbr_section_t clear_bbr_section;
+      reset_mode_t  reset_mode : 8;
+      uint8_t       reserved   : 8;
+
+      cfg_reset_t()
+        : msg_t( UBX_CFG, UBX_CFG_RATE, UBX_MSG_LEN(*this) )
+          { init(); }
+
+    }  __attribute__((packed));
 
     // Configure navigation rate
     enum time_ref_t {
