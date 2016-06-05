@@ -37,11 +37,11 @@ The derived class `ubloxNMEA` has the following configuration items near the top
 * NAV_VELNED - Velocity Solution in NED (North/East/Down)
 * NAV_SVINFO - Space Vehicle Information
 
-If you want to handle the UBX binary protocol from a ublox Neo GPS device, you must copy the above files *and* also copy the ublox/ubxGPS.*, ublox/ubxmsg.* and GPSTime.* into your application directory.  This is required if you are trying the example/ublox/ublox.ino application.
+If you want to handle the UBX binary protocol from a ublox Neo GPS device, you must copy the above files *and* also copy the `ublox/ubxGPS.*`, `ublox/ubx_cfg.h`, `ublox/ubxmsg.*` and `GPSTime.*` into your application directory.  This is required if you are trying the example/ublox/ublox.ino application.
 
-You may also want to change the configured UBX messages in `ubxGPS.h`.  It is currently configured to work with the example application `ublox.ino`.
+You may also want to change the configured UBX messages in `ubx_cfg.h`.  It is currently configured to work with the example application `ublox.ino`.
 
-The derived class `ubloxGPS` has the following configuration items near the top of ubxGPS.h:
+The configuration file `ubx_cfg.h` has the following configuration items near the top of ubxGPS.h:
 ```
 #define UBLOX_PARSE_STATUS
 #define UBLOX_PARSE_TIMEGPS
