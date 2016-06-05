@@ -5,11 +5,11 @@
 //  Program: PUBX.ino
 //
 //  Description:  This program parses NMEA proprietary messages from
-//     ublox devices.  It is an extension of NMEAfused.ino.
+//     ublox devices.  It is an extension of NMEA.ino.
 //
 //  Prerequisites:
 //     1) You have a ublox GPS device
-//     2) NMEAfused.ino works with your device
+//     2) NMEA.ino works with your device
 //     3) You have installed ubxNMEA.H and ubxNMEA.CPP
 //     4) At least one NMEA standard or proprietary sentence has been enabled.
 //     5) Implicit Merging is disabled.
@@ -67,7 +67,7 @@
 //------------------------------------------------------------
 
 static ubloxNMEA gps         ; // This parses received characters
-static gps_fix   fused;
+static gps_fix   merged;
 
 //----------------------------------------------------------------
 
@@ -82,7 +82,7 @@ static void poll()
 static void doSomeWork()
 {
   // Print all the things!
-  trace_all( DEBUG_PORT, gps, fused );
+  trace_all( DEBUG_PORT, gps, merged );
 
   //  Ask for the proprietary messages again
   poll();
@@ -94,7 +94,7 @@ static void doSomeWork()
 static void GPSloop()
 {  
   while (gps.available( gps_port )) {
-    fused = gps.read();
+    merged = gps.read();
 
     doSomeWork();
   }

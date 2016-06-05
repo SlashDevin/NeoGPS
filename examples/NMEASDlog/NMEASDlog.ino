@@ -9,7 +9,7 @@
 //    NeoSWSerial, or NeoICSerial.
 //
 //  Prerequisites:
-//     1) You have completed the requirements for NMEAfused_isr.ino
+//     1) You have completed the requirements for NMEA_isr.ino
 //     2) You have connected an SPI SD card and verified it is working
 //        with other SD utilities.
 //     3) For logging faster than the default 1Hz rate, you have
@@ -301,8 +301,8 @@ void GPSisr( uint8_t c )
 } // GPSisr
 
 //----------------------------------------------------------------
-//  This routine waits for GPSisr to provide a fix in the 
-//    fused array that has a valid location.
+//  This routine waits for GPSisr to provide 
+//  a fix that has a valid location.
 //
 //  The LED is slowly flashed while it's waiting.
 

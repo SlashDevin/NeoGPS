@@ -12,7 +12,11 @@
 //     5) Implicit Merging is disabled in NMEAGPS_cfg.h.
 //
 //  Description:  This program parses UBX binary protocal messages from
-//     ublox devices.  It is an extension of NMEAfused.ino.
+//     ublox devices.  It shows how to acquire the information necessary
+//     to use the GPS Time-Of-Week in many UBX messages.  As an offset
+//     from midnight Sunday morning (GPS time), you also need the current 
+//     UTC time (this is *not* GPS time) and the current number of GPS 
+//     leap seconds.
 //
 //  Serial is for debug output to the Serial Monitor window.
 //
