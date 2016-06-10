@@ -39,6 +39,7 @@ void loop()
   }
 }
 ```
+For more information on this loop, see the [Usage](https://github.com/SlashDevin/NeoGPS/blob/master/doc/Data%20Model.md#usage) section on the [Data Model](https://github.com/SlashDevin/NeoGPS/blob/master/doc/Data%20Model.md) page.
 
 (This is the plain Arduino version of the [CosaGPS](https://github.com/SlashDevin/CosaGPS) library for [Cosa](https://github.com/mikaelpatel/Cosa).)
 
