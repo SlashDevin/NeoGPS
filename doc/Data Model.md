@@ -2,7 +2,7 @@ Data Model
 ==========
 Rather than holding onto individual fields, the concept of a **fix** is used to group data members of the GPS acquisition into a C structure (a `struct` type called `gps_fix`).  This also facilitates merging pieces received at different times (i.e., in separate sentences) into a single easy-to-use structure.
 
-The main `NMEAGPS gps;` object you declare in your sketch parses received characters,  gradually assembling a `fix`.  Most programs will call `gps.read()` to obtain the completed fix structure (see [Usage](#Usage)).
+The main `NMEAGPS gps;` object you declare in your sketch parses received characters,  gradually assembling a `fix`.  Most programs will call `gps.read()` to obtain the completed fix structure (see [Usage](#Usage) below).
 
 Given a variable declaration of type `gps_fix`:
 ```
