@@ -253,6 +253,13 @@ static void GPSloop()
       // call flush() at least once (or close()) before powering down or pulling 
       // the SD card.
       //
+      // It is *strongly* recommended that you use some external event 
+      // to close the file.  For example, staying within 50m of the moving
+      // average location for 1 minute, or using a switch to start and stop 
+      // logging.  It would also be good to provide a visual indication 
+      // that it is safe to power down and/or remove the card,  perhaps via
+      // the LED.
+      //
       // To reduce the amount of data that may be lost by an abnormal shut down,
       // you can call flush() periodically.
       //
@@ -355,7 +362,8 @@ void setup()
   gps_port.attachInterrupt( GPSisr );
   gps_port.begin( 9600 );
 
-  //  Configure the GPS
+  //  Configure the GPS.  These are commands for MTK GPS devices.  Other
+  //    brands will have different commands.
   gps.send_P( &gps_port, F("PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0") ); // RMC only for MTK GPS devices
   gps.send_P( &gps_port, F("PMTK220,100") ); // 10Hz update rate for MTK GPS devices
 
@@ -405,7 +413,7 @@ void setup()
 
     // If the file can't be created for some reason this leaves the LED on
     //   so I know there is a problem
-    digitalWrite(6,HIGH);
+    digitalWrite(LED,HIGH);
 
     while (true) {}
   }

@@ -98,7 +98,7 @@ struct time_t {
   /**
    * Initialize to January 1 of the Epoch Year, 00:00:00
    */
-    void init();
+  void init();
   
   /**
    * Convert to seconds.

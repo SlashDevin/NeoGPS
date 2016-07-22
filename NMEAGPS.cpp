@@ -1474,7 +1474,7 @@ bool NMEAGPS::parse_alt_err( char chr )
 
 //---------------------------------
 
-const gps_fix & NMEAGPS::read()
+const gps_fix NMEAGPS::read()
 {
   if (_fixesAvailable) {
 
@@ -1492,7 +1492,9 @@ const gps_fix & NMEAGPS::read()
     #endif
 
   } else
-    return m_fix;
+    //  Got nuthin', return a default fix.
+    return gps_fix();
+
 } // read
 
 //---------------------------------

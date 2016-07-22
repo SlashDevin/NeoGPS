@@ -120,10 +120,9 @@ public:
 
     //.......................................................................
     // Return the next available fix.  When no more fixes 
-    //   are available, it returns the current fix(), which
-    //   may not be completed yet.
+    //   are available, it returns an empty fix.
 
-    const gps_fix & read();
+    const gps_fix read();
     
     // The typical sketch should have something like this in loop():
     //
