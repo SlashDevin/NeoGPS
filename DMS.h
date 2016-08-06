@@ -28,8 +28,8 @@ class DMS_t
 {
 public:
   uint8_t      degrees;
-  uint8_t      minutes       NEOGPS_BF(6);
-  Hemisphere_t hemisphere    NEOGPS_BF(2);
+  uint8_t      minutes       ;//NEOGPS_BF(6);
+  Hemisphere_t hemisphere    ;//NEOGPS_BF(2); compiler bug!
   uint8_t      seconds_whole NEOGPS_BF(6);
   uint16_t     seconds_frac  NEOGPS_BF(10); // 1000ths
 
