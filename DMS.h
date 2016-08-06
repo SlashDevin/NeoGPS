@@ -47,8 +47,8 @@ public:
     
 } NEOGPS_PACKED;
 
-class Stream;
+class Print;
 
-extern Stream & operator << ( Stream & outs, const DMS_t & );
+extern Print & operator << ( Print & outs, const DMS_t & );
 
 #endif

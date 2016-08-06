@@ -554,7 +554,7 @@ NMEAGPS::decode_t NMEAGPS::parseCommand
 const __FlashStringHelper *NMEAGPS::string_for( nmea_msg_t msg ) const
 {
   if (msg == NMEA_UNKNOWN)
-    return (const __FlashStringHelper *) NULL;
+    return F("UNK");
 
   const msg_table_t *msgs = msg_table();
 

@@ -18,7 +18,7 @@
 
 #include "DMS.h"
 
-#include <Stream.h>
+#include <Print.h>
 
 //----------------------------------------------------------------
 //   Note that no division is used, and shifts are on byte boundaries.  Fast!
@@ -67,7 +67,7 @@ void DMS_t::From( int32_t deg_1E7 )
 
 //----------------------------------------------------------------
 
-Stream & operator << ( Stream & outs, const DMS_t & dms )
+Print & operator << ( Print & outs, const DMS_t & dms )
 {
   if (dms.degrees < 10)
     outs.write( '0' );
