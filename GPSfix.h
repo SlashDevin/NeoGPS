@@ -30,6 +30,10 @@
   #include "DMS.h"
 #endif
 
+#ifdef GPS_FIX_LOCATION
+  #include "Location.h"
+#endif
+
 /**
  * A structure for holding a GPS fix: time, position, velocity, etc.
  *
@@ -102,14 +106,13 @@ public:
   //   degrees value.
 
   #ifdef GPS_FIX_LOCATION
-    int32_t       lat;  // degrees * 1e7, negative is South
-    int32_t       lon;  // degrees * 1e7, negative is West
+    NeoGPS::Location_t location;
 
-    int32_t latitudeL() const { return lat; };
-    float   latitude () const { return ((float) lat) * 1.0e-7; }; // accuracy loss
+    int32_t latitudeL() const { return location.lat (); };
+    float   latitude () const { return location.latF(); }; // accuracy loss
 
-    int32_t longitudeL() const { return lon; };
-    float   longitude () const { return ((float) lon) * 1.0e-7; }; // accuracy loss
+    int32_t longitudeL() const { return location.lon (); };
+    float   longitude () const { return location.lonF(); }; // accuracy loss
   #endif
 
   #ifdef GPS_FIX_LOCATION_DMS
@@ -318,7 +321,7 @@ public:
   void init()
   {
     #ifdef GPS_FIX_LOCATION
-      lat = lon = 0;
+      location.init();
     #endif
 
     #ifdef GPS_FIX_LOCATION_DMS
@@ -411,8 +414,7 @@ public:
 
     #ifdef GPS_FIX_LOCATION
       if (r.valid.location) {
-        lat = r.lat;
-        lon = r.lon;
+        location = r.location;
       }
     #endif
 

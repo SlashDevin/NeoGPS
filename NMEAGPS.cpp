@@ -1235,7 +1235,7 @@ bool NMEAGPS::parseLat( char chr )
       parseDDDMM
         (
           #if defined( GPS_FIX_LOCATION )
-            m_fix.lat, 
+            m_fix.location._lat, 
           #endif
           #if defined( GPS_FIX_LOCATION_DMS )
             m_fix.latitudeDMS,
@@ -1253,7 +1253,7 @@ bool NMEAGPS::parseNS( char chr )
   #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
     if (group_valid && (chr == 'S')) {
       #ifdef GPS_FIX_LOCATION
-        m_fix.lat = -m_fix.lat;
+        m_fix.location._lat = -m_fix.location._lat;
       #endif
       #ifdef GPS_FIX_LOCATION_DMS
         m_fix.latitudeDMS.hemisphere = SOUTH_H;
@@ -1274,7 +1274,7 @@ bool NMEAGPS::parseLon( char chr )
       parseDDDMM
         (
           #if defined( GPS_FIX_LOCATION )
-            m_fix.lon, 
+            m_fix.location._lon, 
           #endif
           #if defined( GPS_FIX_LOCATION_DMS )
             m_fix.longitudeDMS,
@@ -1293,7 +1293,7 @@ bool NMEAGPS::parseEW( char chr )
     if (group_valid) {
       if (chr == 'W') {
         #ifdef GPS_FIX_LOCATION
-          m_fix.lon = -m_fix.lon;
+          m_fix.location._lon = -m_fix.location._lon;
         #endif
         #ifdef GPS_FIX_LOCATION_DMS
           m_fix.longitudeDMS.hemisphere = WEST_H;

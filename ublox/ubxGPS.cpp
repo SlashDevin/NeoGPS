@@ -535,13 +535,13 @@ bool ubloxGPS::parseNavPosLLH( uint8_t chr )
           NMEAGPS_INVALIDATE( location );
         case 5: case 6: case 7:
           #ifdef GPS_FIX_LOCATION
-            ((uint8_t *)&m_fix.lon) [ chrCount-4 ] = chr;
+            ((uint8_t *)&m_fix.location._lon) [ chrCount-4 ] = chr;
           #else
             scratchpad.U1[ chrCount-4 ] = chr;
           #endif
           if (chrCount == 7) {
             #if defined( GPS_FIX_LOCATION ) & defined( GPS_FIX_LOCATION_DMS )
-              m_fix.longitudeDMS.From( m_fix.lon );
+              m_fix.longitudeDMS.From( m_fix.location._lon );
             #elif defined( GPS_FIX_LOCATION_DMS )
               m_fix.longitudeDMS.From( scratchpad.U4 );
             #endif
@@ -549,13 +549,13 @@ bool ubloxGPS::parseNavPosLLH( uint8_t chr )
           break;
         case 8: case 9: case 10: case 11:
           #ifdef GPS_FIX_LOCATION
-            ((uint8_t *)&m_fix.lat) [ chrCount-8 ] = chr;
+            ((uint8_t *)&m_fix.location._lat) [ chrCount-8 ] = chr;
           #else
             scratchpad.U1[ chrCount-8 ] = chr;
           #endif
           if (chrCount == 11) {
             #if defined( GPS_FIX_LOCATION ) & defined( GPS_FIX_LOCATION_DMS )
-              m_fix.latitudeDMS .From( m_fix.lat );
+              m_fix.latitudeDMS .From( m_fix.location._lat );
             #elif defined( GPS_FIX_LOCATION_DMS )
               m_fix.latitudeDMS .From( scratchpad.U4 );
             #endif
