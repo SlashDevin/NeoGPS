@@ -45,8 +45,10 @@ void setup()
   // Start the normal trace output
   Serial.begin(9600);
   Serial.println( F("NMEAbenchmark: started") );
-  Serial << F("fix object size = ") << sizeof(gps.fix()) << '\n';
-  Serial << F("NMEAGPS object size = ") << sizeof(NMEAGPS) << '\n';
+  Serial.print( F("fix object size = ") );
+  Serial.println( sizeof(gps.fix()) );
+  Serial.print( F("  gps object size = ") );
+  Serial.println( sizeof(gps) );
 
   trace_header( Serial );
 

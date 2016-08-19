@@ -37,7 +37,7 @@
   NeoHWSerial & gps_port = NeoSerial1;
   #define USING_GPS_PORT "NeoSerial1"
 
-#elif defined( UBRR1H )
+#elif defined( UBRR1H ) | defined( ID_USART0 )
   HardwareSerial & gps_port = Serial1;
   #define USING_GPS_PORT "Serial1"
 

@@ -492,9 +492,14 @@ NMEAGPS::decode_t NMEAGPS::parseCommand
     if (check_this_table) {
       uint8_t i = entry;
 
-      const char * const *table   = (const char * const *) pgm_read_word( &msgs->table );
-      const char *        table_i = (const char *) pgm_read_word( &table[i] );
-      
+      #ifdef __AVR__
+        const char * const *table   = (const char * const *) pgm_read_ptr( &msgs->table );
+        const char *        table_i = (const char *) pgm_read_ptr( &table[i] );
+      #else
+        const char * const *table   = msgs->table;
+        const char *        table_i = table[i];
+      #endif
+
       for (;;) {
         char rc = pgm_read_byte( &table_i[cmdCount] );
         if (c == rc) {
@@ -517,7 +522,11 @@ NMEAGPS::decode_t NMEAGPS::parseCommand
         }
 
         //  See if the next entry starts with the same characters.
-        const char *table_next = (const char *) pgm_read_word( &table[next_msg] );
+        #ifdef __AVR__
+          const char *table_next = (const char *) pgm_read_word( &table[next_msg] );
+        #else
+          const char *table_next = table[next_msg];
+        #endif
         for (uint8_t j = 0; j < cmdCount; j++)
           if (pgm_read_byte( &table_i[j] ) != pgm_read_byte( &table_next[j] )) {
             // Nope, a different start to this entry
@@ -531,7 +540,11 @@ NMEAGPS::decode_t NMEAGPS::parseCommand
     if (res == DECODE_CHR_INVALID) {
 
       #ifdef NMEAGPS_DERIVED_TYPES
-        msgs = (const msg_table_t *) pgm_read_word( &msgs->previous );
+        #ifdef __AVR__
+          msgs = (const msg_table_t *) pgm_read_word( &msgs->previous );
+        #else
+          msgs = msgs->previous;
+        #endif
         if (msgs) {
           // Try the current character in the previous table
           continue;
@@ -564,15 +577,27 @@ const __FlashStringHelper *NMEAGPS::string_for( nmea_msg_t msg ) const
 
     if ((msg_offset <= msg) && (msg < msg_offset+table_size)) {
       // In range of this table
-      const char * const *table   = (const char * const *) pgm_read_word( &msgs->table );
-      return
-        (const __FlashStringHelper *) 
-          pgm_read_word( &table[ ((uint8_t)msg) - msg_offset ] );
+      #ifdef __AVR__
+        const char * const *table   = (const char * const *) pgm_read_word( &msgs->table );
+        return
+          (const __FlashStringHelper *) 
+            pgm_read_word( &table[ ((uint8_t)msg) - msg_offset ] );
+      #else
+        const char * const *table   = msgs->table;
+        return
+          (const __FlashStringHelper *) 
+            table[ ((uint8_t)msg) - msg_offset ];
+      #endif
+      
     }
  
     #ifdef NMEAGPS_DERIVED_TYPES
       // Try the previous table
-      msgs = (const msg_table_t *) pgm_read_word( &msgs->previous );
+      #ifdef __AVR__
+        msgs = (const msg_table_t *) pgm_read_word( &msgs->previous );
+      #else
+        msgs = (const msg_table_t *) &msgs->previous;
+      #endif
       if (msgs)
         continue;
     #endif
@@ -1560,8 +1585,13 @@ void NMEAGPS::poll( Stream *device, nmea_msg_t msg )
     };
 
   if ((NMEA_FIRST_MSG <= msg) && (msg <= NMEA_LAST_MSG)) {
-    const __FlashStringHelper * pollCmd =
-      (const __FlashStringHelper *) pgm_read_word(&poll_msgs[msg-NMEA_FIRST_MSG]);
+    #ifdef __AVR__
+      const __FlashStringHelper * pollCmd =
+        (const __FlashStringHelper *) pgm_read_word(&poll_msgs[msg-NMEA_FIRST_MSG]);
+    #else
+      const __FlashStringHelper * pollCmd =
+        (const __FlashStringHelper *) poll_msgs[msg-NMEA_FIRST_MSG];
+    #endif
     send_P( device, pollCmd );
   }
 

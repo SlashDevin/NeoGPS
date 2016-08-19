@@ -313,13 +313,13 @@ public:
     void lock() const
       {
         if (processing_style == PS_INTERRUPT)
-          cli();
+          noInterrupts();
       }
 
     void unlock() const
       {
         if (processing_style == PS_INTERRUPT)
-          sei();
+          interrupts();
       }
 
 protected:

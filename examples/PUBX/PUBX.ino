@@ -18,7 +18,7 @@
 //
 //======================================================================
 
-#if defined( UBRR1H )
+#if defined( UBRR1H ) | defined( ID_USART0 )
   // Default is to use Serial1 when available.  You could also
   // use NeoHWSerial, especially if you want to handle GPS characters
   // in an Interrupt Service Routine.

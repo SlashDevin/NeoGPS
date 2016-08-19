@@ -8,7 +8,6 @@
 //                a higher-accuracy *static* location.  It also shows
 //                how to use the distance functions in the Location class.
 //
-//
 //  Prerequisites:
 //     1) NMEA.ino works with your device (correct TX/RX pins and baud rate)
 //     2) At least once sentence with a location field has been enabled
@@ -17,20 +16,7 @@
 //
 //======================================================================
 
-//-------------------------------------------------------------------------
-//  The GPSport.h include file tries to choose a default serial port
-//  for the GPS device.  If you know which serial port you want to use,
-//  delete this section and declare it here:
-//
-//    SoftwareSerial gps_port( rxpin, txpin ); // to GPS TX, RX
-//          or
-//    HardwareSerial & gps_port = Serial2; // an alias
-//          or
-//    Search and replace all occurrences of "gps_port" with your port's name.
-//
-//  See Installation instructions for additional information.
-
-#if defined( UBRR1H )
+#if defined( UBRR1H ) | defined( ID_USART0 )
   // Default is to use Serial1 when available.  You could also
   // use NeoHWSerial, especially if you want to handle GPS characters
   // in an Interrupt Service Routine.
