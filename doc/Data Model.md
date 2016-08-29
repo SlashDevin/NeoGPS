@@ -11,10 +11,12 @@ gps_fix fix;
 ...this `fix` variable (or any other variable of type `gps_fix`) contains the following members:
   * `fix.status`, a status code
     * `enum` values STATUS_NONE, STATUS_EST, STATUS_TIME_ONLY, STATUS_STD or STATUS_DGPS
-  * a latitude and longitude, accessed with
+  * a [location](Location.md) (i.e., latitude and longitude), accessed with
     * `fix.latitudeL()` and `fix.longitudeL()` for the higher-precision integer degrees, scaled by 10,000,000 (10 significant digits)
     * `fix.latitude()` and `fix.longitude()` for the lower-precision floating-point degrees (~7 significant digits)
-      * NOTE: Above values are positive for North or East degrees and negative for South or West degrees
+    * NOTE: these lat/lon values are
+      * positive for North or East degrees and negative for South or West degrees.
+      * stored in a 'fix.location' structure, like a 2D coordinate.  The `location_t` class provides additional methods for distance, bearing and offset calculations, as described [here](Location.md).
     * `fix.latitudeDMS` and `fix.latitudeDMS` are structures (see DMS.h) that each contain
       * `fix.longitudeDMS.degrees` in integer degrees
       * `fix.latitudeDMS.degrees`, in integer minutes
