@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "NMEAGPS.h"
+using namespace NeoGPS;
 
 //======================================================================
 //  Program: NMEAaverage.ino
@@ -57,7 +58,6 @@ static gps_fix  fix;  // This holds the latest GPS fix
 
 //------------------------------------------------------------
 
-using namespace NeoGPS;
 
 static gps_fix    first;            // good GPS data
 static clock_t    firstSecs;        // cached dateTime in seconds since EPOCH
@@ -125,13 +125,43 @@ static void doSomeWork()
       DEBUG_PORT.print( ',' );
       DEBUG_PORT.print( avgLoc.lon() );
       DEBUG_PORT.print( ',' );
-      dLat = fix.location.lat() - avgLoc.lat();
+      dLat = avgLoc.lat() - fix.location.lat();
       DEBUG_PORT.print( dLat );
       DEBUG_PORT.print( ',' );
-      dLon = fix.location.lon() - avgLoc.lon();
+      dLon = avgLoc.lon() - fix.location.lon();
       DEBUG_PORT.print( dLon );
+
+      // Calculate the distance from the current fix to the average location
+      float avgDistError = avgLoc.DistanceKm( fix.location );
       DEBUG_PORT.print( ',' );
-      DEBUG_PORT.print( Location_t::DistanceKm( fix.location, avgLoc ) * 100000.0 );
+      DEBUG_PORT.print( avgDistError * 100000.0 ); // cm
+
+      // Calculate the bearing from the current fix to the average location.
+      //   NOTE: other libraries will have trouble with this calculation,
+      //   because these coordinates are *VERY* close together.  Naive
+      //   floating-point calculations will not have enough significant
+      //   digits.
+      float avgBearingErr = fix.location.BearingTo( avgLoc );
+      DEBUG_PORT.print( ',' );
+      DEBUG_PORT.print( avgBearingErr * Location_t::DEG_PER_RAD, 6 );
+
+      // Calculate a point that is 10km away from the average location,
+      //   at the error bearing
+      Location_t tenKmAway( avgLoc );
+      tenKmAway.OffsetBy( 10.0 / Location_t::EARTH_RADIUS_KM, avgBearingErr );
+      DEBUG_PORT.print( ',' );
+      DEBUG_PORT.print( tenKmAway.lat() );
+      DEBUG_PORT.print( ',' );
+      DEBUG_PORT.print( tenKmAway.lon() );
+
+      // Calculate the bearing from the average location to that point.
+      //    This should be very close to the avgBearingErr, and will
+      //    reflect the calculation error.  This is because the
+      //    current fix is *VERY* close to the average location.
+      float tb = avgLoc.BearingToDegrees( tenKmAway );
+      DEBUG_PORT.print( ',' );
+      DEBUG_PORT.print( tb, 6 );
+
       DEBUG_PORT.println();
     }
 
@@ -139,8 +169,9 @@ static void doSomeWork()
     if (!warned) {
       warned = true;
       DEBUG_PORT.print( F("Waiting for fix...") );
-    } else
+    } else {
       DEBUG_PORT.print( '.' );
+    }
   }
 
 } // doSomeWork
@@ -171,8 +202,9 @@ void setup()
   DEBUG_PORT.print( F("  gps object size = ") );
   DEBUG_PORT.println( sizeof(gps) );
   DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
-  DEBUG_PORT.println( F("count,avg lat,avg lon,dlat,dlon,distance(cm)") );
-
+  DEBUG_PORT.println( F("Comparing current fix with averaged location.\n"
+                        "count,avg lat,avg lon,dlat,dlon,distance(cm),"
+                        "bearing(deg),lat/lon 10km away & recalc bearing") );
   DEBUG_PORT.flush();
 
   // Start the UART for the GPS device

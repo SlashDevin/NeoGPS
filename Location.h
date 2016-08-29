@@ -5,6 +5,24 @@
 
 #include "NeoGPS_cfg.h"
 
+//------------------------------------------------------
+// @file Location.h
+// @version 3.0
+//
+// @section License
+// Copyright (C) 2016, SlashDevin
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+
 class NMEAGPS;
 
 namespace NeoGPS {
@@ -12,71 +30,87 @@ namespace NeoGPS {
 class Location_t
 {
 public:
+    Location_t() {}
+    Location_t( int32_t lat, int32_t lon )
+      : _lat(lat), _lon(lon)
+        {}
+
     CONST_CLASS_DATA float LOC_SCALE = 1.0e-7;
 
     int32_t  lat() const      { return _lat; };
-    float    latF() const     { return ((float) lat()) * LOC_SCALE; };
     void     lat( int32_t l ) { _lat = l; };
+    float    latF() const     { return ((float) lat()) * LOC_SCALE; };
+    void     latF( float v )  { _lat = v * LOC_SCALE; };
 
     int32_t  lon() const { return _lon; };
-    float    lonF() const     { return ((float) lon()) * LOC_SCALE; };
     void     lon( int32_t l ) { _lon = l; };
+    float    lonF() const     { return ((float) lon()) * LOC_SCALE; };
+    void     lonF( float v )  { _lon = v * LOC_SCALE; };
 
     void init() { _lat = _lon = 0; };
 
     CONST_CLASS_DATA float EARTH_RADIUS_KM = 6371.0088;
     CONST_CLASS_DATA float RAD_PER_DEG     = PI / 180.0;
+    CONST_CLASS_DATA float DEG_PER_RAD     = 1.0 / RAD_PER_DEG;
     CONST_CLASS_DATA float MI_PER_KM       = 0.621371;
 
-    static float DistanceKm( const Location_t & p1, const Location_t p2 )
+    //-----------------------------------
+    // Distance calculations
+    
+    static float DistanceKm( const Location_t & p1, const Location_t & p2 )
       {
         return DistanceRadians( p1, p2 ) * EARTH_RADIUS_KM;
       }
+    float DistanceKm( const Location_t & p2 )
+      { return DistanceKm( *this, p2 ); }
 
-    static float DistanceMiles( const Location_t & p1, const Location_t p2 )
+    static float DistanceMiles( const Location_t & p1, const Location_t & p2 )
       {
         return DistanceRadians( p1, p2 ) * EARTH_RADIUS_KM * MI_PER_KM;
       }
+    float DistanceMiles( const Location_t & p2 )
+      { return DistanceMiles( *this, p2 ); }
 
-    static float DistanceRadians( const Location_t & p1, const Location_t p2 )
-      {
-        // Haversine calculation from http://www.movable-type.co.uk/scripts/latlong.html
+    static float DistanceRadians( const Location_t & p1, const Location_t & p2 );
+    float DistanceRadians( const Location_t & p2 )
+      { return DistanceRadians( *this, p2 ); }
 
-              float dLat      = (p2.lat() - p1.lat()) * RAD_PER_DEG * LOC_SCALE;
-              float haverDLat = sin(dLat/2.0);
-        haverDLat *= haverDLat; // squared
-        
-        float dLon      = (p2.lon() - p1.lon()) * RAD_PER_DEG * LOC_SCALE;
-        float haverDLon = sin(dLon/2.0);
-        haverDLon *= haverDLon; // squared
-        
-        float lat1 = p1.latF();
-        lat1 *= RAD_PER_DEG;
-        float lat2 = p2.latF();
-        lat2 *= RAD_PER_DEG;
-        float a = haverDLat + cos(lat1) * cos(lat2) * haverDLon;
+    static float EquirectDistanceRadians
+      ( const Location_t & p1, const Location_t & p2 );
+    float EquirectDistanceRadians( const Location_t & p2 )
+      { return EquirectDistanceRadians( *this, p2 ); }
 
-        float c = 2 * atan2( sqrt(a), sqrt(1-a) );
-
-        return c;
-      }
-
-    static float EquirectDistanceRadians( const Location_t & p1, const Location_t p2 )
-      {
-        // Equirectangular calculation from http://www.movable-type.co.uk/scripts/latlong.html
-
-        float dLat = (p2.lat() - p1.lat()) * RAD_PER_DEG * LOC_SCALE;
-        float dLon = (p2.lon() - p1.lon()) * RAD_PER_DEG * LOC_SCALE;
-        float x    = dLon * cos( p1.lat()  * RAD_PER_DEG * LOC_SCALE + dLat/2 );
-        return sqrt( x*x + dLat*dLat );
-      }
-
-    static float EquirectDistanceKm( const Location_t & p1, const Location_t p2 )
+    static float EquirectDistanceKm( const Location_t & p1, const Location_t & p2 )
       {
         return EquirectDistanceRadians( p1, p2 ) * EARTH_RADIUS_KM;
       }
+    float EquirectDistanceKm( const Location_t & p2 ) const
+      { return  EquirectDistanceKm( *this, p2 ); }
 
-//private:
+    static float EquirectDistanceMiles( const Location_t & p1, const Location_t & p2 )
+      {
+        return EquirectDistanceRadians( p1, p2 ) * EARTH_RADIUS_KM * MI_PER_KM;
+      }
+    float EquirectDistanceMiles( const Location_t & p2 ) const
+      { return  EquirectDistanceMiles( *this, p2 ); }
+
+    //-----------------------------------
+    // Bearing calculations
+
+    static float BearingTo( const Location_t & p1, const Location_t & p2 ); // radians
+    float BearingTo( const Location_t & p2 ) const // radians
+      { return BearingTo( *this, p2 ); }
+
+    static float BearingToDegrees( const Location_t & p1, const Location_t & p2 )
+      { return BearingTo( p1, p2 ) * DEG_PER_RAD; }
+    float BearingToDegrees( const Location_t & p2 ) const // radians
+      { return BearingToDegrees( *this, p2 ); }
+
+    //-----------------------------------
+    // Offset a location (note distance is in radians, not degrees)
+    void OffsetBy( float distR, float bearingR );
+
+//private: //---------------------------------------
     friend class NMEAGPS; // This does not work?!?
 
     int32_t       _lat;  // degrees * 1e7, negative is South
