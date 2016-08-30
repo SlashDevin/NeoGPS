@@ -3,6 +3,26 @@
 using namespace NeoGPS;
 
 //---------------------------------------------------------------------
+//  Calculate dLon with integers, less one bit to avoid overflow
+//     (360 * 1e7 = 3600000000, which is too big).  
+//     Retains precision when points are close together.
+
+int32_t safeDLon( int32_t p2, int32_t p1 )
+{
+  int32_t dLonL;
+  int32_t halfDLon = (p2/2 - p1/2);
+  if (halfDLon < -1800000000L/2) {
+    dLonL = (p2 + 1800000000L) - (p1 - 1800000000L);
+  } else if (1800000000L/2 < halfDLon) {
+    dLonL = (p2 - 1800000000L) - (p1 + 1800000000L);
+  } else {
+    dLonL = p2 - p1;
+  }
+  return dLonL;
+
+} // safeDLon
+
+//---------------------------------------------------------------------
 
 float Location_t::DistanceRadians
   ( const Location_t & p1, const Location_t & p2 )
@@ -13,7 +33,7 @@ float Location_t::DistanceRadians
         float haverDLat = sin(dLat/2.0);
   haverDLat *= haverDLat; // squared
   
-  float dLon      = (p2.lon() - p1.lon()) * RAD_PER_DEG * LOC_SCALE;
+  float dLon      = safeDLon( p2.lon(), p1.lon() ) * RAD_PER_DEG * LOC_SCALE;
   float haverDLon = sin(dLon/2.0);
   haverDLon *= haverDLon; // squared
   
@@ -37,7 +57,7 @@ float Location_t::EquirectDistanceRadians
   // Equirectangular calculation from http://www.movable-type.co.uk/scripts/latlong.html
 
   float dLat = (p2.lat() - p1.lat()) * RAD_PER_DEG * LOC_SCALE;
-  float dLon = (p2.lon() - p1.lon()) * RAD_PER_DEG * LOC_SCALE;
+  float dLon = safeDLon( p2.lon(), p1.lon() ) * RAD_PER_DEG * LOC_SCALE;
   float x    = dLon * cos( p1.lat()  * RAD_PER_DEG * LOC_SCALE + dLat/2 );
   return sqrt( x*x + dLat*dLat );
 
@@ -47,20 +67,8 @@ float Location_t::EquirectDistanceRadians
 
 float Location_t::BearingTo( const Location_t & p1, const Location_t & p2 )
 {
-  //  Calculate dLon with integers, less one bit to avoid overflow
-  //     (360 * 1e7 = 3600000000, which is too big).  
-  //     Retains precision when points are close together.
-  int32_t dLonL;
-  int32_t halfDLon = (p2.lon()/2 - p1.lon()/2);
-  if (halfDLon < -1800000000L/2) {
-    dLonL = (p2.lon() + 1800000000L) - (p1.lon() - 1800000000L);
-  } else if (1800000000L/2 < halfDLon) {
-    dLonL = (p2.lon() - 1800000000L) - (p1.lon() + 1800000000L);
-  } else {
-    dLonL = p2.lon() - p1.lon();
-  }
-  float dLon = dLonL * RAD_PER_DEG * LOC_SCALE;
-
+  int32_t dLonL   = safeDLon( p2.lon(), p1.lon() );
+  float   dLon    = dLonL * RAD_PER_DEG * LOC_SCALE;
   int32_t dLatL   = p2.lat() - p1.lat();
   float   lat1    = p1.lat() * RAD_PER_DEG * LOC_SCALE;
   float   cosLat1 = cos( lat1 );

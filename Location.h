@@ -30,12 +30,15 @@ namespace NeoGPS {
 class Location_t
 {
 public:
+    CONST_CLASS_DATA float LOC_SCALE = 1.0e-7;
+
     Location_t() {}
     Location_t( int32_t lat, int32_t lon )
       : _lat(lat), _lon(lon)
         {}
-
-    CONST_CLASS_DATA float LOC_SCALE = 1.0e-7;
+    Location_t( float lat, float lon )
+      : _lat(lat / LOC_SCALE), _lon(lon / LOC_SCALE)
+        {}
 
     int32_t  lat() const      { return _lat; };
     void     lat( int32_t l ) { _lat = l; };

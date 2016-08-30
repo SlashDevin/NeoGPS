@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "NMEAGPS.h"
+using namespace NeoGPS;
 
 //======================================================================
 //  Program: NMEAtest.ino
@@ -81,48 +82,79 @@ static NMEAGPS gps;
 //--------------------------
 // Example sentences
 
-// Ayers Rock
+struct LocVector_t
+  {
+    float range;
+    float bearing;
+  };
+
+static Location_t AyersRock( -253448688L, 1310324914L );
 //  -25.3448688,131.0324914
 //  2520.692128,S,13101.949484,E
 //  25 20' 41.528" S 131 1' 56.969" E
+static const LocVector_t NiihauToAyersRock = { 9078.6, 238.33972 };
+
 const char validRMC[] __PROGMEM =
   "$GPRMC,092725.00,A,2520.69213,S,13101.94948,E,"
     "0.004,77.52,091202,,,A*43\r\n";
 
+//...........................
+
+static Location_t ubloxHQ( 472852369L, 85630763L ); // near Zurich, Switzerland
+// 47.2852369, 8.5630763
 // 47 17' 6.840" N 008 33' 54.954" E
+static const LocVector_t NiihauToUblox = { 12248.7, 8.0625 };
+
 const char validGGA[] __PROGMEM =
   "$GPGGA,092725.00,4717.113993,N,00833.915904,E,"
     "1,8,1.01,499.6,M,48.0,M,,0*5C\r\n";
 
-// Macchu Picchu
+//...........................
+
+static Location_t MacchuPicchu( -131628050L, -725455080L );
 //  -13.162805, -72.545508
 //  13.162805,S,72.545508,W
 //  13 09' 46.098" S 72 32' 43.830" W
+static const LocVector_t NiihauToMacchu = { 10316.0, 103.07306 };
 
 const char validGGA2[] __PROGMEM =
   "$GPGGA,162254.00,1309.7683,S,7232.7305,W,"
     "1,03,2.36,2430.2,M,-25.6,M,,*7E\r\n";
 
-// Dexter MO
+//...........................
+
+static Location_t DexterMO( 367944050L, -899586550L );
 //  36.794405, -89.958655
 //  36.794405,N,89.958655,W
 //  36 47' 39.858" N 89 57' 31.158" W
+static const LocVector_t NiihauToDexter = { 6865.3, 58.85472 };
 
 const char validRMC2[] __PROGMEM =
   "$GPRMC,162254.00,A,3647.6643,N,8957.5193,W,0.820,188.36,110706,,,A*49\r\n";
 
-// Ni'ihau, HI
+//...........................
+
+static Location_t NiihauHI( 218276210L, -1602448760L );
 //   21.827621, -160.244876
 //   21.827621,N,160.244876,W
 //   21 49' 39.436" N 160 14' 41.554 W
+static const LocVector_t NiihauToNiihau = { 0.0, 90.0 };
 
 const char validRMC3[] __PROGMEM =
 "$GPRMC,235959.99,A,2149.65726,N,16014.69256,W,8.690,359.99,051015,9.47,E,A*26\r\n";
 
-// Some place in Kenya
+//...........................
+
+static Location_t JujaKenya( -10934552L, 370261835L );
+
+//    -1.0934552, 37.0261835
 //    01 05' 36.458" S 037 01' 42.140" E
+static const LocVector_t NiihauToJuja = { 17046.2, 318.6483 };
+
 const char validGLL[] __PROGMEM =
 "$GNGLL,0105.60764,S,03701.70233,E,225627.00,A,A*6B\r\n";
+
+//--------------------------------
 
 const char mtk1[] __PROGMEM =
 "$GPGGA,064951.000,2307.1256,N,12016.4438,E,1,8,0.95,39.9,M,17.8,M,,*63\r\n";
@@ -214,7 +246,8 @@ static uint8_t failed = 0;
 static void checkLatLon
   ( const char *msg, NMEAGPS::nmea_msg_t msg_type, int32_t lat, int32_t lon,
     uint8_t latDeg, uint8_t latMin, uint8_t latSec, uint16_t latSecFrac, Hemisphere_t ns,
-    uint8_t lonDeg, uint8_t lonMin, uint8_t lonSec, uint16_t lonSecFrac, Hemisphere_t ew )
+    uint8_t lonDeg, uint8_t lonMin, uint8_t lonSec, uint16_t lonSecFrac, Hemisphere_t ew,
+    const LocVector_t & to    )
 {
   const char *ptr = msg;
   for (;;) {
@@ -273,8 +306,8 @@ static void checkLatLon
         ok = false;
       }
             int8_t fracDiff = (int8_t)(gps.fix().latitudeDMS.seconds_frac - latSecFrac);
-      const int8_t eps      = 1;
-      if (abs(fracDiff) > eps) {
+      const int8_t ieps     = 1;
+      if (abs(fracDiff) > ieps) {
         Serial.print( F("FAILED wrong latitude seconds fraction ") );
         Serial.print( gps.fix().latitudeDMS.seconds_frac );
         Serial.print( F(", expected ") );
@@ -314,7 +347,7 @@ static void checkLatLon
         ok = false;
       }
       fracDiff = (int8_t)(gps.fix().longitudeDMS.seconds_frac - lonSecFrac);
-      if (abs(fracDiff) > eps) {
+      if (abs(fracDiff) > ieps) {
         Serial.print( F("FAILED wrong longitude seconds fraction ") );
         Serial.print( gps.fix().longitudeDMS.seconds_frac );
         Serial.print( F(", expected ") );
@@ -325,6 +358,28 @@ static void checkLatLon
       if (gps.fix().longitudeDMS.hemisphere    != ew) {
         Serial.print( F("FAILED wrong longitude EW ") );
         Serial.println( gps.fix().longitudeDMS.EW() );
+        failed++;
+        ok = false;
+      }
+
+      float distance = NiihauHI.DistanceKm( gps.fix().location );
+      float diff = abs( distance - to.range );
+      if ( (diff/to.range) > 0.00001 ) {
+        Serial.print( F("FAILED distance ") );
+        Serial.print( distance, 6 );
+        Serial.print( F(" != ") );
+        Serial.println( to.range, 6 );
+        failed++;
+        ok = false;
+      }
+
+      float courseTo = NiihauHI.BearingToDegrees( gps.fix().location );
+      diff = abs( courseTo - to.bearing );
+      if ( diff > 0.005 ) {
+        Serial.print( F("FAILED bearing ") );
+        Serial.print( courseTo, 6 );
+        Serial.print( F(" != ") );
+        Serial.println( to.bearing, 6 );
         failed++;
         ok = false;
       }
@@ -527,17 +582,23 @@ void setup()
   passed++;
 
   checkLatLon( validRMC , NMEAGPS::NMEA_RMC, -253448688L,  1310324913L,
-               25, 20, 41, 528, SOUTH_H, 131, 1, 56, 969, EAST_H );
+               25, 20, 41, 528, SOUTH_H, 131, 1, 56, 969, EAST_H,
+               NiihauToAyersRock );
   checkLatLon( validGGA , NMEAGPS::NMEA_GGA,  472852332L,    85652651L,
-               47, 17, 6, 840, NORTH_H, 8, 33, 54, 954, EAST_H );
+               47, 17, 6, 840, NORTH_H, 8, 33, 54, 954, EAST_H,
+               NiihauToUblox );
   checkLatLon( validGGA2, NMEAGPS::NMEA_GGA, -131628050L,  -725455083L,
-               13, 9, 46, 98, SOUTH_H, 72, 32, 43, 830, WEST_H );
+               13, 9, 46, 98, SOUTH_H, 72, 32, 43, 830, WEST_H,
+               NiihauToMacchu );
   checkLatLon( validRMC2, NMEAGPS::NMEA_RMC,  367944050L,  -899586550L,
-               36, 47, 39, 858, NORTH_H, 89, 57, 31, 158, WEST_H );
+               36, 47, 39, 858, NORTH_H, 89, 57, 31, 158, WEST_H,
+               NiihauToDexter );
   checkLatLon( validRMC3, NMEAGPS::NMEA_RMC,  218276210L, -1602448760L,
-               21, 49, 39, 436, NORTH_H, 160, 14, 41, 554, WEST_H );
+               21, 49, 39, 436, NORTH_H, 160, 14, 41, 554, WEST_H,
+               NiihauToNiihau );
   checkLatLon( validGLL , NMEAGPS::NMEA_GLL,  -10934607L,   370283722L,
-               1, 5, 36, 458, SOUTH_H, 37, 1, 42, 140, EAST_H );
+               1, 5, 36, 458, SOUTH_H, 37, 1, 42, 140, EAST_H,
+               NiihauToJuja );
 }
 
 //--------------------------
