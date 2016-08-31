@@ -27,6 +27,7 @@ This creates an `Arduino/NMEA` sketch subdirectory containing `NMEA.INO`.
     GPSfix_cfg.h
     GPSport.h
     Location.h
+    Location.cpp
     NMEA.ino
     NMEAGPS.cpp
     NMEAGPS.h
