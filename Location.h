@@ -54,7 +54,7 @@ public:
 
     CONST_CLASS_DATA float EARTH_RADIUS_KM = 6371.0088;
     CONST_CLASS_DATA float RAD_PER_DEG     = PI / 180.0;
-    CONST_CLASS_DATA float DEG_PER_RAD     = 1.0 / RAD_PER_DEG;
+    CONST_CLASS_DATA float DEG_PER_RAD     = 180.0 / PI;
     CONST_CLASS_DATA float MI_PER_KM       = 0.621371;
 
     //-----------------------------------
