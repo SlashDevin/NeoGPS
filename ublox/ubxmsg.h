@@ -24,6 +24,7 @@ namespace ublox {
         UBX_ACK_NAK      = 0x00, // Reply to CFG messages
         UBX_ACK_ACK      = 0x01, // Reply to CFG messages
         UBX_CFG_MSG      = 0x01, // Configure which messages to send
+        UBX_CFG_RST      = 0x04, // Reset command
         UBX_CFG_RATE     = 0x08, // Configure message rate
         UBX_CFG_NMEA     = 0x17, // Configure NMEA protocol
         UBX_CFG_NAV5     = 0x24, // Configure navigation engine settings
@@ -48,7 +49,7 @@ namespace ublox {
 
       struct msg_t : msg_hdr_t {
           uint16_t length;  // should be sizeof(this)-sizeof(msg+hdr_t)
-#define UBX_MSG_LEN(msg) (sizeof(msg) - sizeof(ublox::msg_t))
+          #define UBX_MSG_LEN(msg) (sizeof(msg) - sizeof(ublox::msg_t))
 
           msg_t()
             {
@@ -134,7 +135,7 @@ namespace ublox {
       uint8_t       reserved   : 8;
 
       cfg_reset_t()
-        : msg_t( UBX_CFG, UBX_CFG_RATE, UBX_MSG_LEN(*this) )
+        : msg_t( UBX_CFG, UBX_CFG_RST, UBX_MSG_LEN(*this) )
           { init(); }
 
     }  __attribute__((packed));

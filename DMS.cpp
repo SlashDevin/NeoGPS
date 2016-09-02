@@ -88,4 +88,6 @@ Print & operator << ( Print & outs, const DMS_t & dms )
   outs.print( dms.seconds_frac );
   outs.print( F("\" ") );
 
+  return outs;
+  
 } // operator <<
