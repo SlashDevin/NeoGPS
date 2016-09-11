@@ -23,7 +23,9 @@
 
 class __FlashStringHelper;
 #include <Stream.h>
-#include <avr/interrupt.h>
+#ifdef __AVR__
+  #include <avr/interrupt.h>
+#endif
 
 #include "GPSfix.h"
 #include "NMEAGPS_cfg.h"
@@ -166,7 +168,7 @@ public:
     //.......................................................................
     //  Convert a nmea_msg_t to a PROGMEM string.
     //    Useful for printing the sentence type instead of a number.
-    //    This can return NULL if the message is not a valid number.
+    //    This can return "UNK" if the message is not a valid number.
     
     const __FlashStringHelper *string_for( nmea_msg_t msg ) const;
 
