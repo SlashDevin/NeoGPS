@@ -130,7 +130,7 @@ tracked at any one time.
 #define NMEAGPS_MAX_SATELLITES (20)
 ```
 ####Enable/disable gathering interface statistics:
-Uncommenting this define will allow counting the CRC errors and the number of sentences and characters received.
+Uncommenting this define will allow counting the number of sentences and characters received and the number of checksum (CS) errors.  If the CS errors are increasing, you could be losing characters or the connection could be noisy.
 ```
 #define NMEAGPS_STATS
 ```
