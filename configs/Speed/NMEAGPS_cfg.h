@@ -82,7 +82,7 @@
 //        An interval is defined by NMEA_LAST_SENTENCE_IN_INTERVAL.
 // Uncomment zero or one:
 
-//#define NMEAGPS_EXPLICIT_MERGING
+#define NMEAGPS_EXPLICIT_MERGING
 //#define NMEAGPS_IMPLICIT_MERGING
 
 #ifdef NMEAGPS_IMPLICIT_MERGING
@@ -132,7 +132,7 @@
 // but you have to be more careful about using gps.fix() structure,
 // because it will be modified as characters are received.
 
-#define NMEAGPS_FIX_MAX 0
+#define NMEAGPS_FIX_MAX 1
 
 #if defined(NMEAGPS_EXPLICIT_MERGING) && (NMEAGPS_FIX_MAX == 0)
   #error You must define FIX_MAX >= 1 to allow EXPLICIT merging in NMEAGPS_cfg.h

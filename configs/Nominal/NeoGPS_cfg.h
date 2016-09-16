@@ -17,7 +17,9 @@
  * code which accesses packed members.  YMMV.
  **/
 
-#define NEOGPS_PACKED_DATA
+#ifdef __AVR__
+  #define NEOGPS_PACKED_DATA
+#endif
 
 //------------------------------------------------------------------------
 // Based on the above define, choose which set of packing macros should

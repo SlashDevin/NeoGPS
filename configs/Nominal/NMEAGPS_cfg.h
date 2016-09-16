@@ -26,7 +26,7 @@
 // to determine when the GPS quiet time begins, and thus
 // when you can perform "some" time-consuming operations.
 
-#define LAST_SENTENCE_IN_INTERVAL NMEAGPS::NMEA_GLL
+#define LAST_SENTENCE_IN_INTERVAL NMEAGPS::NMEA_RMC
 
 // If the NMEA_LAST_SENTENCE_IN_INTERVAL is not chosen 
 // correctly, GPS data may be lost because the sketch
