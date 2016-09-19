@@ -275,7 +275,7 @@
 //  message is not enabled by a NMEAGPS_PARSE_xxx define above.
 //  No valid flags will be true for those sentences.
 
-//#define NMEAGPS_RECOGNIZE_ALL
+#define NMEAGPS_RECOGNIZE_ALL
 
 //------------------------------------------------------
 // Sometimes, a little extra space is needed to parse an intermediate form.
