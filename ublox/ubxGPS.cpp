@@ -594,9 +594,9 @@ bool ubloxGPS::parseNavPosLLH( uint8_t chr )
           #endif
           // fall through...
         case 21: case 22: case 23:
-          U1[ chrCount-20 ] = chr;
+          scratchpad.U1[ chrCount-20 ] = chr;
           if (chrCount == 23) {
-            uint16_t err_cm = U4/100;
+            uint16_t err_cm = scratchpad.U4/100;
 
             #ifdef GPS_FIX_LAT_ERR
               m_fix.lat_err_cm = err_cm;
@@ -615,9 +615,9 @@ bool ubloxGPS::parseNavPosLLH( uint8_t chr )
         case 24:
           NMEAGPS_INVALIDATE( alt_err );
         case 25: case 26: case 27:
-          U1[ chrCount-24 ] = chr;
+          scratchpad.U1[ chrCount-24 ] = chr;
           if (chrCount == 27) {
-            m_fix.alt_err_cm = U4/100;
+            m_fix.alt_err_cm = scratchpad.U4/100;
             m_fix.valid.alt_err = true;
           }
           break;

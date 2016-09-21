@@ -360,8 +360,8 @@ void loop()
   //   expects a typical set of messages.  This also saves
   //   putting those config messages in every other example.
 
-  if (Serial.available()) {
-    do { Serial.read(); } while (Serial.available());
+  if (DEBUG_PORT.available()) {
+    do { DEBUG_PORT.read(); } while (DEBUG_PORT.available());
     DEBUG_PORT.println( F("Stopping...") );
 
     configNMEA( 1 );
