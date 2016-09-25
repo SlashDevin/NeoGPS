@@ -51,6 +51,14 @@ using namespace NeoGPS;
   #error You must uncomment GPS_FIX_LOCATION in GPSfix_cfg.h!
 #endif
 
+#if !defined( GPS_FIX_TIME )
+  #error You must uncomment GPS_FIX_TIME in GPSfix_cfg.h!
+#endif
+
+#if !defined( GPS_FIX_DATE )
+  #error You must uncomment GPS_FIX_DATE in GPSfix_cfg.h!
+#endif
+
 //------------------------------------------------------------
 
 static NMEAGPS  gps;  // This parses the GPS characters
@@ -58,13 +66,52 @@ static gps_fix  fix;  // This holds the latest GPS fix
 
 //------------------------------------------------------------
 
-
 static gps_fix    first;            // good GPS data
 static clock_t    firstSecs;        // cached dateTime in seconds since EPOCH
 static Location_t avgLoc;           // gradually-calculated average location
 static uint16_t   count;            // number of samples
 static int32_t    sumDLat, sumDLon; // accumulated deltas
 static bool       doneAccumulating; // accumulation completed
+
+//------------------------------------------------------------
+
+const char nCD  [] PROGMEM = "N";
+const char nneCD[] PROGMEM = "NNE";
+const char neCD [] PROGMEM = "NE";
+const char eneCD[] PROGMEM = "ENE";
+const char eCD  [] PROGMEM = "E";
+const char eseCD[] PROGMEM = "ESE";
+const char seCD [] PROGMEM = "SE";
+const char sseCD[] PROGMEM = "SSE";
+const char sCD  [] PROGMEM = "S";
+const char sswCD[] PROGMEM = "SSW";
+const char swCD [] PROGMEM = "SW";
+const char wswCD[] PROGMEM = "WSW";
+const char wCD  [] PROGMEM = "W";
+const char wnwCD[] PROGMEM = "WNW";
+const char nwCD [] PROGMEM = "NW";
+const char nnwCD[] PROGMEM = "NNW";
+
+const char * const dirStrings[] =
+  { nCD, nneCD, neCD, eneCD, eCD, eseCD, seCD, sseCD, 
+    sCD, sswCD, swCD, wswCD, wCD, wnwCD, nwCD, nnwCD };
+
+const __FlashStringHelper *compassDir( uint16_t bearing ) // degrees CW from N
+{
+  const int16_t directions    = sizeof(dirStrings)/sizeof(dirStrings[0]);
+  const int16_t degreesPerDir = 360 / directions;
+        int8_t  dir           = (bearing + degreesPerDir/2) / degreesPerDir;
+
+  while (dir < 0)
+    dir += directions;
+  while (dir >= directions)
+    dir -= directions;
+
+  return (const __FlashStringHelper *) dirStrings[ dir ];
+
+} // compassDir
+
+//------------------------------------------------------------
 
 static void doSomeWork()
 {
@@ -142,8 +189,11 @@ static void doSomeWork()
       //   floating-point calculations will not have enough significant
       //   digits.
       float avgBearingErr = fix.location.BearingTo( avgLoc );
+      float bearing       = avgBearingErr * Location_t::DEG_PER_RAD;
       DEBUG_PORT.print( ',' );
-      DEBUG_PORT.print( avgBearingErr * Location_t::DEG_PER_RAD, 6 );
+      DEBUG_PORT.print( bearing, 6 );
+      DEBUG_PORT.print( ',' );
+      DEBUG_PORT.print( compassDir( bearing ) );
 
       // Calculate a point that is 10km away from the average location,
       //   at the error bearing
@@ -204,7 +254,7 @@ void setup()
   DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
   DEBUG_PORT.println( F("Comparing current fix with averaged location.\n"
                         "count,avg lat,avg lon,dlat,dlon,distance(cm),"
-                        "bearing(deg),lat/lon 10km away & recalc bearing") );
+                        "bearing deg,compass,lat/lon 10km away & recalc bearing") );
   DEBUG_PORT.flush();
 
   // Start the UART for the GPS device
