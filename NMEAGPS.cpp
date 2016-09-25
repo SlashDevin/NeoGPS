@@ -806,6 +806,7 @@ bool NMEAGPS::parseGSV( char chr )
                       uint8_t snr = satellites[sat_count-1].snr;
                       parseInt( snr, chr );
                       satellites[sat_count-1].snr = snr;
+                      comma_needed( true );
                     } else
                       satellites[sat_count-1].tracked = (chrCount != 0);
                     break;

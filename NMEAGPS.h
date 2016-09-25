@@ -21,8 +21,7 @@
 
 #include "CosaCompat.h"
 
-class __FlashStringHelper;
-#include <Stream.h>
+#include <Arduino.h>
 #ifdef __AVR__
   #include <avr/interrupt.h>
 #endif
