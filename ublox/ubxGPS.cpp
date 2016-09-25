@@ -429,10 +429,11 @@ bool ubloxGPS::parseField( char c )
   switch (rx().msg_class) {
 
     case UBX_NAV: //=================================================
-//if (chrCount == 0) trace << F( " NAV ") << (uint8_t) rx().msg_id;
+//if (chrCount == 0) Serial << F( " NAV ") << (uint8_t) rx().msg_id;
       switch (rx().msg_id) {
         case UBX_NAV_STATUS : return parseNavStatus ( chr );
         case UBX_NAV_POSLLH : return parseNavPosLLH ( chr );
+        case UBX_NAV_DOP    : return parseNavDOP    ( chr );
         case UBX_NAV_VELNED : return parseNavVelNED ( chr );
         case UBX_NAV_TIMEGPS: return parseNavTimeGPS( chr );
         case UBX_NAV_TIMEUTC: return parseNavTimeUTC( chr );
@@ -515,6 +516,62 @@ bool ubloxGPS::parseNavStatus( uint8_t chr )
   return ok;
 
 } // parseNavStatus
+
+//---------------------------------------------------------
+
+bool ubloxGPS::parseNavDOP   ( uint8_t chr )
+{
+  bool ok = true;
+
+//if (chrCount == 0) Serial.print( F( "dop ") );
+  #ifdef UBLOX_PARSE_DOP
+    switch (chrCount) {
+      case 0: case 1: case 2: case 3:
+        ok = parseTOW( chr );
+        break;
+
+      #ifdef GPS_FIX_PDOP
+        case 6:
+          NMEAGPS_INVALIDATE( pdop );
+          m_fix.pdop = chr;
+          break;
+        case 7:
+          ((uint8_t *)&m_fix.pdop) [1] = chr;
+          m_fix.pdop *= 10;
+          m_fix.valid.pdop = true;
+          break;
+      #endif
+
+      #ifdef GPS_FIX_VDOP
+        case 10:
+          NMEAGPS_INVALIDATE( vdop );
+          m_fix.vdop = chr;
+          break;
+        case 11:
+          ((uint8_t *)&m_fix.vdop) [1] = chr;
+          m_fix.vdop *= 10;
+          m_fix.valid.vdop = true;
+          break;
+      #endif
+
+      #ifdef GPS_FIX_HDOP
+        case 12:
+          NMEAGPS_INVALIDATE( hdop );
+          m_fix.hdop = chr;
+          break;
+        case 13:
+          ((uint8_t *)&m_fix.hdop) [1] = chr;
+          m_fix.hdop *= 10;
+          m_fix.valid.hdop = true;
+          break;
+      #endif
+
+    }
+  #endif
+
+  return ok;
+
+} // parseNavDOP
 
 //---------------------------------------------------------
 

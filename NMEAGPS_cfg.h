@@ -265,7 +265,7 @@
 // of a sentence is received and the last field parser 
 // indicated that it still needs one.
 
-//#define NMEAGPS_COMMA_NEEDED
+#define NMEAGPS_COMMA_NEEDED
 
 //------------------------------------------------------
 //  Some applications may want to recognize a sentence type

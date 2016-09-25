@@ -31,6 +31,7 @@ namespace ublox {
         UBX_MON_VER      = 0x04, // Monitor Receiver/Software version
         UBX_NAV_POSLLH   = 0x02, // Current Position
         UBX_NAV_STATUS   = 0x03, // Receiver Navigation Status
+        UBX_NAV_DOP      = 0x04, // Dilutions of Precision
         UBX_NAV_ODO      = 0x09, // Odometer Solution (NEO-M8 only)
         UBX_NAV_RESETODO = 0x10, // Reset Odometer (NEO-M8 only)
         UBX_NAV_VELNED   = 0x12, // Current Velocity
@@ -291,6 +292,21 @@ namespace ublox {
         uint32_t uptime; // ms since startup/reset
 
         nav_status_t() : msg_t( UBX_NAV, UBX_NAV_STATUS, UBX_MSG_LEN(*this) ) {};
+    }  __attribute__((packed));
+
+    // Dilutions of Precision
+    struct nav_dop_t : msg_t {
+        uint32_t time_of_week; // mS
+
+        uint16_t gdop; // Geometric
+        uint16_t pdop; // Position
+        uint16_t tdop; // Time
+        uint16_t vdop; // Vertical
+        uint16_t hdop; // Horizontal
+        uint16_t ndop; // Northing
+        uint16_t edop; // Easting
+
+        nav_dop_t() : msg_t( UBX_NAV, UBX_NAV_DOP, UBX_MSG_LEN(*this) ) {};
     }  __attribute__((packed));
 
     // Odometer Solution (NEO-M8 only)

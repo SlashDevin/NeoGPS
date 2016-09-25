@@ -711,6 +711,9 @@ bool NMEAGPS::parseGSA( char chr )
       case 15: return parsePDOP( chr );
       case 16: return parseHDOP( chr );
       case 17: return parseVDOP( chr );
+         #if defined(GPS_FIX_VDOP) & !defined(NMEAGPS_COMMA_NEEDED)
+           #error When GSA and VDOP are enabled, you must define NMEAGPS_COMMA_NEEDED in NMEAGPS_cfg.h!
+         #endif
 
       #ifdef NMEAGPS_PARSE_SATELLITES
 
