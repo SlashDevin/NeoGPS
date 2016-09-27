@@ -9,12 +9,12 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * This file is part of the NeoGPS project.  Based on the execellent
  * framework, Cosa, by Mikael Patel.
  */
@@ -38,7 +38,7 @@ namespace NeoGPS {
 
 /**
  * Number of seconds elapsed since January 1 of the Epoch Year,
- * 00:00:00 +0000 (UTC). 
+ * 00:00:00 +0000 (UTC).
  */
 typedef uint32_t clock_t;
 
@@ -76,13 +76,13 @@ struct time_t {
   static const uint16_t Y2K_EPOCH_YEAR      = 2000;
   static const uint8_t  Y2K_EPOCH_WEEKDAY   = SATURDAY;
 
-  uint8_t seconds;		//!< 00-59 Seconds.
-  uint8_t minutes;		//!< 00-59 Minutes.
-  uint8_t hours;		  //!< 00-23 Hours.
-  uint8_t day;			  //!< 01-07 Day.
-  uint8_t date;			  //!< 01-31 Date.
-  uint8_t month;		  //!< 01-12 Month.
-  uint8_t year;			  //!< 00-99 Year.
+  uint8_t seconds;    //!< 00-59
+  uint8_t minutes;    //!< 00-59
+  uint8_t hours;      //!< 00-23
+  uint8_t day;        //!< 01-07 Day of Week
+  uint8_t date;       //!< 01-31 Day of Month
+  uint8_t month;      //!< 01-12
+  uint8_t year;       //!< 00-99
 
   /**
    * Constructor.
@@ -99,7 +99,7 @@ struct time_t {
    * Initialize to January 1 of the Epoch Year, 00:00:00
    */
   void init();
-  
+
   /**
    * Convert to seconds.
    * @return seconds from epoch.
@@ -203,12 +203,12 @@ struct time_t {
   }
 
   /**
-   * Check that all members are set to a coherent date/time.
+   * Check that all members, EXCEPT FOR day, are set to a coherent date/time.
    * @return true if valid date/time.
    */
   bool is_valid() const
   {
-    return 
+    return
       ((year <= 99) &&
        (1 <= month) && (month <= 12) &&
        ((1 <= date) &&
@@ -240,9 +240,9 @@ struct time_t {
    * Get the epoch year.
    * @return year.
    */
-  static uint16_t epoch_year() 
-  { 
-    return (s_epoch_year); 
+  static uint16_t epoch_year()
+  {
+    return (s_epoch_year);
   }
 
   static uint8_t epoch_weekday()             { return s_epoch_weekday; };
@@ -264,7 +264,7 @@ struct time_t {
     /**
      * Use the current year for the epoch year. This will result in the
      * best performance of conversions, but dates/times before January 1
-     * of the epoch year cannot be represented. 
+     * of the epoch year cannot be represented.
      */
     static void use_fastest_epoch();
   #endif

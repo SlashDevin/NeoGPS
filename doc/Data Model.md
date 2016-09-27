@@ -11,7 +11,7 @@ gps_fix fix;
 ...this `fix` variable (or any other variable of type `gps_fix`) contains the following members:
   * `fix.status`, a status code
     * `enum` values STATUS_NONE, STATUS_EST, STATUS_TIME_ONLY, STATUS_STD or STATUS_DGPS
-  * a [location](Location.md) (i.e., latitude and longitude), accessed with
+  * a [location](Location.md) structure (i.e., latitude and longitude), accessed with
     * `fix.latitudeL()` and `fix.longitudeL()` for the higher-precision integer degrees, scaled by 10,000,000 (10 significant digits)
     * `fix.latitude()` and `fix.longitude()` for the lower-precision floating-point degrees (~7 significant digits)
     * NOTE: these lat/lon values are
@@ -53,8 +53,16 @@ gps_fix fix;
     * `fix.geoidHt.whole`, in integer meters
     * `fix.geoidHt.frac`, in integer centimeters to be added to the whole part
   * `fix.satellites`, a satellite count
-  * `fix.dateTime`, a date/time structure (see [Time.h](/Time.h)), which contains
-    * year, month, day-of-month, hours, minutes, and seconds, accessed with `fix.dateTime.year`, `fix.dateTime.month`, `fix.dateTime.date`, `fix.dateTime.hours`, etc.  Time operations allow converting to and from total seconds offset from a *de facto* starting time (e.g., an epoch date/time "origin").
+  * a date/time structure (see [Time.h](/Time.h)), accessed with
+    * `fix.dateTime.year`,
+    * `fix.dateTime.month`,
+    * `fix.dateTime.date`, the day-of-month,
+    * `fix.dateTime.hours`,
+    * `fix.dateTime.minutes`, 
+    * `fix.dateTime.seconds`, and
+    * `fix.dateTime.day`, the day-of-the-week. This member is expensive to calculate, so it is *uninitialized* until you call the `set_day()` method. If you need the day-of-the-week, be sure to call `set_day` whenever the `year`, `month` or `date` members are changed.  In general, call `fix.dateTime.set_day()` whenever `fix` is assigned (e.g., `fix = gps.read()`).<br><br>
+    `Time` operations allow converting to and from total seconds offset from a *de facto* starting time (e.g., an epoch date/time "origin").  There are constants in Time.h for NTP, POSIX and Y2K epochs.  Simply change the `static` members `s_epoch_year` and `s_epoch_weekday` in Time.h, and all date/time operations will be based on that epoch.  This does not affect GPS times, but it will allow you to easily convert a GPS time to/from an NTP or POSIX time value (seconds).<br><br>
+    The [NMEAtimezone.ino](/examples/NMEAtimezone/NMEAtimezone.ino) example program shows how to convert the GPS time (UTC) into a local time.  Basically, a `Time` structure is converted to seconds (from the epoch start), then the time zone offset *in seconds* is added, and then the offset seconds are converted back to a time structure, with corrected day, month, year, hours and minutes members.
   * `fix.dateTime_cs`, in integer hundredths of a second
   * a collection of boolean `valid` flags for each of the above members, accessed with
     * `fix.valid.status`
