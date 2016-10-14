@@ -62,6 +62,7 @@ bool ubloxNMEA::parsePUBX_00( char chr )
       case 11: return parseSpeed( chr ); // kph!
       case 12: return parseHeading( chr );
       case 15: return parseHDOP( chr );
+      case 16: return parseVDOP( chr );
       case 18: return parseSatellites( chr );
     #endif
   }
