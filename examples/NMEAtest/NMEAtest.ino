@@ -77,6 +77,10 @@ using namespace NeoGPS;
   #error GPS_FIX_HDOP must be defined in GPSfix_cfg.h!
 #endif
 
+#ifndef GPS_FIX_GEOID_HEIGHT
+  #error GPS_FIX_GEOID_HEIGHT must be defined in GPSfix_cfg.h!
+#endif
+
 static NMEAGPS gps;
 
 //--------------------------
@@ -170,6 +174,8 @@ const char mtk6[] __PROGMEM =
 "$GPGSV,3,2,09,18,26,314,40,09,57,170,44,06,20,229,37,10,26,084,37*77\r\n";
 const char mtk7[] __PROGMEM =
 "$GPGSV,3,3,09,07,,,26*73\r\n";
+const char mtk7a[] __PROGMEM =
+"$GLGSV,1,1,4,29,36,029,42,21,46,314,43,26,44,020,43,15,21,321,39*5E\r\n";
 const char mtk8[] __PROGMEM =
 "$GNGST,082356.00,1.8,,,,1.7,1.3,2.2*60\r\n";
 const char mtk9[] __PROGMEM =
@@ -587,9 +593,19 @@ void setup()
   checkLatLon( validGGA , NMEAGPS::NMEA_GGA,  472852332L,    85652651L,
                47, 17, 6, 840, NORTH_H, 8, 33, 54, 954, EAST_H,
                NiihauToUblox );
+  if (gps.fix().geoidHeight_cm() != 4800) {
+    Serial.print( F("FAILED wrong geoid height for 48.00") );
+    Serial.println( gps.fix().geoidHeight_cm() );
+    failed++;
+  }
   checkLatLon( validGGA2, NMEAGPS::NMEA_GGA, -131628050L,  -725455083L,
                13, 9, 46, 98, SOUTH_H, 72, 32, 43, 830, WEST_H,
                NiihauToMacchu );
+  if (gps.fix().geoidHeight_cm() != -2560) {
+    Serial.print( F("FAILED wrong geoid height for -25.60") );
+    Serial.println( gps.fix().geoidHeight_cm() );
+    failed++;
+  }
   checkLatLon( validRMC2, NMEAGPS::NMEA_RMC,  367944050L,  -899586550L,
                36, 47, 39, 858, NORTH_H, 89, 57, 31, 158, WEST_H,
                NiihauToDexter );
@@ -623,6 +639,7 @@ void loop()
 #endif
 
     traceSample( validGGA );
+    traceSample( validGGA2 );
     traceSample( validRMC );
     traceSample( validRMC2 );
     traceSample( validRMC3 );
@@ -634,6 +651,7 @@ void loop()
     traceSample( mtk5 );
     traceSample( mtk6, false );
     traceSample( mtk7, false );
+    traceSample( mtk7a, false );
     traceSample( mtk8 );
     traceSample( mtk9 );
     traceSample( mtk10 );

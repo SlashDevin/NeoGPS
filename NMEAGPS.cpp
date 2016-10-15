@@ -108,6 +108,15 @@ void NMEAGPS::sentenceBegin()
     talker_id[0] =
     talker_id[1] = 0;
   #endif
+
+  // If the previous interval had been completed,
+  //   this is the start of a new interval.
+  //   Initialize all the NMEAGPS members that are accumulated in an interval.
+  if (intervalComplete()) {
+    #ifdef NMEAGPS_PARSE_SATELLITES
+      sat_count = 0;
+    #endif
+  }
 }
 
 
@@ -717,30 +726,33 @@ bool NMEAGPS::parseGSA( char chr )
 
       #ifdef NMEAGPS_PARSE_SATELLITES
 
-        // It's not clear how this sentence relates to GSV.  GSA
-        // only allows 12 satellites, while GSV allows any number.  
-        // In the absence of guidance, GSV shall have priority 
-        // over GSA with repect to populating the satellites
-        // array.  Ignore the satellite fields if GSV is enabled.
-
-        #ifndef NMEAGPS_PARSE_GSV
+        // It's not clear how this sentence relates to GSV and GGA.  
+        // GSA only allows 12 satellites, while GSV allows any number.
+        // GGA just says how many are used to calculate a fix.
 
           case 1: break; // allows "default:" case for SV fields
+
+        // GGA shall have priority over GSA with respect to populating the
+        // satellites field.  Ignore the satellite field if GGA is enabled.
+        #ifndef NMEAGPS_PARSE_GGA
+          case 2: return parseSatellites( chr );
+        #endif
+
+        // GSV shall have priority over GSA with respect to populating the
+        // satellites array.  Ignore the satellite fields if GSV is enabled.
+        #ifndef NMEAGPS_PARSE_GSV
           case 3:
             if (chrCount == 0) {
-              NMEAGPS_INVALIDATE( satellites );
-              m_fix.satellites = 0;
               sat_count = 0;
+              comma_needed( true );
             }
           default:
             if (chr == ',') {
               if (chrCount > 0) {
-                m_fix.valid.satellites = true;
-                m_fix.satellites++;
-                sat_count = m_fix.satellites;
+                sat_count++;
               }
             } else
-              parseInt( satellites[m_fix.satellites].id, chr );
+              parseInt( satellites[ sat_count ].id, chr );
             break;
         #endif
       #endif
@@ -772,58 +784,39 @@ bool NMEAGPS::parseGST( char chr )
 
 bool NMEAGPS::parseGSV( char chr )
 {
-  #ifdef NMEAGPS_PARSE_GSV
+  #if defined(NMEAGPS_PARSE_GSV) & defined(NMEAGPS_PARSE_SATELLITES)
+    if (sat_count < NMEAGPS_MAX_SATELLITES) {
+      if (fieldIndex >= 4) {
 
-    switch (fieldIndex) {
-        case 3: return parseSatellites( chr );
-
-        #ifdef NMEAGPS_PARSE_SATELLITES
-          case 1:
-            // allows "default:" case for SV fields
-            break;
-          case 2: // GSV message number (e.g., 2nd of n)
-            if (chr != ',')
-              // sat_count is temporarily used to hold the MsgNo...
-              parseInt( sat_count, chr );
-            else
-              // ...then it's converted to the real sat_count
-              // based on up to 4 satellites per msg.
-              sat_count = (sat_count - 1) * 4;
-            break;
-
-          default:
-            if (sat_count < NMEAGPS_MAX_SATELLITES) {
-
-              switch (fieldIndex % 4) {
-                #ifdef NMEAGPS_PARSE_SATELLITE_INFO
-                  case 0: parseInt( satellites[sat_count].id       , chr ); break;
-                  case 1: parseInt( satellites[sat_count].elevation, chr ); break;
-                  case 2:
-                    if (chr != ',')
-                      parseInt( satellites[sat_count].azimuth, chr );
-                    else
-                      sat_count++; // field 3 can be omitted, increment now
-                    break;
-                  case 3:
-                    if (chr != ',') {
-                      uint8_t snr = satellites[sat_count-1].snr;
-                      parseInt( snr, chr );
-                      satellites[sat_count-1].snr = snr;
-                      comma_needed( true );
-                    } else
-                      satellites[sat_count-1].tracked = (chrCount != 0);
-                    break;
-                #else
-                  case 0:
-                    if (chr != ',')
-                      parseInt( satellites[sat_count].id, chr );
-                    else
-                      sat_count++;
-                    break;
-                #endif
-              }
-            }
-        #endif
+        switch (fieldIndex % 4) {
+          #ifdef NMEAGPS_PARSE_SATELLITE_INFO
+            case 0: parseInt( satellites[sat_count].id       , chr ); break;
+            case 1: parseInt( satellites[sat_count].elevation, chr ); break;
+            case 2:
+              if (chr != ',')
+                parseInt( satellites[sat_count].azimuth, chr );
+              else
+                sat_count++; // field 3 can be omitted, increment now
+              break;
+            case 3:
+              if (chr != ',') {
+                uint8_t snr = satellites[sat_count-1].snr;
+                parseInt( snr, chr );
+                satellites[sat_count-1].snr = snr;
+                comma_needed( true );
+              } else
+                satellites[sat_count-1].tracked = (chrCount != 0);
+              break;
+          #else
+            case 0:
+              if (chr != ',')
+                parseInt( satellites[sat_count].id, chr );
+              else
+                sat_count++;
+              break;
+          #endif
+        }
+      }
     }
   #endif
 

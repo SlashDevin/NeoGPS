@@ -131,7 +131,7 @@ Next, figure out what messages can fill out those members, because those message
     <td> </td>
     <td>*</td>
     <td> </td>
-    <td>*</td>
+    <td> </td>
     <td> </td>
     <td> </td>
     <td> </td>
