@@ -50,7 +50,8 @@
 
 #if !defined(UBLOX_PARSE_STATUS) & !defined(UBLOX_PARSE_TIMEGPS) & \
     !defined(UBLOX_PARSE_TIMEUTC) & !defined(UBLOX_PARSE_POSLLH) & \
-    !defined(UBLOX_PARSE_VELNED) & !defined(UBLOX_PARSE_SVINFO)
+    !defined(UBLOX_PARSE_VELNED) & !defined(UBLOX_PARSE_SVINFO)  & \
+    !defined(UBLOX_PARSE_DOP)
 
   #error No UBX binary messages enabled: no fix data available for fusing.
 
@@ -121,7 +122,7 @@ public:
             defined(UBLOX_PARSE_TIMEGPS)
 
           if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEGPS ))
-            DEBUG_PORT.print( F("enable TIMEGPS failed!\n") );
+            DEBUG_PORT.println( F("enable TIMEGPS failed!") );
 
           state = GETTING_LEAP_SECONDS;
         #else
@@ -142,11 +143,11 @@ public:
           DEBUG_PORT << F("Acquired leap seconds: ") << GPSTime::leap_seconds << '\n';
 
           if (!disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEGPS ))
-            DEBUG_PORT.print( F("disable TIMEGPS failed!\n") );
+            DEBUG_PORT.println( F("disable TIMEGPS failed!") );
 
           #if defined(UBLOX_PARSE_TIMEUTC)
             if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC ))
-              DEBUG_PORT.print( F("enable TIMEUTC failed!\n") );
+              DEBUG_PORT.println( F("enable TIMEUTC failed!") );
             state = GETTING_UTC;
           #else
             start_running();
@@ -190,7 +191,7 @@ public:
            defined(GPS_FIX_ALTITUDE)) & \
           defined(UBLOX_PARSE_POSLLH)
         if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_POSLLH ))
-          DEBUG_PORT.print( F("enable POSLLH failed!\n") );
+          DEBUG_PORT.println( F("enable POSLLH failed!") );
 
         enabled_msg_with_time = true;
       #endif
@@ -198,7 +199,19 @@ public:
       #if (defined(GPS_FIX_SPEED) | defined(GPS_FIX_HEADING)) & \
           defined(UBLOX_PARSE_VELNED)
         if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_VELNED ))
-          DEBUG_PORT.print( F("enable VELNED failed!\n") );
+          DEBUG_PORT.println( F("enable VELNED failed!") );
+
+        enabled_msg_with_time = true;
+      #endif
+
+      #if (defined(GPS_FIX_HDOP) | \
+           defined(GPS_FIX_VDOP) | \
+           defined(GPS_FIX_PDOP)) & \
+          defined(UBLOX_PARSE_DOP)
+        if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_DOP ))
+          DEBUG_PORT.println( F("enable DOP failed!") );
+        else
+          DEBUG_PORT.println( F("enabled DOP.") );
 
         enabled_msg_with_time = true;
       #endif
@@ -206,7 +219,7 @@ public:
       #if (defined(GPS_FIX_SATELLITES) | defined(NMEAGPS_PARSE_SATELLITES)) & \
           defined(UBLOX_PARSE_SVINFO)
         if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_SVINFO ))
-          DEBUG_PORT << PSTR("enable SVINFO failed!\n");
+          DEBUG_PORT.println( F("enable SVINFO failed!") );
         
         enabled_msg_with_time = true;
       #endif
@@ -216,13 +229,13 @@ public:
         #if defined(GPS_FIX_TIME) & defined(GPS_FIX_DATE)
           if (enabled_msg_with_time &&
               !disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC ))
-            DEBUG_PORT.print( F("disable TIMEUTC failed!\n") );
+            DEBUG_PORT.println( F("disable TIMEUTC failed!") );
 
         #elif defined(GPS_FIX_TIME) | defined(GPS_FIX_DATE)
           // If both aren't defined, we can't convert TOW to UTC,
           // so ask for the separate UTC message.
           if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC ))
-            DEBUG_PORT.print( F("enable TIMEUTC failed!\n") );
+            DEBUG_PORT.println( F("enable TIMEUTC failed!") );
         #endif
 
       #endif
@@ -275,6 +288,7 @@ static void disableUBX()
   gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_TIMEUTC );
   gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_VELNED );
   gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_POSLLH );
+  gps.disable_msg( ublox::UBX_NAV, ublox::UBX_NAV_DOP );
 }
 
 //--------------------------
