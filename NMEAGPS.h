@@ -403,7 +403,8 @@ protected:
     //  more complex, specific conditions.
 
     NMEAGPS_VIRTUAL bool intervalCompleted() const
-      { return (nmeaMessage == LAST_SENTENCE_IN_INTERVAL); } // see NMEAGPS_cfg.h
+      { return (nmeaMessage == LAST_SENTENCE_IN_INTERVAL); }
+                               // see NMEAGPS_cfg.h
 
     //.......................................................................
     //  When a fix has been fully assembled from a batch of sentences, as

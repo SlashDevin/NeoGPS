@@ -1619,11 +1619,12 @@ void NMEAGPS::send( Stream *device, const char *msg )
     if (*msg == '$')
       msg++;
     uint8_t sent_trailer = 0;
-    uint8_t crc = 0;
+    uint8_t crc          = 0;
     while (*msg) {
-      crc ^= *msg;
-      if (*msg == '*' || (sent_trailer > 0))
+      if ((*msg == '*') || (sent_trailer > 0))
         sent_trailer++;
+      else
+        crc ^= *msg;
       device->print( *msg++ );
     }
 
@@ -1639,16 +1640,20 @@ void NMEAGPS::send_P( Stream *device, const __FlashStringHelper *msg )
 {
   if (msg) {
     const char *ptr = (const char *)msg;
-    char chr = pgm_read_byte(ptr++);
-    if (chr && (chr != '$'))
-      device->print('$');
+          char  chr = pgm_read_byte(ptr++);
+
+    device->print('$');
+    if (chr == '$')
+      chr = pgm_read_byte(ptr++);
     uint8_t sent_trailer = 0;
-    uint8_t crc = 0;
+    uint8_t crc          = 0;
     while (chr) {
-      crc ^= chr;
       if ((chr == '*') || (sent_trailer > 0))
         sent_trailer++;
+      else
+        crc ^= chr;
       device->print( chr );
+
       chr = pgm_read_byte(ptr++);
     }
 
