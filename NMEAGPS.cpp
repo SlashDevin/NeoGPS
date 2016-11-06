@@ -27,7 +27,7 @@
 
   // The fractional part of the NMEA minutes can have 5 significant figures.
   //   This requires more temporary storage than is available in the DMS_t.
-  #error You must enable NMEAGPS_PARSING_SCRATCHPAD in NMEAGPS_cfg.h
+  #error You must enable NMEAGPS_PARSING_SCRATCHPAD in NMEAGPS_cfg.h when GPS_FIX_LOCATION_DMS is enabled in GPSfix_cfg.h!
 
 #endif
 
