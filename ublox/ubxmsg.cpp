@@ -8,6 +8,7 @@ bool ublox::configNMEA( ubloxGPS &gps, NMEAGPS::nmea_msg_t msgType, uint8_t rate
         UBX_GPGGA,
         UBX_GPGLL,
         UBX_GPGSA,
+        UBX_GPGST,
         UBX_GPGSV,
         UBX_GPRMC,
         UBX_GPVTG,

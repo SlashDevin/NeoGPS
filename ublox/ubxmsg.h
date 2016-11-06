@@ -80,6 +80,7 @@ namespace ublox {
         UBX_GPGSV = 0x03,
         UBX_GPRMC = 0x04,
         UBX_GPVTG = 0x05,
+        UBX_GPGST = 0x07,
         UBX_GPZDA = 0x08
     } __attribute__((packed));
 
