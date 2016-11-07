@@ -5,14 +5,37 @@ using namespace ublox;
 bool ublox::configNMEA( ubloxGPS &gps, NMEAGPS::nmea_msg_t msgType, uint8_t rate )
 {
   static const ubx_nmea_msg_t ubx[] __PROGMEM = {
+      #if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
         UBX_GPGGA,
+      #endif
+        
+      #if defined(NMEAGPS_PARSE_GLL) | defined(NMEAGPS_RECOGNIZE_ALL)
         UBX_GPGLL,
+      #endif
+        
+      #if defined(NMEAGPS_PARSE_GSA) | defined(NMEAGPS_RECOGNIZE_ALL)
         UBX_GPGSA,
+      #endif
+        
+      #if defined(NMEAGPS_PARSE_GST) | defined(NMEAGPS_RECOGNIZE_ALL)
         UBX_GPGST,
+      #endif
+        
+      #if defined(NMEAGPS_PARSE_GSV) | defined(NMEAGPS_RECOGNIZE_ALL)
         UBX_GPGSV,
+      #endif
+        
+      #if defined(NMEAGPS_PARSE_RMC) | defined(NMEAGPS_RECOGNIZE_ALL)
         UBX_GPRMC,
+      #endif
+        
+      #if defined(NMEAGPS_PARSE_VTG) | defined(NMEAGPS_RECOGNIZE_ALL)
         UBX_GPVTG,
+      #endif
+        
+      #if defined(NMEAGPS_PARSE_ZDA) | defined(NMEAGPS_RECOGNIZE_ALL)
         UBX_GPZDA,
+      #endif
     };
 
   uint8_t msg_index = (uint8_t) msgType - (uint8_t) NMEAGPS::NMEA_FIRST_MSG;
