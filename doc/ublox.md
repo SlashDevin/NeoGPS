@@ -14,9 +14,7 @@ To use either ublox-specific NMEA messages ($PUBX) or the UBX binary protocol, y
 * UBX,00 - Lat/Long Position Data
 * UBX,04 - Time of Day and Clock Information
 
-If you want to handle $PUBX messages from a ublox Neo GPS device, you must copy the generic files (see [Installing](Installing.md)) *and* also copy the ublox/ubxNMEA.* files into your application directory.  If you are trying the example/PUBX/PUBX.ino application, you should also copy the configs/PUBX files.
-
-You may also want to change the configured PUBX messages in `ubxNMEA.h`.  It is currently configured to work with the example application, `PUBX.ino`.
+You may want to change the configured PUBX messages in `ubxNMEA.h`.  It is currently configured to work with the example application, `PUBX.ino`.
 
 The derived class `ubloxNMEA` has the following configuration items near the top of ubxNMEA.h:
 ```
@@ -37,9 +35,7 @@ The derived class `ubloxNMEA` has the following configuration items near the top
 * NAV_VELNED - Velocity Solution in NED (North/East/Down)
 * NAV_SVINFO - Space Vehicle Information
 
-If you want to handle the UBX binary protocol from a ublox Neo GPS device, you must copy the above files *and* also copy the `ublox/ubxGPS.*`, `ublox/ubx_cfg.h`, `ublox/ubxmsg.*` and `GPSTime.*` into your application directory.  This is required if you are trying the example/ublox/ublox.ino application.
-
-You may also want to change the configured UBX messages in `ubx_cfg.h`.  It is currently configured to work with the example application `ublox.ino`.
+You may want to change the configured UBX messages in `ubx_cfg.h`.  It is currently configured to work with the example application `ublox.ino`.
 
 The configuration file `ubx_cfg.h` has the following configuration items near the top of the file:
 ```
@@ -47,6 +43,7 @@ The configuration file `ubx_cfg.h` has the following configuration items near th
 #define UBLOX_PARSE_TIMEGPS
 #define UBLOX_PARSE_TIMEUTC
 #define UBLOX_PARSE_POSLLH
+//#define UBLOX_PARSE_DOP
 #define UBLOX_PARSE_VELNED
 #define UBLOX_PARSE_SVINFO
 ```

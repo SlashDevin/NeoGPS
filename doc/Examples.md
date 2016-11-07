@@ -22,7 +22,7 @@ These example programs demonstrate how to use the classes in the different progr
 * [PUBX](/examples/PUBX/PUBX.ino) - sync, coherent fix, standard NMEA + ublox proprietary NMEA
 * [ublox](/examples/ublox/ublox.ino) - sync or **async**, coherent fix, ublox binary protocol UBX
 
-Preprocessor symbol `USE_FLOAT` can be used in [Streamers.cpp](Streamers.cpp) to select integer or floating-point output.
+Preprocessor symbol `USE_FLOAT` can be used in [Streamers.cpp](/src/Streamers.cpp) to select integer or floating-point output.
 
 See also important information in `NMEAorder.ino` below, and the [Installing](Installing.md), [Configurations](Configurations.md) and [Troubleshooting](Troubleshooting.md) sections.
 

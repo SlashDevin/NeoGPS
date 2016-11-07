@@ -10,7 +10,7 @@ conditional compilation is ugly.
 
 ####Accumulating parts means knowing which parts are valid.
 
-Before accessing a part, you must check its `valid` flag.  Fortunately, this adds only one bit per member.  See [Streamers.cpp](/Streamers.cpp#L100) for an example of accessing every data member.  That file also shows how to accommodate different builds: all references to 'gps_fix' members are wrapped with conditional compilation `#ifdef`/`#endif` statements.  If you do not plan to support multiple configurations, you do not need to use `#ifdef`/`#endif` statements.
+Before accessing a part, you must check its `valid` flag.  Fortunately, this adds only one bit per member.  See [Streamers.cpp](/src/Streamers.cpp#L100) for an example of accessing every data member.  That file also shows how to accommodate different builds: all references to 'gps_fix' members are wrapped with conditional compilation `#ifdef`/`#endif` statements.  If you do not plan to support multiple configurations, you do not need to use `#ifdef`/`#endif` statements.
 
 ####Parsing without buffers, or *in place*, means that you must be more careful about when you access data items.
 

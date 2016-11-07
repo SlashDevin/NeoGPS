@@ -1,6 +1,6 @@
 Location
 ========
-The `Location_t` class is a 2D point, containing a latitude and longitude in integer degrees * 10<sup>7</sup> (source [here](/Location.h)).
+The `Location_t` class is a 2D point, containing a latitude and longitude in integer degrees * 10<sup>7</sup> (source [here](/src/Location.h)).
 
 This class also provides geographic distance, bearing and offset functions.  Furthermore, they all take advantage of the increased precision of the integer coordinates.  Other libraries use floating-point coordinates, which have only 6 or 7 significant digits.  By using integer math, calculations maintain their original accuracy as long as possible.  For example, small distances can be calculated to millimeter accuracy.
 

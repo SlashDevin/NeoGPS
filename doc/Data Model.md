@@ -53,7 +53,7 @@ gps_fix fix;
     * `fix.geoidHt.whole`, in integer meters
     * `fix.geoidHt.frac`, in integer centimeters to be added to the whole part
   * `fix.satellites`, a satellite count
-  * a date/time structure (see [Time.h](/Time.h)), accessed with
+  * a date/time structure (see [Time.h](/src/Time.h)), accessed with
     * `fix.dateTime.year`,
     * `fix.dateTime.month`,
     * `fix.dateTime.date`, the day-of-month,
@@ -85,7 +85,7 @@ Because the GPS device may *not* have a fix, each member of a `gps_fix` can be m
     Serial.println( my_fix.longitude() );
   }
 ```
-You should also know that, even though you have enabled a particular member (see [GPSfix_cfg.h](/GPSfix_cfg.h)), it **may not have a value** until the related NMEA sentence sets it.  And if you have not enabled that sentence for parsing in `NMEAGPS_cfg.h`, it will **never** be valid.
+You should also know that, even though you have enabled a particular member (see [GPSfix_cfg.h](/src/GPSfix_cfg.h)), it **may not have a value** until the related NMEA sentence sets it.  And if you have not enabled that sentence for parsing in `NMEAGPS_cfg.h`, it will **never** be valid.
 
 ##Other GPS-related information
 There is additional information that is not related to a fix.  Instead, it contains information about parsing or a [**G**lobal **N**avigation **S**atellite **S**ystem](https://en.wikipedia.org/wiki/Satellite_navigation).   GNSS's currently include GPS (US), GLONASS (Russia), Beidou (China) and Galileo (EU). The main `NMEAGPS gps` object you declare in your sketch contains:
@@ -220,10 +220,10 @@ multiple members:
 ```
 Bonus: The compiler will optimize this into a single bit mask operation.
 
-The example printing utility file, [Streamers.cpp](/Streamers.cpp#L100) shows how to access each fix member and print its value.
+The example printing utility file, [Streamers.cpp](/src/Streamers.cpp#L100) shows how to access each fix member and print its value.
 
 ##Options
-Except for `status`, each of these `gps_fix` members is conditionally compiled; any, all, or *no* members can be selected for parsing, storing and merging.  This allows you to configuring NeoGPS to use the minimum amount of RAM for the particular members of interest.  See [Configurations](Configurations.md) for how to edit [GPSfix_cfg.h](/GPSfix_cfg.h) and [NMEAGPS_cfg.h](/NMEAGPS_cfg.h#L67), respectively.
+Except for `status`, each of these `gps_fix` members is conditionally compiled; any, all, or *no* members can be selected for parsing, storing and merging.  This allows you to configuring NeoGPS to use the minimum amount of RAM for the particular members of interest.  See [Configurations](Configurations.md) for how to edit [GPSfix_cfg.h](/src/GPSfix_cfg.h) and [NMEAGPS_cfg.h](/src/NMEAGPS_cfg.h#L67), respectively.
 
 ##Precision
 Integers are used for all members, retaining full precision of the original data.
