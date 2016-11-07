@@ -28,6 +28,9 @@
 
 #define LAST_SENTENCE_IN_INTERVAL NMEAGPS::NMEA_RMC
 
+// NOTE: For PUBX-only configs, use
+//          (NMEAGPS::nmea_msg_t)(NMEAGPS::NMEA_LAST_MSG+1)
+//
 // If the NMEA_LAST_SENTENCE_IN_INTERVAL is not chosen 
 // correctly, GPS data may be lost because the sketch
 // takes too long elsewhere when this sentence is received.

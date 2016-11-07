@@ -53,7 +53,11 @@
 #endif
 
 #if !defined( NMEAGPS_PARSE_PUBX_00 ) & !defined( NMEAGPS_PARSE_PUBX_04 )
- // #error No PUBX messages enabled!  You must enable one or more in ubxNMEA.h!
+  #error No PUBX messages enabled!  You must enable one or more in ubxNMEA.h!
+#endif
+
+#ifndef NMEAGPS_DERIVED_TYPES
+  #error You must "#define NMEAGPS_DERIVED_TYPES" in NMEAGPS_cfg.h!
 #endif
 
 #ifndef NMEAGPS_EXPLICIT_MERGING
@@ -73,8 +77,12 @@ static gps_fix   merged;
 
 static void poll()
 {
-  gps.send_P( &gps_port, F("PUBX,00") );
-  gps.send_P( &gps_port, F("PUBX,04") );
+  #if defined( NMEAGPS_PARSE_PUBX_00 )
+    gps.send_P( &gps_port, F("PUBX,00") );
+  #endif
+  #if defined( NMEAGPS_PARSE_PUBX_04 )
+    gps.send_P( &gps_port, F("PUBX,04") );
+  #endif
 }
 
 //----------------------------------------------------------------
