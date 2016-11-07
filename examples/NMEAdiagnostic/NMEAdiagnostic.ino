@@ -21,25 +21,18 @@
 //======================================================================
 
 #if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
+  // Default is to use Serial1 when available.
+
 #else  
   // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
   //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
+  //#include <NeoSWSerial.h> /* ONLY WORKS AT 9600, 19200 and 38400 */
+  #include <SoftwareSerial.h> /* NOT RECOMMENDED */
 #endif
 #include "GPSport.h"
 
 #include "Streamers.h"
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
+#define DEBUG_PORT Serial
 
 // Check configuration
 
@@ -60,6 +53,8 @@ static NMEAGPS  gps          ; // This parses received characters
 static gps_fix  all_data     ; // A composite of all GPS data fields
 static uint32_t last_rx = 0UL; // The last millis() time a character was
                                // received from GPS.
+static uint32_t valid_sentence_received = 0UL;
+static bool     last_sentence_received  = false;
 static uint32_t baudStartTime = 0UL;
 static uint8_t  warnings = 0;
 static uint8_t  errors   = 0;
@@ -85,7 +80,8 @@ static void hang()
 
   DEBUG_PORT.flush();
 
-  exit(0);
+  for (;;)
+    ;
 
 } // hang
 
@@ -110,6 +106,7 @@ static void tryBaud()
   DEBUG_PORT.print( F(" baud...\n") );
   DEBUG_PORT.flush();
 
+//if (baud == 9600) baud = 17000;
   gps_port.begin( baud );
   baudStartTime = millis();
 
@@ -182,10 +179,37 @@ static void dumpSomeChars()
         DEBUG_PORT.print( ascii[ j ] );
       DEBUG_PORT.print( '\n' );
     }
+    DEBUG_PORT.flush();
 
     someCharsIndex = 0;
   }
 } // dumpSomeChars
+
+//----------------------------------------------------------------
+
+void displaySentences()
+{
+  // We received one or more sentences, display the baud rate
+  DEBUG_PORT.print( F("\n\n**** NMEA sentence(s) detected!  ****\n") );
+  dumpSomeChars();
+  DEBUG_PORT << F("\nDevice baud rate is ") <<
+    baud_table[ baud_index ] << '\n';
+
+  DEBUG_PORT.print( F("\nGPS data fields received:\n\n  ") );
+  trace_header( DEBUG_PORT );
+  DEBUG_PORT.print( F("  ") );
+  trace_all( DEBUG_PORT, gps, all_data );
+
+  if (!last_sentence_received) {
+    warnings++;
+    DEBUG_PORT.print( F("\nWarning: LAST_SENTENCE_IN_INTERVAL defined to be ") );
+    DEBUG_PORT.print( gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
+    DEBUG_PORT.println( F(", but was never received.\n"
+                      "  Please use NMEAorder.ino to determine which sentences your GPS device sends, and then\n"
+                      "  use the last one for the definition in NMEAGPS_cfg.h.") );
+  }
+
+} // displaySentences
 
 //----------------------------------------------------------------
 //  Listen to see if the GPS device is correctly 
@@ -193,50 +217,64 @@ static void dumpSomeChars()
 
 static void listenForSomething()
 {
-  uint32_t current_ms       = millis();
-  uint32_t ms_since_last_rx = current_ms - last_rx;
+  uint32_t current_ms         = millis();
+  uint32_t ms_since_last_rx   = current_ms - last_rx;
+  bool     waited_long_enough = (current_ms - baudStartTime) > 1000UL;
 
-  if (ms_since_last_rx > 5) {
+  if ((ms_since_last_rx > 5) && waited_long_enough) {
 
     // The GPS device has not sent any characters for at least 5ms.
     //   See if we've been getting chars sometime during the last second.
     //   If not, the GPS may not be working or connected properly.
 
-           bool     getting_chars   =  (ms_since_last_rx < 1000UL);
-    static uint32_t last_quiet_time = 0UL;
-           bool     just_went_quiet =
-                            (((int32_t) (last_rx - last_quiet_time)) > 0L);
-           bool     next_quiet_time =
-                               ((current_ms - last_quiet_time) >= 1000UL);
+    bool getting_chars = (someCharsIndex > 0);
 
-    if ((getting_chars && just_went_quiet)
-          ||
-        (!getting_chars && next_quiet_time)) {
+    // Try to diagnose the problem
+    
+    static uint8_t tries = 1;
+    bool           tryNext = false;
 
-      last_quiet_time = current_ms;  // Remember for next loop
+    if (!getting_chars) {
 
-      // Try to diagnose the problem
-      
-      static uint8_t tries = 1;
-      if (!getting_chars) {
-
-        if (tries++ >= 3) {
-          errors++;
-          DEBUG_PORT.println( F("\nCheck GPS device and/or connections.  No data received.\n") );
-          hang();
-        }
-
-      } else {
-        tries = 1;
-        
-        DEBUG_PORT.println( F("No valid sentences, but characters are being received.\n"
-        "Check baud rate or device protocol configuration.\n" ) );
-
-        dumpSomeChars();
-        delay( 2000 );
-
-        tryAnotherBaudRate();
+      if (tries++ >= 3) {
+        errors++;
+        DEBUG_PORT.println( F("\nCheck GPS device and/or connections.  No data received.\n") );
+        tryNext = true;
       }
+
+    } else if (valid_sentence_received) {
+      uint8_t s  = valid_sentence_received/1000;
+      uint8_t ms = valid_sentence_received - s*1000;
+
+      DEBUG_PORT.print( F("Valid sentences were received ") );
+      DEBUG_PORT.print( s );
+      DEBUG_PORT.print( '.' );
+      if (ms < 100)
+        DEBUG_PORT.print( '0' );
+      if (ms < 10)
+        DEBUG_PORT.print( '0' );
+      DEBUG_PORT.print( ms );
+      DEBUG_PORT.println(
+        F(" seconds ago.\n"
+          "  The GPS update rate may be lower than 1Hz,\n"
+          "  or the connections may be bad." ) );
+      displaySentences();
+      hang();
+
+    } else {
+        DEBUG_PORT.println(
+          F("No valid sentences, but characters are being received.\n"
+            "  Check baud rate or device protocol configuration.\n" ) );
+
+      dumpSomeChars();
+      delay( 2000 );
+      tryNext = true;
+    }
+
+    if (tryNext) {
+      tries = 1;
+      tryAnotherBaudRate();
+      valid_sentence_received = 0UL;
     }
   }
   
@@ -246,8 +284,6 @@ static void listenForSomething()
 
 static void GPSloop()
 {
-  static bool valid_sentence_received = false;
-
   while (gps_port.available()) {
     last_rx = millis();
 
@@ -258,9 +294,8 @@ static void GPSloop()
 
     if (gps.decode( c ) == NMEAGPS::DECODE_COMPLETED) {
       all_data |= gps.fix();
-      valid_sentence_received = true;
+      valid_sentence_received = last_rx;
 
-      static bool last_sentence_received = false;
       if (gps.nmeaMessage == LAST_SENTENCE_IN_INTERVAL)
         last_sentence_received = true;
 
@@ -270,37 +305,19 @@ static void GPSloop()
       static uint8_t sentences_printed = 0;
              bool    long_enough       = (millis() - baudStartTime > 3000);
 
-      if ((sentences_printed++ >= 20) || long_enough) {
-
-        if ((someCharsIndex >= MAX_SAMPLE) || long_enough) {
-
-          // We received one or more sentences, display the baud rate
-          DEBUG_PORT.print( F("\n\n**** NMEA sentence(s) detected!  ****\n") );
-          dumpSomeChars();
-          DEBUG_PORT << F("\nDevice baud rate is ") <<
-            baud_table[ baud_index ] << '\n';
-
-          DEBUG_PORT.print( F("\nGPS data fields received:\n\n  ") );
-          trace_header( DEBUG_PORT );
-          DEBUG_PORT.print( F("  ") );
-          trace_all( DEBUG_PORT, gps, all_data );
-
-          if (!last_sentence_received) {
-            warnings++;
-            DEBUG_PORT.print( F("\nWarning: LAST_SENTENCE_IN_INTERVAL defined to be ") );
-            DEBUG_PORT.print( gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
-            DEBUG_PORT.println( F(", but was never received.\n"
-                              "  Please use NMEAorder.ino to determine which sentences your GPS device sends, and then\n"
-                              "  use the last one for the definition in NMEAGPS_cfg.h.") );
-          }
-
-          hang();
-        }
+      if (long_enough ||
+          (
+            (sentences_printed++ >= 20) &&
+            (someCharsIndex      >= MAX_SAMPLE)
+          ) ) {
+        displaySentences();
+        hang();
       }
     }
   }
 
-  if (!valid_sentence_received)
+  if (!valid_sentence_received ||
+      (millis() - valid_sentence_received > 3000UL))
     listenForSomething();
 
 } // GPSloop
