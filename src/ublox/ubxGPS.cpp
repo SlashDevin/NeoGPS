@@ -1,4 +1,9 @@
-#include "ubxGPS.h"
+#include "NMEAGPS_cfg.h"
+// Disable the entire file if derived types are not allowed.
+#ifdef NMEAGPS_DERIVED_TYPES
+
+#include "ublox/ubxGPS.h"
+
 // Check configurations
  
 #if defined( UBLOX_PARSE_POSLLH ) & \
@@ -963,3 +968,5 @@ bool ubloxGPS::parseFix( uint8_t c )
 
   const ubloxGPS::msg_t *test2 = (const ubloxGPS::msg_t *) &test2_data[0];
 #endif
+
+#endif // NMEAGPS_DERIVED_TYPES enabled

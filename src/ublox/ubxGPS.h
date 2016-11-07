@@ -19,10 +19,14 @@
  * Lesser General Public License for more details.
  */
 
-#include "ubxNMEA.h"
-#include "ubxmsg.h"
+#include "NMEAGPS_cfg.h"
+// Disable the entire file if derived types are not allowed.
+#ifdef NMEAGPS_DERIVED_TYPES
+
+#include "ublox/ubxNMEA.h"
+#include "ublox/ubxmsg.h"
 #include "GPSTime.h"
-#include "ubx_cfg.h"
+#include "ublox/ubx_cfg.h"
 
 #include <Stream.h>
 #include <stddef.h>
@@ -318,5 +322,7 @@ private:
     }
 
 } NEOGPS_PACKED;
+
+#endif // NMEAGPS_DERIVED_TYPES enabled
 
 #endif

@@ -19,6 +19,11 @@
  * Lesser General Public License for more details.
  */
 
+#include "NMEAGPS_cfg.h"
+
+// Disable the entire file if derived types are not allowed.
+#ifdef NMEAGPS_DERIVED_TYPES
+
 #include "NMEAGPS.h"
 
 //------------------------------------------------------------
@@ -48,10 +53,6 @@
   #if !defined(NMEAGPS_PARSE_MFR_ID)
     #error NMEAGPS_PARSE_MFR_ID must be defined in NMEAGPS_cfg.h in order to parse PUBX messages!
   #endif
-#endif
-
-#ifndef NMEAGPS_DERIVED_TYPES
-  #error You must "#define NMEAGPS_DERIVED_TYPES" in NMEAGPS_cfg.h!
 #endif
 
 //=============================================================
@@ -104,5 +105,7 @@ protected:
 
     bool parseFix( char chr );
 } NEOGPS_PACKED;
+
+#endif // NMEAGPS_DERIVED_TYPES enabled
 
 #endif

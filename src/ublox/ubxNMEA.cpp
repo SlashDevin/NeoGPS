@@ -1,4 +1,7 @@
-#include "ubxNMEA.h"
+#include "ublox/ubxNMEA.h"
+
+// Disable the entire file if derived types are not allowed.
+#ifdef NMEAGPS_DERIVED_TYPES
 
 //---------------------------------------------
 
@@ -122,3 +125,5 @@ bool ubloxNMEA::parseFix( char chr )
   
   return true;
 }
+
+#endif

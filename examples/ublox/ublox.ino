@@ -1,5 +1,5 @@
-#include <Arduino.h>
-#include "ubxGPS.h"
+#include <NeoGPS_cfg.h>
+#include <ublox/ubxGPS.h>
 
 //======================================================================
 //  Program: ublox.ino

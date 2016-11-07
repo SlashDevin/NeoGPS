@@ -1,5 +1,5 @@
-#include <Arduino.h>
-#include "ubxNMEA.h"
+#include <NeoGPS_cfg.h>
+#include <ublox/ubxNMEA.h>
 
 //======================================================================
 //  Program: PUBX.ino

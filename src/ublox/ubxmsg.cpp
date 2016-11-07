@@ -1,4 +1,7 @@
-#include "ubxGPS.h"
+#include "ublox/ubxGPS.h"
+
+// Disable the entire file if derived types are not allowed.
+#ifdef NMEAGPS_DERIVED_TYPES
 
 using namespace ublox;
 
@@ -47,3 +50,5 @@ bool ublox::configNMEA( ubloxGPS &gps, NMEAGPS::nmea_msg_t msgType, uint8_t rate
 
   return gps.send( cfg_msg_t( UBX_NMEA, msg_id, rate ) );
 }
+
+#endif

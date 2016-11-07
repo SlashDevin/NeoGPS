@@ -307,6 +307,8 @@ public:
     static const processing_style_t 
       processing_style = NMEAGPS_PROCESSING_STYLE;  // see NMEAGPS_cfg.h
 
+    static const bool keepNewestFixes = NMEAGPS_KEEP_NEWEST_FIXES;
+
     //.......................................................................
     //  Control access to this object.  This preserves atomicity when
     //     the processing style is interrupt-driven.

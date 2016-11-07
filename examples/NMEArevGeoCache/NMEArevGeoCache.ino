@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "NMEAGPS.h"
+#include <NMEAGPS.h>
 
 //======================================================================
 //  Program: NMEArevGeoCache.ino
@@ -64,6 +64,7 @@
 //------------------------------------------------------------
 //  Additional Hardware includes
 #include <LiquidCrystal.h>
+//#include <NewLiquidCrystal_emul.h>
 
 #include <PWMServo.h>
 PWMServo   servoLatch;

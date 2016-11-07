@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "NMEAGPS.h"
+#include <NMEAGPS.h>
 
 //======================================================================
 //  Program: NMEA_isr.ino
@@ -13,7 +13,7 @@
 //     structures to a buffer that can be later read() by loop().
 //======================================================================
 
-#if defined( UBRR1H )
+#if defined( UBRR1H ) | defined( ID_USART0 )
   // Default is to use NeoSerial1 when available.  You could also
   #include <NeoHWSerial.h>
   // NOTE: There is an issue with IDEs before 1.6.6.  The above include 

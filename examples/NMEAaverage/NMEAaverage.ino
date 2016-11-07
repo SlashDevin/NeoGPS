@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "NMEAGPS.h"
+#include <NMEAGPS.h>
 using namespace NeoGPS;
 
 //======================================================================

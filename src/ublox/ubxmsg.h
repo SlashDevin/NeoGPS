@@ -1,6 +1,11 @@
 #ifndef UBXMSG_H
 #define UBXMSG_H
 
+#include "NMEAGPS_cfg.h"
+
+// Disable the entire file if derived types are not allowed.
+#ifdef NMEAGPS_DERIVED_TYPES
+
 #include "NMEAGPS.h"
 class ubloxGPS;
 
@@ -506,5 +511,7 @@ namespace ublox {
       }  __attribute__((packed));
 
 };
+
+#endif // NMEAGPS_DERIVED_TYPES enabled
 
 #endif

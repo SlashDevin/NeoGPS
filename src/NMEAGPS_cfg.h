@@ -142,6 +142,13 @@
 #endif
 
 //------------------------------------------------------
+// Define how fixes are dropped when the FIFO is full.
+//   true  = the oldest fix will be dropped, and the new fix will be saved.
+//   false = the new fix will be dropped, and all old fixes will be saved.
+
+#define NMEAGPS_KEEP_NEWEST_FIXES true
+
+//------------------------------------------------------
 // Enable/Disable interrupt-style processing of GPS characters
 // If you are using one of the NeoXXSerial libraries,
 //   to attachInterrupt, this must be defined.
