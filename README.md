@@ -23,7 +23,7 @@ The "GP" prefix usually indicates an original [GPS](https://en.wikipedia.org/wik
   * "GN" (mixed)
 
 This means that GLRMC, GBRMC or BDRMC, GARMC and GNRMC will also be correctly parsed.  See discussion of Talker 
-IDs in [Configurations](doc/Configurations.md#enabledisable-the-talker-id-and-manufacturer-id-processing).
+IDs in [Configurations](extras/doc/Configurations.md#enabledisable-the-talker-id-and-manufacturer-id-processing).
 
 Most applications can be fully implemented with the standard NMEA messages above.  They are supported by almost all GPS manufacturers.  Additional messages can be added through derived classes.
 
@@ -64,15 +64,15 @@ Don't believe it?  Check out these detailed sections:
 
 Section  |  Description
 -------- |  ------------
-[Installing] (doc/Installing.md) | Copying files
-[Data Model](doc/Data Model.md) | How to parse and use GPS data
-[Configurations](doc/Configurations.md) | Tailoring NeoGPS to your needs
-[Performance](doc/Performance.md) | 37% to 72% faster!  Really!
-[RAM requirements](doc/RAM.md) | Doing it without buffers!
-[Program Space requirements](doc/Program.md) | Making it fit
-[Examples](doc/Examples.md) | Programming styles
-[Troubleshooting](doc/Troubleshooting.md) | Troubleshooting
-[Extending NeoGPS](doc/Extending.md) | Using specific devices
-[ublox](doc/ublox.md) | ublox-specific code
-[Tradeoffs](doc/Tradeoffs.md) | Comparing to other libraries
-[Acknowledgements](doc/Acknowledgements.md) | Thanks!
+[Installing] (extras/doc/Installing.md) | Copying files
+[Data Model](extras/doc/Data Model.md) | How to parse and use GPS data
+[Configurations](extras/doc/Configurations.md) | Tailoring NeoGPS to your needs
+[Performance](extras/doc/Performance.md) | 37% to 72% faster!  Really!
+[RAM requirements](extras/doc/RAM.md) | Doing it without buffers!
+[Program Space requirements](extras/doc/Program.md) | Making it fit
+[Examples](extras/doc/Examples.md) | Programming styles
+[Troubleshooting](extras/doc/Troubleshooting.md) | Troubleshooting
+[Extending NeoGPS](extras/doc/Extending.md) | Using specific devices
+[ublox](extras/doc/ublox.md) | ublox-specific code
+[Tradeoffs](extras/doc/Tradeoffs.md) | Comparing to other libraries
+[Acknowledgements](extras/doc/Acknowledgements.md) | Thanks!
