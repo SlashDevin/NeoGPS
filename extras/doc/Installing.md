@@ -1,24 +1,25 @@
 Installing
 ==========
-**1.**  Download the [master ZIP file](https://github.com/SlashDevin/NeoGPS/archive/master.zip).
+**1.** Use the [Ardino IDE Library Manager](https://www.arduino.cc/en/Guide/Libraries#toc3) to automatically download and install NeoGPS.
 
-**2.**  Open the zip file and open the nested `NeoGPS-master` subdirectory.
+If you need to perform a manual installation,:
 
-**3.**  Select and copy all files in that subdirectory into a new `Arduino/Libraries/NeoGPS` directory, like most libraries.  The `Arduino/Libraries/NeoGPS` directory should contain:
+* Download the [master ZIP file](https://github.com/SlashDevin/NeoGPS/archive/master.zip).
+*  Open the zip file and open the nested `NeoGPS-master` subdirectory.
+*  Select and copy all files in the `NeoGPS-master` subdirectory into a new `Arduino/Libraries/NeoGPS` directory, like most libraries.  The `Arduino/Libraries/NeoGPS` directory should contain:<br>
 ```
-configs
-doc
+extras
 examples
 src
 library.properties
 README.md
 ```
 
-For most non-Mega boards (e.g., UNOs) and GPS devices that run at 9600, 19200 or 38400 baud, you should also download and install the [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) library.
+**2.** For most non-Mega boards (e.g., UNOs) and GPS devices that run at 9600, 19200 or 38400 baud, you should also download and install the [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) library.  This library is *much* more efficient than `SoftwareSerial` and will help you avoid common timing problems caused by `SoftwareSerial`.
 <br>
 <br>
 
-**4.** Review `Libraries/NeoGPS/src/GPSport.h` to confirm that the correct serial port will be used for your GPS device.
+**3.** Review `Libraries/NeoGPS/src/GPSport.h` to confirm that the correct serial port will be used for your GPS device.
 
 By default, Mega Boards will use `Serial1`.  If you have installed the [NeoHWSerial](https://github.com/SlashDevin/NeoHWSerial) library and included the header before `GPSport.h`, then `NeoSerial1` will be used.
 
@@ -48,9 +49,9 @@ The above will cause `GPSport.h` to declare `gps_port` using the class `NeoICSer
 Modify these defaults if necessary, or if you know what serial port to use, you can declare it yourself.  Be sure to delete the line `#include "GPSport.h"`, and delete the file `GPSport.h`.
 <br>
 <br>
-**5.**  Open the Arduino IDE and select File -> Examples -> NeoGPS -> NMEA.
+**4.**  Open the Arduino IDE and select File -> Examples -> NeoGPS -> NMEA.
 
-**6.**  Build and upload the sketch to your Arduino.
+**5.**  Build and upload the sketch to your Arduino.
 
 **Note:**  If the sketch does not compile, please see the [Troubleshooting](Troubleshooting.md#configuration-errors) section.
 
