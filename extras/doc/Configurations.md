@@ -47,12 +47,6 @@ This is used to determine when the GPS quiet time begins and when a batch of coh
 #define LAST_SENTENCE_IN_INTERVAL NMEAGPS::NMEA_GLL
 ```
 You can use `NMEAorder.ino` to determine the last sentence sent by your device.
-####Enable/Disable coherency
-If you need each fix to contain information that is only from the current update interval, you should uncomment this define.  At the beginning of the next interval, the accumulating fix will start out empty.  When the LAST_SENTENCE_IN_INTERVAL arrives, the valid fields will be coherent.
-```
-#define NMEAGPS_COHERENT
-```
-See [Coherency](Coherency.md) for more information.
 ####Enable/Disable No, Implicit, Explicit Merging
 If you want NO merging, comment out both defines.  Otherwise, uncomment the IMPLICIT or EXPLICIT define.
 ```
@@ -65,6 +59,13 @@ The NMEAGPS object will hold on to this many fixes before an overrun occurs.  Th
 ```
 #define NMEAGPS_FIX_MAX 1
 ```
+####Enable/Disable interrupt-style processing
+Define how fixes are dropped when the fix buffer is full.
+```
+#define NMEAGPS_KEEP_NEWEST_FIXES true
+```
+   true  = the oldest fix will be dropped, and the new fix will be saved.
+   false = the new fix will be dropped, and all old fixes will be saved.
 ####Enable/Disable interrupt-style processing
 If you are using one of the NeoXXSerial libraries to `attachInterrupt`, this must be uncommented to guarantee safe access to the buffered fixes with `gps.read()`.  For  normal polling-style processing, it must be commented out.
 ```

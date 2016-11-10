@@ -43,32 +43,7 @@
 // it.  Just select the last sentence that you have *enabled*.
 
 //------------------------------------------------------
-// Enable/Disable coherency:
-//
-// If you need each fix to contain information that is only
-// from the current update interval, you should uncomment
-// this define.  At the beginning of the next interval,
-// the accumulating fix will start out empty.  When
-// the LAST_SENTENCE_IN_INTERVAL arrives, the valid
-// fields will be coherent.
-
-//#define NMEAGPS_COHERENT
-
-// With IMPLICIT merging, fix() will be emptied when the
-// next sentence begins.
-//
-// With EXPLICIT or NO merging, the fix() was already
-// being initialized.
-//
-// If you use the fix-oriented methods available() and read(),
-// they will empty the current fix for you automatically.
-//
-// If you use the character-oriented method decode(), you should
-// empty the accumulating fix by testing and clearing the
-// 'intervalComplete' flag in the same way that available() does.
-
-//------------------------------------------------------
-// Choose how multiple sentences are merged:
+// Choose how multiple sentences are merged into a fix:
 //   1) No merging
 //        Each sentence fills out its own fix; there could be 
 //        multiple sentences per interval.
@@ -91,15 +66,8 @@
 #ifdef NMEAGPS_IMPLICIT_MERGING
   #define NMEAGPS_MERGING NMEAGPS::IMPLICIT_MERGING
 
-  // When accumulating, nothing is done to the fix at the 
-  // beginning of every sentence...
-  #ifdef NMEAGPS_COHERENT
-    // ...unless COHERENT is enabled and a new interval is starting
-    #define NMEAGPS_INIT_FIX(m) \
-      if (intervalComplete()) { intervalComplete( false ); m.valid.init(); }
-  #else
-    #define NMEAGPS_INIT_FIX(m)
-  #endif
+  // Nothing is done to the fix at the beginning of every sentence...
+  #define NMEAGPS_INIT_FIX(m)
 
   // ...but we invalidate one part when it starts to get parsed.  It *may* get
   // validated when the parsing is finished.
@@ -114,8 +82,8 @@
     #define NMEAGPS_NO_MERGING
   #endif
 
-  // When NOT accumulating, invalidate the entire fix at the 
-  // beginning of every sentence
+  // When NOT accumulating (not IMPLICIT), invalidate the entire fix 
+  // at the beginning of every sentence...
   #define NMEAGPS_INIT_FIX(m) m.valid.init()
 
   // ...so the individual parts do not need to be invalidated as they are parsed

@@ -17,7 +17,6 @@ These example programs demonstrate how to use the classes in the different progr
 * [NMEAlocDMS](/examples/NMEAlocDMS/NMEAlocDMS.ino) - same as NMEAloc.ino, but displays location in Degrees, Minutes and Seconds
 * [NMEAaverage](/examples/NMEAaverage/NMEAaverage.ino) - sync, single fix, averages a high-accuracy location over time
 * [NMEAtimezone](/examples/NMEAtimezone/NMEAtimezone.ino) - same as NMEAloc.ino, but displays local time instead of UTC (GMT)
-* [NMEAcoherent](/examples/NMEAcoherent/NMEAcoherent.ino) - sync, coherent fix, standard NMEA only
 * [NMEASDlog](/examples/NMEASDlog/NMEASDlog.ino) - **async**, buffered fixes, standard NMEA only (RMC sentence only), logging to SD card
 * [PUBX](/examples/PUBX/PUBX.ino) - sync, coherent fix, standard NMEA + ublox proprietary NMEA
 * [ublox](/examples/ublox/ublox.ino) - sync or **async**, coherent fix, ublox binary protocol UBX

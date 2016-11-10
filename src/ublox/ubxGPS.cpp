@@ -127,16 +127,16 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
             case 0:
               rx().msg_class = (msg_class_t) chr;
 //if ((uint8_t) chr < 0x10)
-//  Serial.print( '0' );
-//Serial.print( chr, HEX );
+//  NeoSerial.print( '0' );
+//NeoSerial.print( chr, HEX );
               break;
             case 1:
               rx().msg_id = (msg_id_t) chr;
-//Serial.print( '/' );
+//NeoSerial.print( '/' );
 //if ((uint8_t) chr < 0x10)
-//  Serial.print( '0' );
-//Serial.print( (uint8_t) chr, HEX );
-//Serial.write( ' ' );
+//  NeoSerial.print( '0' );
+//NeoSerial.print( (uint8_t) chr, HEX );
+//NeoSerial.write( ' ' );
               break;
             case 2:
               rx().length = chr;
@@ -191,7 +191,7 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
             m_fix.valid.init();
             rx().msg_class = UBX_UNK;
             #ifdef NMEAGPS_STATS
-              statistics.crc_errors++;
+              statistics.errors++;
             #endif
           }
           rxState = (rxState_t) UBX_CRC_B;
@@ -203,13 +203,15 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
             m_fix.valid.init();
             rx().msg_class = UBX_UNK;
             #ifdef NMEAGPS_STATS
-              statistics.crc_errors++;
+              statistics.errors++;
             #endif
           } else if (rxEnd()) {
             res = ubloxGPS::DECODE_COMPLETED;
             #ifdef NMEAGPS_STATS
               statistics.ok++;
             #endif
+            //  This implements coherency.
+            intervalComplete( intervalCompleted() );
           }
 //Serial.print( '!' );
           rxState = (rxState_t) UBX_IDLE;

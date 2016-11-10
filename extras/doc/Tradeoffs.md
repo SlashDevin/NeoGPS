@@ -35,10 +35,6 @@ must accommodate possible gaps in fix availability.
 
 You are not restricted from having other instances of fix; you can copy or merge the accumulating fix into another copy if you want.  This is just a way to minimize RAM requirements and still have a fused fix.
 
-####Correlating timestamps for coherency means extra date/time comparisons for each sentence before it is fused.
-
-This is optional: compare NMEAcoherent.ino and NMEAfused.ino to see code that determines when a new time interval has been entered.
-
 ####Full C++ OO implementation is more advanced than most Arduino libraries.
 
 You've been warned!  ;)

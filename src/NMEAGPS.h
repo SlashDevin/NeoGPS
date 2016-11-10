@@ -3,7 +3,7 @@
 
 //------------------------------------------------------
 // @file NMEAGPS.h
-// @version 3.0
+// @version 4.1.0
 //
 // @section License
 // Copyright (C) 2016, SlashDevin
@@ -31,22 +31,17 @@
 
 //------------------------------------------------------
 //
-// NMEA 0183 Parser for generic GPS Modules.  As bytes are received from
-// the device, they affect the internal FSM and set various members
-// of the current /fix/.  As multiple sentences are received, they are 
-// (optionally) merged into a single fix.  When the last sentence in a 
-// time interval (usually 1 second) is received, the fix is stored in the 
-// (optional) buffer of fixes.
+// NMEA 0183 Parser for generic GPS Modules.
 //
-// @section Limitations
-// 1) Only these NMEA messages are parsed:
+// As bytes are received from the device, they affect the 
+// internal FSM and set various members of the current /fix/.  
+// As multiple sentences are received, they are (optionally) 
+// merged into a single fix.  When the last sentence in a time 
+// interval (usually 1 second) is received, the fix is stored 
+// in the (optional) buffer of fixes.
+//
+// Only these NMEA messages are parsed:
 //      GGA, GLL, GSA, GST, GSV, RMC, VTG, and ZDA.
-// 2) The current `fix` is only safe to access _after_ the complete message 
-//      is parsed and _before_ the next message begins to affect the members. 
-//      If you access `fix` at any other time, /is_safe()/ must be checked. 
-//      Otherwise, you should make a copy of `fix` after a sentence has been
-//      completely DECODED.
-//
 
 class NMEAGPS
 {
@@ -150,16 +145,19 @@ public:
 
     //=======================================================================
     // CHARACTER-ORIENTED "decode" method
+    //=======================================================================
     //
-    //    Using this method may be necessary if the source of GPS
-    //    characters is not a Stream, or if you want finer control 
+    //    *** MOST APPLICATIONS SHOULD USE THE FIX-ORIENTED METHODS ***
+    //
+    //    Using this method is only necessary if you want finer control 
     //    on how fix information is filtered and merged.
     //
     // Process one character of an NMEA GPS sentence.  The internal state 
     // machine tracks what part of the sentence has been received.  As the
-    // tracks what part of the sentence has been received so far.  As the
     // sentence is received, members of the /fix/ structure are updated.
-    // This character-oriented method does not buffer any fixes.
+    // This character-oriented method does not buffer any fixes, and
+    // /read()/ will always return an empty fix.
+    //
     // @return DECODE_COMPLETED when a sentence has been completely received.
 
     NMEAGPS_VIRTUAL decode_t decode( char c );
@@ -189,6 +187,7 @@ public:
 
     //.......................................................................
     //  Current fix accessor.
+    //    *** MOST APPLICATIONS SHOULD USE read() TO GET THE CURRENT FIX  ***
     //    /fix/ will be constantly changing as characters are received.
     //
     //  For example, fix().longitude() may return nonsense data if
@@ -197,9 +196,8 @@ public:
     gps_fix & fix() { return m_fix; };
 
     //  NOTE: /is_safe/ *must* be checked before accessing members of /fix/.
-    //  If you need access to the current /fix/ at any time, you must
-    //  take a snapshot while it is_safe, and then use the snapshot
-    //  later.
+    //  If you need access to the current /fix/ at any time, you should
+    //  use the FIX-ORIENTED methods.
 
     //.......................................................................
     //  Determine whether the members of /fix/ are "currently" safe.
@@ -209,40 +207,22 @@ public:
 
     bool is_safe() const volatile { return (rxState == NMEA_IDLE); }
 
-    //  Notes regarding is_safe() and fix():
-    //
-    //  If an NMEAGPS instance is fed characters inside a UART interrupt,
-    //    is_safe() and fix() could change at any time (i.e., they should be 
-    //    considered /volatile/).
-    //
-    //  If an NMEAGPS instance is fed characters from a non-interrupt
-    //    context, the following method is safe:
-    //
-    //  void loop()
-    //  {
-    //    while (uart.available()) {
-    //      if (gps.decode( uart.read() ) == DECODE_COMPLETED) {
-    //        // Got something new!  Access only valid members here and/or...
-    //
-    //        // ...save a snapshot for later
-    //        safe_fix = gps.fix();
-    //      }
-    //    }
-    //    // Access valid members of /safe_fix/ anywhere, any time.
-    //  }
+    //  NOTE:  When INTERRUPT_PROCESSING is enabled, is_safe() 
+    //  and fix() could change at any time (i.e., they should be 
+    //  considered /volatile/).
 
     //.......................................................................
 
     #ifdef NMEAGPS_STATS
       struct statistics_t {
-          uint32_t ok;         // count of successfully parsed sentences
-          uint32_t crc_errors; // count of CRC errors
+          uint32_t ok;     // count of successfully parsed sentences
+          uint32_t errors; // NMEA checksum or other message errors
           uint32_t chars;
           void init()
             {
-              ok         = 0L;
-              crc_errors = 0L;
-              chars      = 0L;
+              ok     = 0L;
+              errors = 0L;
+              chars  = 0L;
             }
       } statistics;
     #endif
@@ -260,14 +240,14 @@ public:
     static void send_P( Stream *device, const __FlashStringHelper *msg );
 
     //.......................................................................
-    // Indicate that the next sentence should initialize the internal fix()
+    // Indicate that the next sentence should initialize the internal data.
     //    This is useful for coherency or custom filtering.
     
     bool intervalComplete() const { return _intervalComplete; }
     void intervalComplete( bool val ) { _intervalComplete = val; }
 
     //.......................................................................
-    // Set all parsed data (fix(), satellite info, etc.) to initial values.
+    // Set all parsed data to initial values.
 
     void data_init()
     {

@@ -382,9 +382,9 @@ void trace_all( Print & outs, const NMEAGPS &gps, const gps_fix &fix )
   #endif
 
   #ifdef NMEAGPS_STATS
-    outs << gps.statistics.ok         << ','
-          << gps.statistics.crc_errors << ','
-          << gps.statistics.chars      << ',';
+    outs << gps.statistics.ok     << ','
+         << gps.statistics.errors << ','
+         << gps.statistics.chars  << ',';
   #endif
 
   outs << '\n';

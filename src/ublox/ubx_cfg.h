@@ -14,7 +14,7 @@
 #define UBLOX_PARSE_POSLLH
 //#define UBLOX_PARSE_DOP
 #define UBLOX_PARSE_VELNED
-#define UBLOX_PARSE_SVINFO
+//#define UBLOX_PARSE_SVINFO
 //#define UBLOX_PARSE_CFGNAV5
 //#define UBLOX_PARSE_MONVER
 
@@ -28,10 +28,10 @@
 
 #if defined(UBLOX_PARSE_DOP)
   #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_DOP
-#elif defined(UBLOX_PARSE_POSLLH)
-  #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_POSLLH
 #elif defined(UBLOX_PARSE_VELNED)
   #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_VELNED
+#elif defined(UBLOX_PARSE_POSLLH)
+  #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_POSLLH
 #elif defined(UBLOX_PARSE_SVINFO)
   #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_SVINFO
 #else
