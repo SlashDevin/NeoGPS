@@ -22,8 +22,7 @@ The "GP" prefix usually indicates an original [GPS](https://en.wikipedia.org/wik
   * "GA" ([Galileo](https://en.wikipedia.org/wiki/Satellite_navigation#Galileo)), and
   * "GN" (mixed)
 
-This means that GLRMC, GBRMC or BDRMC, GARMC and GNRMC will also be correctly parsed.  See discussion of Talker 
-IDs in [Configurations](extras/doc/Configurations.md#enabledisable-the-talker-id-and-manufacturer-id-processing).
+This means that GLRMC, GBRMC or BDRMC, GARMC and GNRMC from the latest GPS devices will also be correctly parsed.  See discussion of Talker IDs in [Configurations](extras/doc/Configurations.md#enabledisable-the-talker-id-and-manufacturer-id-processing).
 
 Most applications can be fully implemented with the standard NMEA messages above.  They are supported by almost all GPS manufacturers.  Additional messages can be added through derived classes.
 
@@ -39,7 +38,7 @@ void loop()
   }
 }
 ```
-For more information on this loop, see the [Usage](https://github.com/SlashDevin/NeoGPS/blob/master/doc/Data%20Model.md#usage) section on the [Data Model](https://github.com/SlashDevin/NeoGPS/blob/master/doc/Data%20Model.md) page.
+For more information on this loop, see the [Usage](extras/doc/Data%20Model.md#usage) section on the [Data Model](extras/doc/Data%20Model.md) page.
 
 (This is the plain Arduino version of the [CosaGPS](https://github.com/SlashDevin/CosaGPS) library for [Cosa](https://github.com/mikaelpatel/Cosa).)
 
@@ -49,7 +48,7 @@ In an attempt to be reusable in a variety of different programming styles, this 
 * resource-constrained environments (e.g., ATTINY targets)
 * sync or async operation (reading in `loop()` vs interrupt processing)
 * event or polling (deferred handling vs. continuous calls in `loop()`)
-* single, fused or coherent fixes (multiple reports in one)
+* coherent fixes (merged from multiple sentences) vs. individual sentences
 * optional buffering of fixes
 * optional floating point
 * configurable message sets, including hooks for implementing proprietary NMEA messages
