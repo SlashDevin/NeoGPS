@@ -6,6 +6,7 @@ Most problems are caused by these kinds of errors:
    3. [Configuration](#configuration-errors) (use `NMEAtest.ino`)
    4. [Quiet Time Interval](#quiet-time-interval) (use `NMEAorder.ino`)
    5. [Trying to do too many things](#trying-to-do-too-many-things) at the same time
+   6. [When all else fails...](#when-all-else-fails)
 
 __________________
 ##GPS device connection problems
@@ -261,6 +262,9 @@ This is why NeoGPS uses a `fix` structure: it can be
 You do not have to call a "parse" function after a complete sentence has been received -- the data was parsed as it was received.  Essentially, the processing time for parsing is spread out across the receipt of all characters.  When the last character of the sentence is received (i.e. `gps.available()` or `gps.decode(c) == DECODE_COMPLETED`), the relevant members of `gps.fix()` have already been populated.
 
 These example programs are structured so that the (relatively) slow printing operations are performed during the GPS quiet time.  Simply replace those trace/print statements with your specific code.
+
+__________________
+##When all else fails
 
 If you still do not have enough time to complete your tasks during the GPS quiet time, you can
    * Increase the baud rate on the debug port (takes less time to print)
