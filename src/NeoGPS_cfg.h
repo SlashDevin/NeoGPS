@@ -72,7 +72,7 @@
  *
  */
 
-#if ARDUINO < 10606
+#if (ARDUINO < 10606) | ((10700 <= ARDUINO) & (ARDUINO <= 107099))
 
   #define CONST_CLASS_DATA static const
   
