@@ -328,7 +328,7 @@ void NMEAGPS::storeFix()
         } else if (keepNewestFixes) {
           // we just wrote over the oldest fix
           _firstFix++;
-          if (_firstFix > NMEAGPS_FIX_MAX)
+          if (_firstFix >= NMEAGPS_FIX_MAX)
             _firstFix = 0;
         }
 
@@ -1512,24 +1512,27 @@ bool NMEAGPS::parse_alt_err( char chr )
 
 const gps_fix NMEAGPS::read()
 {
-  if (_fixesAvailable) {
+  gps_fix fix;
 
-    #if (NMEAGPS_FIX_MAX > 0)
-      lock();
+  if (_fixesAvailable) {
+    lock();
+
+      #if (NMEAGPS_FIX_MAX > 0)
         _fixesAvailable--;
-        uint8_t i = _firstFix++;
+        fix = buffer[ _firstFix++ ];
         if (_firstFix >= NMEAGPS_FIX_MAX)
           _firstFix = 0;
-      unlock();
-      return buffer[i];
-    #else
-      _fixesAvailable = false;
-      return m_fix;
-    #endif
+      #else
+        if (is_safe()) {
+          _fixesAvailable = false;
+          fix = m_fix;
+        }
+      #endif
 
-  } else
-    //  Got nuthin', return a default fix.
-    return gps_fix();
+    unlock();
+  }
+
+  return fix;
 
 } // read
 
