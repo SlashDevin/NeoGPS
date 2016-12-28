@@ -117,6 +117,7 @@ public:
 
     bool send( const ublox::msg_t & msg, ublox::msg_t *reply_msg = (ublox::msg_t *) NULL );
     bool send_P( const ublox::msg_t & msg, ublox::msg_t *reply_msg = (ublox::msg_t *) NULL );
+    using NMEAGPS::send_P;
 
     //................................................................
     //  Ask for a specific message (non-blocking).
@@ -228,9 +229,11 @@ protected:
 
     virtual bool intervalCompleted() const
       {
-        return (nmeaMessage == UBX_MSG) &&
-               (m_rx_msg.msg_class == UBX_LAST_MSG_CLASS_IN_INTERVAL) &&
-               (m_rx_msg.msg_id    == UBX_LAST_MSG_ID_IN_INTERVAL);
+        return ((nmeaMessage == UBX_MSG) &&
+                (m_rx_msg.msg_class == UBX_LAST_MSG_CLASS_IN_INTERVAL) &&
+                (m_rx_msg.msg_id    == UBX_LAST_MSG_ID_IN_INTERVAL))
+                        ||
+               NMEAGPS::intervalCompleted();
       }
 
 private:

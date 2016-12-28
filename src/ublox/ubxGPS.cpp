@@ -206,7 +206,7 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
               statistics.errors++;
             #endif
           } else if (rxEnd()) {
-            res = ubloxGPS::DECODE_COMPLETED;
+            res = DECODE_COMPLETED;
             #ifdef NMEAGPS_STATS
               statistics.ok++;
             #endif
@@ -429,6 +429,9 @@ bool ubloxGPS::send_P( const msg_t & msg, msg_t *reply_msg )
 
 bool ubloxGPS::parseField( char c )
 {
+  if (nmeaMessage != NMEAGPS::NMEA_UNKNOWN)
+    return NMEAGPS::parseField( c );
+
   uint8_t chr = c;
 
   switch (rx().msg_class) {
