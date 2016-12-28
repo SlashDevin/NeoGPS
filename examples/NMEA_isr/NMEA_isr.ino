@@ -81,7 +81,7 @@ void setup()
 void loop()
 {
 
-  while (gps.available()) {
+  if (gps.available()) {
     // Print all the things!
     trace_all( DEBUG_PORT, gps, gps.read() );
   }

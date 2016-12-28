@@ -205,7 +205,7 @@ void printL( Print & outs, int32_t degE7 )
 
 static void GPSloop()
 {
-  while (gps.available()) {
+  if (gps.available()) {
 
     gps_fix fix = gps.read();
 
