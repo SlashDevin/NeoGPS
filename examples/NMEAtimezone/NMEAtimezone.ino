@@ -61,7 +61,7 @@ static void doSomeWork( const gps_fix & fix )
 {
   // Display the local time
 
-  if (fix.valid.time) {
+  if (fix.valid.time && fix.valid.date) {
     NeoGPS::clock_t seconds = fix.dateTime;
 
     //  USA Daylight Savings Time rule (calculated once per reset and year!)
@@ -82,6 +82,7 @@ static void doSomeWork( const gps_fix & fix )
 
       changeover.month   = 11;
       changeover.date    = 7; // latest 1st Sunday
+      changeover.hours--; // to account for the "apparent" DST +1
       changeover.set_day();
       // Step back to the 1st Sunday, if day != SUNDAY
       changeover.date -= (changeover.day - NeoGPS::time_t::SUNDAY);
@@ -89,16 +90,18 @@ static void doSomeWork( const gps_fix & fix )
     }
 
     // Set these values to the offset of your timezone from GMT
-    int32_t zone_hours   = -5L; // EST
-    if ((springForward <= seconds) && (seconds < fallBack))
-      zone_hours++;
-
+    static const int32_t zone_hours           = -5L; // EST
     static const int32_t         zone_minutes =  0L; // usually zero
     static const NeoGPS::clock_t zone_offset  =
                       zone_hours   * NeoGPS::SECONDS_PER_HOUR +
                       zone_minutes * NeoGPS::SECONDS_PER_MINUTE;
 
-    NeoGPS::time_t localTime( seconds + zone_offset );
+    seconds += zone_offset;
+
+    if ((springForward <= seconds) && (seconds < fallBack))
+      seconds += NeoGPS::SECONDS_PER_HOUR;
+
+    NeoGPS::time_t localTime( seconds );
 
     DEBUG_PORT << localTime;
   }
