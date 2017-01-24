@@ -429,7 +429,7 @@ bool ubloxGPS::send_P( const msg_t & msg, msg_t *reply_msg )
 
 bool ubloxGPS::parseField( char c )
 {
-  if (nmeaMessage != NMEAGPS::NMEA_UNKNOWN)
+  if ((nmeaMessage != NMEAGPS::NMEA_UNKNOWN) && (nmeaMessage != UBX_MSG))
     return NMEAGPS::parseField( c );
 
   uint8_t chr = c;

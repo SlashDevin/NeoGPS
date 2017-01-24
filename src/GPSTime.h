@@ -1,7 +1,7 @@
 #ifndef GPSTIME_H
 #define GPSTIME_H
 
-#include "Time.h"
+#include "NeoTime.h"
 
 class GPSTime
 {

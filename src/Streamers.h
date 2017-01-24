@@ -3,8 +3,6 @@
 
 #include <Arduino.h>
 
-#include "Time.h"
-
 extern Print & operator <<( Print & outs, const bool b );
 extern Print & operator <<( Print & outs, const char c );
 extern Print & operator <<( Print & outs, const uint16_t v );

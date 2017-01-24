@@ -1,6 +1,8 @@
 #ifndef NMEAGPS_CFG_H
 #define NMEAGPS_CFG_H
 
+#include "GPSfix_cfg.h"
+
 //------------------------------------------------------
 // Enable/disable the parsing of specific sentences.
 //

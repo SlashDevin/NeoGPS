@@ -19,7 +19,7 @@
  * framework, Cosa, by Mikael Patel.
  */
 
-#include "Time.h"
+#include "NeoTime.h"
 
 // For strtoul declaration
 #include <stdlib.h>

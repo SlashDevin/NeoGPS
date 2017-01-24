@@ -82,7 +82,7 @@ static void doSomeWork( const gps_fix & fix )
 
       changeover.month   = 11;
       changeover.date    = 7; // latest 1st Sunday
-      changeover.hours--; // to account for the "apparent" DST +1
+      changeover.hours   = 2 - 1; // to account for the "apparent" DST +1
       changeover.set_day();
       // Step back to the 1st Sunday, if day != SUNDAY
       changeover.date -= (changeover.day - NeoGPS::time_t::SUNDAY);

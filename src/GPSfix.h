@@ -23,7 +23,7 @@
 #include "GPSfix_cfg.h"
 
 #if defined( GPS_FIX_DATE ) | defined( GPS_FIX_TIME )
-  #include "Time.h"
+  #include "NeoTime.h"
 #endif
 
 #ifdef GPS_FIX_LOCATION_DMS

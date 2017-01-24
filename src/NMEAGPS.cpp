@@ -299,10 +299,32 @@ void NMEAGPS::storeFix()
   bool room = ((NMEAGPS_FIX_MAX == 0) &&  !_available()) ||
               ((NMEAGPS_FIX_MAX >  0) && (_available() < NMEAGPS_FIX_MAX));
 
-  if (!room)
+  if (!room) {
     overrun( true );
 
-  if (room || keepNewestFixes) {
+    if (keepNewestFixes) {
+
+      #if NMEAGPS_FIX_MAX > 0
+
+        // Write over the oldest fix (_firstFix), so "pop" it off the front.
+        _firstFix++;
+        if (_firstFix >= NMEAGPS_FIX_MAX)
+          _firstFix = 0;
+
+        // this new one is not available until the interval is complete
+        _fixesAvailable--;
+
+      #else
+        // Write over the one and only fix.  It may not be complete.
+        _fixesAvailable = false;
+      #endif
+
+      // Now there's room!
+      room = true;
+    }
+  }
+
+  if (room) {
     // YES, save it.
     //   Note: If FIX_MAX == 0, this just marks _fixesAvailable = true.
 
@@ -322,15 +344,8 @@ void NMEAGPS::storeFix()
         if (_currentFix >= NMEAGPS_FIX_MAX)
           _currentFix = 0;
 
-        if (_fixesAvailable < NMEAGPS_FIX_MAX) {
+        if (_fixesAvailable < NMEAGPS_FIX_MAX)
           _fixesAvailable++;
-
-        } else if (keepNewestFixes) {
-          // we just wrote over the oldest fix
-          _firstFix++;
-          if (_firstFix >= NMEAGPS_FIX_MAX)
-            _firstFix = 0;
-        }
 
       #else // FIX_MAX == 0
         _fixesAvailable = true;
@@ -1519,8 +1534,11 @@ const gps_fix NMEAGPS::read()
 
       #if (NMEAGPS_FIX_MAX > 0)
         _fixesAvailable--;
-        fix = buffer[ _firstFix++ ];
-        if (_firstFix >= NMEAGPS_FIX_MAX)
+        fix = buffer[ _firstFix ];
+        if (merging == EXPLICIT_MERGING)
+          // Prepare to accumulate all fixes in an interval
+          buffer[ _firstFix ].init();
+        if (++_firstFix >= NMEAGPS_FIX_MAX)
           _firstFix = 0;
       #else
         if (is_safe()) {
