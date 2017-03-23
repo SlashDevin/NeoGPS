@@ -6,7 +6,7 @@ requiring as few as _**10 bytes of RAM**_, **866 bytes of PROGMEM**, and **less 
 
 It supports the following protocols and messages:
 
-####NMEA 0183
+#### NMEA 0183
 * GPGGA - System fix data
 * GPGLL - Geographic Latitude and Longitude
 * GPGSA - DOP and active satellites
@@ -63,7 +63,7 @@ Don't believe it?  Check out these detailed sections:
 
 Section  |  Description
 -------- |  ------------
-[Installing] (extras/doc/Installing.md) | Copying files
+[Installing](extras/doc/Installing.md) | Copying files
 [Data Model](extras/doc/Data Model.md) | How to parse and use GPS data
 [Configurations](extras/doc/Configurations.md) | Tailoring NeoGPS to your needs
 [Performance](extras/doc/Performance.md) | 37% to 72% faster!  Really!
