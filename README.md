@@ -64,7 +64,7 @@ Don't believe it?  Check out these detailed sections:
 Section  |  Description
 -------- |  ------------
 [Installing](extras/doc/Installing.md) | Copying files
-[Data Model](extras/doc/Data Model.md) | How to parse and use GPS data
+[Data Model](extras/doc/Data%20Model.md) | How to parse and use GPS data
 [Configurations](extras/doc/Configurations.md) | Tailoring NeoGPS to your needs
 [Performance](extras/doc/Performance.md) | 37% to 72% faster!  Really!
 [RAM requirements](extras/doc/RAM.md) | Doing it without buffers!
