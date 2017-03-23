@@ -124,7 +124,6 @@ void printL( Print & outs, int32_t degE7 )
   degE7 -= deg*10000000L;
 
   // Print leading zeroes, if needed
-  int32_t factor = 1000000L;
   if (degE7 < 10L)
     outs.print( F("000000") );
   else if (degE7 < 100L)
