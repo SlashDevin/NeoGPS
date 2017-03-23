@@ -88,6 +88,15 @@ static void printSentenceOrder()
     DEBUG_PORT.println( gps.string_for( sentences[i] ) );
   }
 
+  if (sentences[sentence_count-1] == LAST_SENTENCE_IN_INTERVAL) {
+    DEBUG_PORT.print( F("\nSUCCESS: LAST_SENTENCE_IN_INTERVAL is correctly set to NMEAGPS::NMEA_") );
+  } else {
+    DEBUG_PORT.print( F("\nERROR: LAST_SENTENCE_IN_INTERVAL is incorrectly set to NMEAGPS::NMEA_") );
+    DEBUG_PORT.print( gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
+    DEBUG_PORT.print( F("!\n  You must change this line in NMEAGPS_cfg.h:\n"
+                          "     #define LAST_SENTENCE_IN_INTERVAL NMEAGPS::NMEA_") );
+  }
+  DEBUG_PORT.println( gps.string_for( sentences[sentence_count-1] ) );
   DEBUG_PORT.println();
 
 } // printSentenceOrder
