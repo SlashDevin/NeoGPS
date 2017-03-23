@@ -75,7 +75,7 @@ The default NeoGPS configuration is **Nominal**, as described [here](Configurati
 
 If you do not see this output, please review the  [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section.
 
-#The NMEA.ino example works!
+# The NMEA.ino example works!
 Once you have verified the GPS device connection and build process with this first example, you should also verify your device's behavior with `NMEAorder.ino` (see [this section](Troubleshooting.md#quiet-time-interval)).  This can avoid problems later on, when you start adding/merging other functions to do your "work".
 
 [Other examples](Examples.md) include `NMEAloc.ino`, which shows how to use just the location fields of a fix, or `NMEAtimezone.ino`, which shows how to adjust the GPS time for your local time zone.
@@ -90,5 +90,5 @@ You can review and edit each of the copied configuration files to add or remove 
 
 **Note:**  Not all configurations will work with all example applications.  Compiler error messages are emitted for incompatible settings, or if an example requires certain configurations.
 
-#I have a ublox GPS device
+# I have a ublox GPS device
 After you have tried all the standard NMEA examples, and you need the ublox-specific capabilities of NeoGPS, please see the [ublox](ublox.md) section.  Try `PUBX.ino` first, then try `ublox.ino` if you *really* need the binary protocol.
