@@ -1,7 +1,7 @@
-#Choosing your configuration
+# Choosing your configuration
 There are only a few configurations provided by examples.  If your application needs something slightly different, here is a general configuration process.
 
-##What number do you want?
+## What number do you want?
 First, decide which data members of `gps_fix` and `NMEAGPS` you need (see [Data Model](Data Model.md) for member descriptions).  Those members **must** be enabled in `GPSfix_cfg.h`.
 
 Next, figure out what messages can fill out those members, because those messages **must** be enabled in `NMEAGPS_cfg.h`.    Here is a table of the NMEA messages parsed by NeoGPS, and which data members they affect:
