@@ -247,6 +247,52 @@ public:
     void intervalComplete( bool val ) { _intervalComplete = val; }
 
     //.......................................................................
+    // Correlate the Arduino micros() clock with UTC.
+
+    #if defined(NMEAGPS_TIMESTAMP_FROM_PPS) |  \
+        defined(NMEAGPS_TIMESTAMP_FROM_INTERVAL)
+      private:
+        uint32_t _UTCsecondStart;
+        #if defined(NMEAGPS_TIMESTAMP_FROM_INTERVAL) & \
+            ( defined(GPS_FIX_DATE) | defined(GPS_FIX_TIME) )
+          uint32_t _IntervalStart; // quiet time just ended
+        #endif
+      public:
+
+        // The micros() value when the current UTC second started
+        void     UTCsecondStart( uint32_t us ) { _UTCsecondStart = us; };
+        uint32_t UTCsecondStart() const
+          { lock();
+              uint32_t ret = _UTCsecondStart;
+            unlock();
+            return ret;
+          };
+
+        // The elapsed time since the start of the current UTC second
+        uint32_t UTCus() const { return micros() - UTCsecondStart(); };
+        uint32_t UTCms() const { return UTCus() / 1000UL; };
+
+        // If you have attached a Pin Change interrupt routine to the PPS pin:
+        //
+        //     const int PPSpin = 5;
+        //     void PPSisr() { UTCsecondStart( micros() ); };
+        //     void setup()
+        //     {
+        //       attachInterrupt( digitalPinToInterrupt(PPSpin), PPSisr, RISING );
+        //     }
+        //        
+        // If you are using an Input Capture pin, calculate the elapsed
+        //   microseconds since the capture time (based on the TIMER
+        //   frequency):
+        //
+        // void savePPSus() // called as an ISR or from a test in loop
+        // {
+        //    uint32_t elapsedUS = (currentCount - captureCount) * countUS;
+        //    gps.UTCsecondStart( micros() - elapsedUS );
+        // }
+    #endif
+
+    //.......................................................................
     // Set all parsed data to initial values.
 
     void data_init()

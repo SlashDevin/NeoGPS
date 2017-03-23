@@ -86,6 +86,21 @@ NMEAGPS::NMEAGPS()
 
 void NMEAGPS::sentenceBegin()
 {
+  if (intervalComplete()) {
+    // GPS quiet time is over, this is the start of a new interval.
+
+    #if defined(NMEAGPS_TIMESTAMP_FROM_INTERVAL) & \
+        ( defined(GPS_FIX_DATE) | defined(GPS_FIX_TIME) )
+      _IntervalStart = micros();
+    #endif
+
+    intervalComplete( false );
+
+    #ifdef NMEAGPS_PARSE_SATELLITES
+      sat_count = 0;
+    #endif
+  }
+
   crc          = 0;
   nmeaMessage  = NMEA_UNKNOWN;
   rxState      = NMEA_RECEIVING_HEADER;
@@ -107,17 +122,7 @@ void NMEAGPS::sentenceBegin()
     talker_id[1] = 0;
   #endif
 
-  // If the previous interval was completed,
-  //   this is the start of a new interval.
-
-  if (intervalComplete()) {
-    intervalComplete( false );
-
-    #ifdef NMEAGPS_PARSE_SATELLITES
-      sat_count = 0;
-    #endif
-  }
-}
+} // sentenceBegin
 
 //----------------------------------------------------------------
 // All fields from a sentence have been parsed.
@@ -138,6 +143,11 @@ void NMEAGPS::sentenceOk()
   //  This implements coherency.
   intervalComplete( intervalCompleted() );
 
+  if (intervalComplete()) {
+    // GPS quiet time now
+
+  }
+  
   reset();
 }
 
@@ -334,6 +344,23 @@ void NMEAGPS::storeFix()
     }
 
     if ((merging == NO_MERGING) || intervalComplete()) {
+
+      #if defined(NMEAGPS_TIMESTAMP_FROM_INTERVAL) & \
+          defined(GPS_FIX_TIME)
+
+        // If this new fix is the start of a second, save the
+        //   interval start time as the start of this UTC second.
+
+        #if NMEAGPS_FIX_MAX > 0
+          gps_fix & currentFix = buffer[ _currentFix ];
+        #else
+          gps_fix & currentFix = m_fix;
+        #endif
+      
+        if (currentFix.valid.time && (currentFix.dateTime_cs == 0))
+          UTCsecondStart( _IntervalStart );
+
+      #endif
 
       #if NMEAGPS_FIX_MAX > 0
 

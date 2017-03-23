@@ -207,7 +207,13 @@ public:
   //  Date and Time for the fix
   #if defined(GPS_FIX_DATE) | defined(GPS_FIX_TIME)
     NeoGPS::time_t  dateTime   ; // Date and Time in one structure
-    uint8_t         dateTime_cs; // hundredths of a second
+  #endif
+  #if defined(GPS_FIX_TIME)
+    uint8_t         dateTime_cs;         // The fix's UTC hundredths of a second
+    uint32_t        dateTime_us() const  // The fix's UTC microseconds
+                      { return dateTime_cs * 10000UL; };
+    uint16_t        dateTime_ms() const  // The fix's UTC millseconds
+                      { return dateTime_cs * 10; };
   #endif
 
   //--------------------------------------------------------

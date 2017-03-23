@@ -150,9 +150,12 @@ Print & operator <<( Print &outs, const gps_fix &fix )
 
     if (someTime) {
       outs << fix.dateTime << '.';
-      if (fix.dateTime_cs < 10)
+      uint16_t ms = fix.dateTime_ms();
+      if (ms < 100)
         outs << '0';
-      outs << fix.dateTime_cs;
+      if (ms < 10)
+        outs << '0';
+      outs << ms;
     }
     outs << ',';
 
@@ -331,6 +334,10 @@ Print & operator <<( Print &outs, const gps_fix &fix )
 //-----------------------------
 
 static const char NMEAGPS_header[] __PROGMEM =
+  #if defined(NMEAGPS_TIMESTAMP_FROM_INTERVAL) | defined(NMEAGPS_TIMESTAMP_FROM_PPS)
+    "micros(),"
+  #endif
+
   #if defined(NMEAGPS_PARSE_SATELLITES)
     "[sat"
     #if defined(NMEAGPS_PARSE_SATELLITE_INFO)
@@ -358,6 +365,11 @@ void trace_header( Print & outs )
 void trace_all( Print & outs, const NMEAGPS &gps, const gps_fix &fix )
 {
   outs << fix;
+
+  #if defined(NMEAGPS_TIMESTAMP_FROM_INTERVAL) | defined(NMEAGPS_TIMESTAMP_FROM_PPS)
+    outs << gps.UTCsecondStart();
+    outs << ',';
+  #endif
 
   #if defined(NMEAGPS_PARSE_SATELLITES)
     outs << '[';

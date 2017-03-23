@@ -263,4 +263,40 @@
 
 //#define NMEAGPS_PARSING_SCRATCHPAD
 
+//------------------------------------------------------
+// If you need to know the exact UTC time at *any* time,
+//   not just after a fix arrives, you must calculate the
+//   offset between the Arduino micros() clock and the UTC 
+//   time in a received fix.  There are two ways to do this:
+//
+// 1) When the GPS quiet time ends and the new update interval begins.  
+//    The timestamp will be set when the first character (the '$') of 
+//    the new batch of sentences arrives from the GPS device.  This is fairly
+//    accurate, but it will be delayed from the PPS edge by the GPS device's
+//    fix calculation time (usually ~100us).  There is very little variance
+//    in this calculation time (usually < 30us), so all timestamps are 
+//    delayed by a nearly-constant amount.
+//
+//    NOTE:  At update rates higher than 1Hz, the updates may arrive with 
+//    some increasing variance.
+
+//#define NMEAGPS_TIMESTAMP_FROM_INTERVAL
+
+// 2) From the PPS pin of the GPS module.  It is up to the application 
+//    developer to decide how to capture that event.  For example, you could:
+//
+//    a) simply poll for it in loop and call UTCsecondStart(micros());
+//    b) use attachInterrupt to call a Pin Change Interrupt ISR to save 
+//       the micros() at the time of the interrupt (see NMEAGPS.h), or
+//    c) connect the PPS to an Input Capture pin.  Set the 
+//       associated TIMER frequency, calculate the elapsed time
+//       since the PPS edge, and add that to the current micros().
+
+//#define NMEAGPS_TIMESTAMP_FROM_PPS
+
+#if defined( NMEAGPS_TIMESTAMP_FROM_INTERVAL ) &   \
+    defined( NMEAGPS_TIMESTAMP_FROM_PPS )
+  #error You cannot enable both TIMESTAMP_FROM_INTERVAL and PPS in NMEAGPS_cfg.h!
+#endif
+
 #endif
