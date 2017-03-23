@@ -21,6 +21,7 @@
 
 #include "NeoGPS_cfg.h"
 #include <stdint.h>
+class Print;
 
 enum Hemisphere_t { NORTH_H = 0, SOUTH_H = 1, EAST_H = 0, WEST_H = 1 };
 
@@ -44,10 +45,11 @@ public:
   // A utility function to convert from integer 'lat' or 'lon', scaled by 10^7
 
   void  From( int32_t deg_1E7 );
-    
-} NEOGPS_PACKED;
 
-class Print;
+  // Print DMS as the funky NMEA DDDMM.mmmm format
+  void printDDDMMmmmm( Print & outs ) const;
+
+} NEOGPS_PACKED;
 
 extern Print & operator << ( Print & outs, const DMS_t & );
 

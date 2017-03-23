@@ -91,3 +91,30 @@ Print & operator << ( Print & outs, const DMS_t & dms )
   return outs;
   
 } // operator <<
+
+//----------------------------------------------------------------
+
+void DMS_t::printDDDMMmmmm( Print & outs ) const
+{
+  outs.print( degrees );
+
+  if (minutes < 10)
+    outs.print( '0' );
+  outs.print( minutes );
+  outs.print( '.' );
+
+  //  Calculate the fractional minutes from the seconds,
+  //     *without* using floating-point numbers.
+
+  uint16_t mmmm = seconds_whole * 166;  // same as 10000/60, less .66666...
+  mmmm += (seconds_whole * 2) / 3;  // ... plus the .66666... fraction part
+
+  //  print leading zeroes, if necessary
+  if (mmmm < 1000)
+    outs.print( '0' );
+  if (mmmm <  100)
+    outs.print( '0' );
+  if (mmmm <   10)
+    outs.print( '0' );
+  outs.print( mmmm );
+}
