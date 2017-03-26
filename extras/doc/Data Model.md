@@ -64,6 +64,8 @@ gps_fix fix;
     `Time` operations allow converting to and from total seconds offset from a *de facto* starting time (e.g., an epoch date/time "origin").  There are constants in Time.h for NTP, POSIX and Y2K epochs.  Simply change the `static` members `s_epoch_year` and `s_epoch_weekday` in Time.h, and all date/time operations will be based on that epoch.  This does not affect GPS times, but it will allow you to easily convert a GPS time to/from an NTP or POSIX time value (seconds).<br><br>
     The [NMEAtimezone.ino](/examples/NMEAtimezone/NMEAtimezone.ino) example program shows how to convert the GPS time (UTC) into a local time.  Basically, a `Time` structure is converted to seconds (from the epoch start), then the time zone offset *in seconds* is added, and then the offset seconds are converted back to a time structure, with corrected day, month, year, hours and minutes members.
   * `fix.dateTime_cs`, in integer hundredths of a second
+    * `fix.dateTime_ms()`, in milliseconds
+    * `fix.dateTime_us()`, in microseconds
   * a collection of boolean `valid` flags for each of the above members, accessed with
     * `fix.valid.status`
     * `fix.valid.date` for year, month, day-of-month
@@ -76,7 +78,7 @@ gps_fix fix;
     * `fix.valid.lat_err`, `fix.valid.lon_err` and `fix.valid.alt_err`
     * `fix.valid.geoidHeight`
 
-##Validity
+## Validity
 Because the GPS device may *not* have a fix, each member of a `gps_fix` can be marked as valid or invalid.  That is, the GPS device may not know the lat/long yet.  To check whether the  fix member has been received, test the corresponding `valid` flag (described above).  For example, to check if lat/long data has been received:
 ```
   if (my_fix.valid.location) {
@@ -87,9 +89,12 @@ Because the GPS device may *not* have a fix, each member of a `gps_fix` can be m
 ```
 You should also know that, even though you have enabled a particular member (see [GPSfix_cfg.h](/src/GPSfix_cfg.h)), it **may not have a value** until the related NMEA sentence sets it.  And if you have not enabled that sentence for parsing in `NMEAGPS_cfg.h`, it will **never** be valid.
 
-##Other GPS-related information
+## Other GPS-related information
 There is additional information that is not related to a fix.  Instead, it contains information about parsing or a [**G**lobal **N**avigation **S**atellite **S**ystem](https://en.wikipedia.org/wiki/Satellite_navigation).   GNSS's currently include GPS (US), GLONASS (Russia), Beidou (China) and Galileo (EU). The main `NMEAGPS gps` object you declare in your sketch contains:
-  * `gps.nmeaMessage`, the latest received message type
+  * `gps.UTCsecondStart()`, the Arduino `micros()` value when the current UTC second started
+  * `gps.UTCms()`, the number of milliseconds since the last received UTC time, calculated from `micros()` and `gps.UTCsecondStart`.
+  * `gps.UTCus()`, the number of microseconds since the last received UTC time, calculated from `micros()` and `gps.UTCsecondStart`.
+  * `gps.nmeaMessage`, the latest received message type.  This is an ephemeral value, because multiple sentences are merged into one `fix` structure.  If you only check this after a complete fix is received, you will only see the LAST_SENTENCE_IN_INTERVAL.
     * enum values NMEA_GLL, NMEA_GSA, NMEA_GST, NMEA_GSV, NMEA_RMC, NMEA_VTG or NMEA_ZDA
   * `gps.satellies[]`, an array of satellite-specific information, where each element contains
     * `gps.satellies[i].id`, satellite ID
@@ -101,7 +106,7 @@ There is additional information that is not related to a fix.  Instead, it conta
   * `gps.mfr_id[]`, manufacturer ID, a three-character array (not NUL-terminated)
   * an internal fix structure,  `gps.fix()`.  Most sketches **should not** use `gps.fix()` directly!
 
-##Usage
+## Usage
 First, declare an instance of `NMEAGPS`:
 ```
 NMEAGPS gps;
@@ -160,7 +165,7 @@ However, the fix-oriented methods operate on complete *fixes*, not individual ch
 
 Note: If you find that you need to filter or merge data with a finer level of control,  you may need to use a different [Merging option](Merging.md), [Coherency](Coherency.md), or the more-advanced [Character-Oriented methods](/doc/CharOriented.md).  
 
-##Examples
+## Examples
 Some examples of accessing fix values:
 ```
 gps_fix fix_copy = gps.read();
@@ -222,10 +227,10 @@ Bonus: The compiler will optimize this into a single bit mask operation.
 
 The example printing utility file, [Streamers.cpp](/src/Streamers.cpp#L100) shows how to access each fix member and print its value.
 
-##Options
+## Options
 Except for `status`, each of these `gps_fix` members is conditionally compiled; any, all, or *no* members can be selected for parsing, storing and merging.  This allows you to configuring NeoGPS to use the minimum amount of RAM for the particular members of interest.  See [Configurations](Configurations.md) for how to edit [GPSfix_cfg.h](/src/GPSfix_cfg.h) and [NMEAGPS_cfg.h](/src/NMEAGPS_cfg.h#L67), respectively.
 
-##Precision
+## Precision
 Integers are used for all members, retaining full precision of the original data.
 ```
     gps_fix fix = gps.read();
