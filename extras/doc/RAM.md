@@ -1,7 +1,7 @@
 RAM requirements
 =======
 
-####**NeoGPS** requires **72% to 96% _less_ RAM, saving 140 to 1100 bytes.**
+#### **NeoGPS** requires **72% to 96% _less_ RAM, saving 140 to 1100 bytes.**
 
 Because you can select what data members are stored, the RAM savings depends on the [configuration](Configurations.md):
 
@@ -13,7 +13,7 @@ Because you can select what data members are stored, the RAM savings depends on 
 <tr><td>Full</td><td>242</td><td>- (-)</td><td>~1400 (83%)</td></tr>
 </table>
 
-####Why does **NeoGPS** use less RAM?
+#### Why does **NeoGPS** use less RAM?
 
 As data is received from the device, various portions of a `fix` are 
 modified.  In fact, _**no buffering RAM is required**_.  Each character 
@@ -25,14 +25,13 @@ can configure it to parse *no* sentence types and retain *no* data members.
 This is the **Minimal** configuration.  Although the 
 `fix().status` can be checked, no valid flags are available.  Even 
 though no sentences are parsed and no data members are stored, the 
-application will  still receive a `decoded` message type once per second:
+application will  still receive an empty `fix` once per second:
 
 ```
-while (uart1.available())
-  if (gps.decode( uart1.getchar() )) {
-    if (gps.nmeaMessage == NMEAGPS::NMEA_RMC)
-      sentenceReceived();
-  }
+while (gps.available( gpsPort )) {
+  gps_fix nothingButStatus = gps.read();
+  sentenceReceived();
+}
 ```
 
 The `ubloxNMEA` derived class doesn't use any extra bytes of RAM.
