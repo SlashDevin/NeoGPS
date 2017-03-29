@@ -275,7 +275,7 @@ public:
         // If you have attached a Pin Change interrupt routine to the PPS pin:
         //
         //     const int PPSpin = 5;
-        //     void PPSisr() { UTCsecondStart( micros() ); };
+        //     void PPSisr() { gps.UTCsecondStart( micros() ); };
         //     void setup()
         //     {
         //       attachInterrupt( digitalPinToInterrupt(PPSpin), PPSisr, RISING );
