@@ -92,7 +92,7 @@ const char wnwCD[] PROGMEM = "WNW";
 const char nwCD [] PROGMEM = "NW";
 const char nnwCD[] PROGMEM = "NNW";
 
-const char * const dirStrings[] =
+const char * const dirStrings[] PROGMEM =
   { nCD, nneCD, neCD, eneCD, eCD, eseCD, seCD, sseCD, 
     sCD, sswCD, swCD, wswCD, wCD, wnwCD, nwCD, nnwCD };
 
@@ -107,7 +107,7 @@ const __FlashStringHelper *compassDir( uint16_t bearing ) // degrees CW from N
   while (dir >= directions)
     dir -= directions;
 
-  return (const __FlashStringHelper *) dirStrings[ dir ];
+  return (const __FlashStringHelper *) pgm_read_ptr( &dirStrings[ dir ] );
 
 } // compassDir
 
