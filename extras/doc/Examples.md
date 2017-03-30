@@ -28,7 +28,7 @@ See also important information in `NMEAorder.ino` below, and the [Installing](In
 ##Diagnostics
 Several programs are provided to help diagnose GPS device problems:
 
-###Connection and Baud Rate
+### Connection and Baud Rate
 
 * [NMEAdiagnostic](/examples/NMEAdiagnostic/NMEAdiagnostic.ino)
  
@@ -36,7 +36,7 @@ This program listens for sentences and, if none are detected, tries a different 
 
 See the [Troubleshooting](Troubleshooting.md) section for more details.
 
-###Sentence order
+### Sentence order
 
 * [NMEAorder](/examples/NMEAorder/NMEAorder.ino)
 
@@ -62,7 +62,7 @@ Sentence order in each 1-second interval:
 
 The last sentence is of particular interest, as it is used to determine when the quiet time begins.  All example programs **depend** on knowing the last sentence (see [Quiet Time Interval](Troubleshooting#quiet-time-interval)).
 
-###Self-test Program
+### Self-test Program
 
 * [NMEAtest](/examples/NMEAtest/NMEAtest.ino)
 
@@ -153,7 +153,7 @@ Input:  $GPGGA,092725.00,3242.9000,N,11705.8176,W,1,8,1.01,499.6,M,48.0,M,,0*47
 Results:  3,2000-01-01 09:27:25.00,327150000,-1170969600,,,49960,1010,,,,,,8,[29,21,26,15,18,9,6,10,7,],
 ```
 
-###Benchmark
+### Benchmark
 
 *  [NMEAbenchmark](/examples/NMEAbenchmark/NMEAbenchmark.ino)
   
