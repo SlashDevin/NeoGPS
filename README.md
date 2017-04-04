@@ -22,19 +22,20 @@ The "GP" prefix usually indicates an original [GPS](https://en.wikipedia.org/wik
   * "GA" ([Galileo](https://en.wikipedia.org/wiki/Satellite_navigation#Galileo)), and
   * "GN" (mixed)
 
-This means that GLRMC, GBRMC or BDRMC, GARMC and GNRMC from the latest GPS devices will also be correctly parsed.  See discussion of Talker IDs in [Configurations](extras/doc/Configurations.md#enabledisable-the-talker-id-and-manufacturer-id-processing).
+This means that GLRMC, GBRMC or BDRMC, GARMC and GNRMC from the latest GPS devices (e.g., ublox M8N) will also be correctly parsed.  See discussion of Talker IDs in [Configurations](extras/doc/Configurations.md#enabledisable-the-talker-id-and-manufacturer-id-processing).
 
 Most applications can be fully implemented with the standard NMEA messages above.  They are supported by almost all GPS manufacturers.  Additional messages can be added through derived classes.
 
 Most applications will use this simple, familiar loop structure:
 ```
-gps_fix myFix;
+NMEAGPS gps;
+gps_fix fix;
 
 void loop()
 {
   while (gps.available( gps_port )) {
-    myFix = gps.read();
-    doSomeWork( myFix);
+    fix = gps.read();
+    doSomeWork( fix );
   }
 }
 ```
@@ -54,7 +55,7 @@ In an attempt to be reusable in a variety of different programming styles, this 
 * configurable message sets, including hooks for implementing proprietary NMEA messages
 * configurable message fields
 * multiple protocols from same device
-* any kind of input stream (Serial, SoftwareSerial, PROGMEM arrays, etc.)
+* any kind of input stream (Serial, [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial), I2C, PROGMEM arrays, etc.)
 
 Inconceivable!
 =============
