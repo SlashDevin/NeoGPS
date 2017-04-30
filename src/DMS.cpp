@@ -107,7 +107,9 @@ void DMS_t::printDDDMMmmmm( Print & outs ) const
   //     *without* using floating-point numbers.
 
   uint16_t mmmm = seconds_whole * 166;  // same as 10000/60, less .66666...
-  mmmm += (seconds_whole * 2) / 3;  // ... plus the .66666... fraction part
+  mmmm += (seconds_whole * 2 + seconds_frac/2 ) / 3;  // ... plus the remaining .66666
+      // ... plus the seconds_frac, scaled by 10000/(60*1000) = 1/6, which
+      //        is implemented above as 1/2 * 1/3 
 
   //  print leading zeroes, if necessary
   if (mmmm < 1000)
