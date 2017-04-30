@@ -338,10 +338,12 @@ void NMEAGPS::storeFix()
     // YES, save it.
     //   Note: If FIX_MAX == 0, this just marks _fixesAvailable = true.
 
-    if ((NMEAGPS_FIX_MAX > 0) && (merging == EXPLICIT_MERGING)) {
+    #if NMEAGPS_FIX_MAX > 0
+      if (merging == EXPLICIT_MERGING) {
       // Accumulate all sentences
       buffer[ _currentFix ] |= fix();
     }
+    #endif
 
     if ((merging == NO_MERGING) || intervalComplete()) {
 
