@@ -11,11 +11,12 @@
 //    Enter the following commands through the Serial Monitor window:
 //
 //      '1' - send NMEA PUBX text command to enable all sentences
-//      '0' - end NMEA PUBX text command to disable all sentences except GLL
+//      '0' - send NMEA PUBX text command to disable all sentences except GLL
 //      'd' - send UBX binary command to disable all sentences except GLL
 //      'r1' - send UBX binary command to set update rate to  1Hz
 //      'r5' - send UBX binary command to set update rate to  5Hz
 //      'r0' - send UBX binary command to set update rate to 10Hz
+//      'r6' - send UBX binary command to set update rate to 16Hz
 //      '3'  - send NMEA PUBX text command to set baud rate to 38400
 //      '9'  - send NMEA PUBX text command to set baud rate to 9600
 //      'e'  - toggle echo of all characters received from GPS device.
@@ -34,8 +35,21 @@
 //     3) You know the default baud rate of your GPS device.
 //          If 9600 does not work, use NMEAdiagnostic.ino to
 //          scan for the correct baud rate.
-//     4) LAST_SENTENCE_IN_INTERVAL is defined to be 
-//          NMEAGPS::NMEA_GLL (see NMEAGPS_cfg.h).
+//     4) LAST_SENTENCE_IN_INTERVAL is defined to be the following in NMEAGPS_cfg.h:
+//
+//          #include <stdint.h>
+//          extern uint8_t LastSentenceInInterval; // a variable!
+//          #define LAST_SENTENCE_IN_INTERVAL \
+//                      ((NMEAGPS::nmea_msg_t) LastSentenceInInterval)
+//
+//        This is a replacement for the typical
+//
+//          #define LAST_SENTENCE_IN_INTERVAL NMEAGPS::NMEA_GLL
+//
+//        This allows the sketch to choose the last sentence *at run time*, not
+//        compile time.  This is necessary because this sketch can send 
+//        configuration commands that change which sentences are enabled at run
+//        time.  The storage for the "externed" variable is below.
 //
 //  'Serial' is for debug output to the Serial Monitor window.
 //
@@ -66,6 +80,7 @@
 
 static NMEAGPS  gps;
 static gps_fix  fix_data;
+uint8_t LastSentenceInInterval = 0xFF; // storage for the run-time selection
 
 static char lastChar; // last command char
 static bool echoing = false;
@@ -80,9 +95,11 @@ NeoTeeStream tee( both, sizeof(both)/sizeof(both[0]) );
 const unsigned char ubxRate1Hz[] PROGMEM = 
   { 0x06,0x08,0x06,0x00,0xE8,0x03,0x01,0x00,0x01,0x00 };
 const unsigned char ubxRate5Hz[] PROGMEM =
-  { 0x06,0x08,0x06,0x00,0xC8,0x00,0x01,0x00,0x01,0x00 };
+  { 0x06,0x08,0x06,0x00,200,0x00,0x01,0x00,0x01,0x00 };
 const unsigned char ubxRate10Hz[] PROGMEM =
-  { 0x06,0x08,0x06,0x00,0x64,0x00,0x01,0x00,0x01,0x00 };
+  { 0x06,0x08,0x06,0x00,100,0x00,0x01,0x00,0x01,0x00 };
+const unsigned char ubxRate16Hz[] PROGMEM =
+  { 0x06,0x08,0x06,0x00,50,0x00,0x01,0x00,0x01,0x00 };
 
 // Disable specific NMEA sentences
 const unsigned char ubxDisableGGA[] PROGMEM =
@@ -206,10 +223,13 @@ void setup()
     }
   #endif
 
-  if (LAST_SENTENCE_IN_INTERVAL != NMEAGPS::NMEA_GLL) {
-    DEBUG_PORT.print  ( F("ERROR:\n   LAST_SENTENCE_IN_INTERVAL must be defined to  NMEAGPS::NMEA_GLL in NMEAGPS_cfg.h") );
-    for (;;);
+  if (LastSentenceInInterval != LAST_SENTENCE_IN_INTERVAL) {
+    Serial.println(
+      F("LAST_SENTENCE_IN_INTERVAL is not properly defined in NMEAGPS_cfg.h!\n"
+        "   See Prerequisite 4 above") );
+    for (;;); // hang here!
   }
+  LastSentenceInInterval = NMEAGPS::NMEA_GLL;
 
   trace_header( DEBUG_PORT );
   DEBUG_PORT.flush();
@@ -237,6 +257,7 @@ void loop()
           gps.send_P( &tee, (const __FlashStringHelper *) disableGGA );
           gps.send_P( &tee, (const __FlashStringHelper *) disableVTG );
           gps.send_P( &tee, (const __FlashStringHelper *) disableZDA );
+          LastSentenceInInterval = NMEAGPS::NMEA_GLL;
         }
         break;
       case '1':
@@ -250,6 +271,7 @@ void loop()
           gps.send_P( &tee, (const __FlashStringHelper *) enableGGA );
           gps.send_P( &tee, (const __FlashStringHelper *) enableVTG );
           gps.send_P( &tee, (const __FlashStringHelper *) enableZDA );
+          LastSentenceInInterval = NMEAGPS::NMEA_ZDA;
         }
         break;
       case '3':
@@ -258,6 +280,11 @@ void loop()
       case '5':
         if (lastChar == 'r') {
           sendUBX( ubxRate5Hz, sizeof(ubxRate5Hz) );
+        }
+        break;
+      case '6':
+        if (lastChar == 'r') {
+          sendUBX( ubxRate16Hz, sizeof(ubxRate16Hz) );
         }
         break;
       case '9':
@@ -272,6 +299,7 @@ void loop()
         sendUBX( ubxDisableGGA, sizeof(ubxDisableGGA) );
         sendUBX( ubxDisableVTG, sizeof(ubxDisableVTG) );
         sendUBX( ubxDisableZDA, sizeof(ubxDisableZDA) );
+        LastSentenceInInterval = NMEAGPS::NMEA_GLL;
         break;
 
       case 'e':
