@@ -56,7 +56,7 @@ void loop()
     Serial.print( F("Location: ") );
     if (fix.valid.location) {
       Serial.print( fix.latitude(), 6 );
-    Serial.print( ',' );
+      Serial.print( ',' );
       Serial.print( fix.longitude(), 6 );
     }
 

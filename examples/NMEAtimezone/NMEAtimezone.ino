@@ -90,7 +90,7 @@ static void doSomeWork( const gps_fix & fix )
     }
 
     // Set these values to the offset of your timezone from GMT
-    static const int32_t zone_hours           = -5L; // EST
+    static const int32_t         zone_hours   = -5L; // EST
     static const int32_t         zone_minutes =  0L; // usually zero
     static const NeoGPS::clock_t zone_offset  =
                       zone_hours   * NeoGPS::SECONDS_PER_HOUR +

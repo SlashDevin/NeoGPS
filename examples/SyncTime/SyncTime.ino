@@ -115,7 +115,7 @@ void setup()
   DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
   DEBUG_PORT.println( F("Local time seconds.milliseconds") );
   DEBUG_PORT.flush();
-  
+
   gps_port.begin( 9600 );
 }
 
@@ -124,15 +124,15 @@ void setup()
 void loop()
 {
   while (gps.available( gps_port )) {
-    fix      = gps.read();
+    fix = gps.read();
   }
 
-    if (fix.valid.time) {
+  if (fix.valid.time) {
     uint32_t UTCms = gps.UTCms();
 
     if (((UTCms % CLOCK_INTERVAL_MS) == 0) && (UTCms != lastShowTime)) {
       showTime( UTCms, 1000 );
       lastShowTime = UTCms;
-      }
     }
+  }
 }

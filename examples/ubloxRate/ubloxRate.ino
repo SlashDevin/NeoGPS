@@ -10,9 +10,9 @@
 //
 //    Enter the following commands through the Serial Monitor window:
 //
-//      '1' - send NMEA PUBX text command to enable all sentences
-//      '0' - send NMEA PUBX text command to disable all sentences except GLL
-//      'd' - send UBX binary command to disable all sentences except GLL
+//      '1'  - send NMEA PUBX text command to enable all sentences
+//      '0'  - send NMEA PUBX text command to disable all sentences except GLL
+//      'd'  - send UBX binary command to disable all sentences except GLL
 //      'r1' - send UBX binary command to set update rate to  1Hz
 //      'r5' - send UBX binary command to set update rate to  5Hz
 //      'r0' - send UBX binary command to set update rate to 10Hz
