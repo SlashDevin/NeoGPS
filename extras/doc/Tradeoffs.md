@@ -14,26 +14,21 @@ Before accessing a part, you must check its `valid` flag.  Fortunately, this add
 
 #### Parsing without buffers, or *in place*, means that you must be more careful about when you access data items.
 
-In general, you should wait to access the fix until after the entire sentence has been parsed.  Most of the examples simply `decode` until a sentence is COMPLETED, then do all their work with `fix`.  See `loop()` in [NMEA.ino](/examples/NMEA/NMEA.ino). 
-Member function `is_safe()` can also be used to determine when it is safe.
+In general, using the fix-oriented methods `available` and `read` are atomically safe.  You can access any parts of your `fix` structure, at any time.
 
-If you need to access the fix at any time, you will have to double-buffer the fix: simply copy the `fix` when it is safe to do so.  (See NMEAGPS.h comments regarding a
-`safe_fix`.)  Also, received data errors can cause invalid field values to be set *before* the CRC is fully computed.  The CRC will
-catch most of those, and the fix members will then be marked as invalid.
+If you are using the advanced [character-oriented methods](/extras/doc/CharOriented.md):
+
+*  You must wait to access the internal `gps.fix()` until after the entire sentence has been parsed.
+*  Only 3 example programs use these methods: NMEAblink, NMEAorder and NMEAdiagnostic.  These examples simply `decode` until a sentence is COMPLETED.  See `GPSloop()` in [NMEAdiagnostic.ino](/examples/NMEAdiagnostoc/NMEAdiagnostic.ino).
+*  Member function `gps.is_safe()` can also be used to determine when it is safe to access the internal `gps.fix()`.
+*  Received data errors can cause invalid field values to be set in the internal fix *before* the CRC is fully computed.  The CRC will
+catch most of those, and the internal fix members will then be marked as invalid.
 
 #### Accumulating parts into *one* fix means less RAM but more complicated code
 
-By enabling `NMEAGPS_ACCUMULATE_FIX`, the fix will accumulate data from all received sentences.  Each
-fix member will contain the last value received from any sentence that
-contains that information.  While it avoids the need for a second copy of the merged fix, it has several restrictions:
-* Fix members can only be accessed while it `is_safe()`.  There is no double-buffered fix.
-* Fix members may contain information from different time intervals (i.e., they are not 
-coherent).  It is possible to acheive coherency if the `fix` is re-initialzed at the correct time.
-* All fix members may be invalidated if a received sentence is rejected for any reason (e.g., CRC
-error).  No members will be valid until new sentences are received, parsed, accepted and *safe*.  Your application
-must accommodate possible gaps in fix availability.
+By enabling one of the [merging](/extras/doc/Merging.md) methods, fixes will accumulate data from all received sentences.  The code required to implement those different techniques is more complicated than simply setting a structure member.
 
-You are not restricted from having other instances of fix; you can copy or merge the accumulating fix into another copy if you want.  This is just a way to minimize RAM requirements and still have a fused fix.
+You are not restricted from having other instances of fix; you can copy or merge a some or all of a new fix into another copy if you want.
 
 #### Full C++ OO implementation is more advanced than most Arduino libraries.
 
@@ -43,4 +38,3 @@ You've been warned!  ;)
 
 Although most of the RAM reduction is due to eliminating buffers, some of it is from trading RAM
 for additional code (see **Nominal** Program Space above).  And, as I mentioned, the readabilty (i.e., goodness) suffers from its configurability.
-
