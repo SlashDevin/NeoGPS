@@ -2,7 +2,7 @@ Merging
 ===========
 Because different NMEA sentences contain different pieces of a fix, they have to be "merged" to determine a complete picture.  Some sentences contain only date and time.  Others contain location and altitude, but not speed and heading (see table [here](Choosing.md)).
 
-There are several ways to use the GPS fix data: without merging, implicit merging, and **explicit merging ([the default](#3-by-update-intervals-explicit-merging))**.  NeoGPS allows you to choose how you want multiple sentences to be merged:
+There are several ways to use the GPS fix data: without merging, implicit merging, and **explicit merging ([the default](#3-explicit-merging))**.  NeoGPS allows you to choose how you want multiple sentences to be merged:
 
 ### 1. NO MERGING
 
