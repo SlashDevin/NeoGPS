@@ -1,7 +1,7 @@
 Performance
 ===========
 
-####**NeoGPS** is **40% to 70% faster**.
+#### **NeoGPS** is **40% to 70% faster**.
 
 For comparison, the following sentences were parsed by various [Configurations](/doc/Configurations.md) of **NeoGPS**, **TinyGPS** and **TinyGPSPlus** on a 16MHz Arduino Mega2560.
 
@@ -21,7 +21,7 @@ $GPGSV,3,3,10,26,82,187,47,28,43,056,46*77
 <tr><td>Full</td><td>GGA<br>RMC<br>GSV</td><td>908us<br>899us<br>2194us</td><td>- (37%)<BR>-  (37%)<br>-   (-)</td><td>1523us (40%)<br>1560us (42%)<br>6651us (67%)</td></tr>
 </table>
 
-####Why is **NeoGPS** faster?
+#### Why is **NeoGPS** faster?
 
 Most libraries use extra buffers to accumulate parts of the sentence so they 
 can be parsed all at once.  For example, an extra field buffer may hold on 
