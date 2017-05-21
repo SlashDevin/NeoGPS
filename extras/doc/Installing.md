@@ -1,5 +1,14 @@
 Installing
 ==========
+
+1. [Download the library](#1-download-the-library)
+2. [Choose a serial port](#2-choose-a-serial-port)
+3. [Connect the GPS device](#3-connect-the-gps-device)
+4. [Review `GPSport.h`](#4-review-librariesneogpssrcgpsporth)
+5. [Open the example](#5--open-the-example-sketch-nmeaino)
+6. [Build and upload](#6--build-and-upload-the-sketch-to-your-arduino)
+<hr>
+
 ### 1. Download the library
 
 It is easiest to use the [Ardino IDE Library Manager](https://www.arduino.cc/en/Guide/Libraries#toc3) to automatically download and install NeoGPS.  Select the menu **Sketch -> Include Library -> Manage Libraries**.  Then type "NeoGPS" in the Search box.
@@ -16,6 +25,8 @@ src
 library.properties
 README.md
 ```
+
+<hr>
 
 ### 2. Choose a serial port
 
@@ -36,8 +47,8 @@ For Micro and Leo (and other 32U4-based Arduinos), you can connect the GPS devic
 `NeoSWSerial` can be used with `AltSoftSerial` at the same time, allowing your sketch to have two extra serial ports.
 
 **WORST**:  `SoftwareSerial` is NOT RECOMMENDED, because it disables interrupts for long periods of time.  This can interfere with other parts of your sketch, or with other libraries.  It cannot transmit and receive at the same time, and your sketch can only receive from one `SoftwareSerial` instance at time.
-<br>
-<br>
+
+<hr>
 
 ### 3. Connect the GPS device
 
@@ -48,6 +59,8 @@ Most GPS devices are 3.3V devices, and most Arduinos are 5V devices.  Although m
 This can damage the device, cause overheating, system power problems or decrease the lifetime of battery-operated systems.  You must level-shift this connection with inexpensive level-shifting modules (best) or a resistor divider.
 
 Connecting the 3.3V GPS TX pin to a 5V Arduino receive pin will not damage the GPS device, but it may not be reliable.  This is because the GPS TX voltage is slightly lower than what the Arduino requires.  It works in many situations, but if you are not able to receive GPS characters reliably, you probably need to use a level-shifting module (best) or a diode+resistor to "pull up" the GPS TX pin voltage.
+
+<hr>
 
 ### 4. Review `Libraries/NeoGPS/src/GPSport.h`
 
@@ -81,11 +94,14 @@ To select one of the non-default types, simply include their header before inclu
 The above will cause `GPSport.h` to declare `gps_port` using the class `NeoICSerial`.
 
 Modify these defaults if necessary, or if you know what serial port to use, you can declare it yourself.  Be sure to delete the line `#include "GPSport.h"`, and delete the file `GPSport.h`.
-<br>
-<br>
+
+<hr>
+
 ### 5.  Open the example sketch NMEA.ino
 
 In the Arduino IDE, select **File -> Examples -> NeoGPS -> NMEA**.
+
+<hr>
 
 ### 6.  Build and upload the sketch to your Arduino.
 
@@ -110,6 +126,8 @@ Status,UTC Date/Time,Lat,Lon,Hdg,Spd,Alt,Sats,Rx ok,Rx err,Rx chars,
 The default NeoGPS configuration is **Nominal**, as described [here](Configurations.md#typical-configurations).  This output can be copy & pasted into a spreadsheet for graphing or analysis, or into a text editor for saving as a CSV file.
 
 If you do not see this output, please review the  [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section.
+
+<hr>
 
 ### The NMEA.ino example works!
 Once you have verified the GPS device connection and build process with this first example, you should also verify your device's behavior with `NMEAorder.ino` (see [this section](Troubleshooting.md#quiet-time-interval)).  This can avoid problems later on, when you start adding/merging other functions to do your "work".
