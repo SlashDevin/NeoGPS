@@ -264,7 +264,7 @@ You do not have to call a "parse" function after a complete sentence has been re
 These example programs are structured so that the (relatively) slow printing operations are performed during the GPS quiet time.  Simply replace those trace/print statements with your specific code.
 
 __________________
-##When all else fails
+## When all else fails
 
 If you still do not have enough time to complete your tasks during the GPS quiet time, you can
    * Increase the baud rate on the debug port (takes less time to print)
