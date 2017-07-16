@@ -27,13 +27,22 @@ int32_t safeDLon( int32_t p2, int32_t p1 )
 float Location_t::DistanceRadians
   ( const Location_t & p1, const Location_t & p2 )
 {
-  // Haversine calculation from http://www.movable-type.co.uk/scripts/latlong.html
+  int32_t dLonL   = safeDLon( p2.lon(), p1.lon() );
+  int32_t dLatL   = p2.lat() - p1.lat();
 
-        float dLat      = (p2.lat() - p1.lat()) * RAD_PER_DEG * LOC_SCALE;
-        float haverDLat = sin(dLat/2.0);
+  if ((abs(dLatL)+abs(dLonL)) < 1000) {
+    //  VERY close together.  Just use equirect approximation with precise integers.
+    //    This is not needed for accuracy (that I can measure), but it is
+    //    a quicker calculation.
+    return EquirectDistanceRadians( p1, p2 );
+  }
+
+  // Haversine calculation from http://www.movable-type.co.uk/scripts/latlong.html
+  float dLat      = dLatL * RAD_PER_DEG * LOC_SCALE;
+  float haverDLat = sin(dLat/2.0);
   haverDLat *= haverDLat; // squared
   
-  float dLon      = safeDLon( p2.lon(), p1.lon() ) * RAD_PER_DEG * LOC_SCALE;
+  float dLon      = dLonL * RAD_PER_DEG * LOC_SCALE;
   float haverDLon = sin(dLon/2.0);
   haverDLon *= haverDLon; // squared
   
