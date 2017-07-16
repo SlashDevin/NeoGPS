@@ -110,7 +110,7 @@ static void print( const NeoGPS::time_t & dt, bool valid, int8_t len )
     printInvalid( len );
   } else {
     Serial.write( ' ' );
-    Serial << dt;
+    Serial << dt; // this "streaming" operator outputs date and time
   }
 }
 

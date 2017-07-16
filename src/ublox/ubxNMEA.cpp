@@ -17,7 +17,8 @@ bool ubloxNMEA::parseField(char chr)
         case PUBX_04: return parsePUBX_04( chr );
       #endif
 
-      default: break;
+      default: 
+        break;
     }
 
   } else
