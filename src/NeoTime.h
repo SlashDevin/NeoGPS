@@ -108,8 +108,7 @@ struct time_t {
 
   /**
    * Offset by a number of seconds.
-   * @param[in] seconds to offset.
-   * @return *this
+   * @param[in] offset in seconds.
    */
   void operator +=( clock_t offset )
     { *this = offset + operator clock_t(); }
@@ -194,7 +193,7 @@ struct time_t {
 
   /**
    * Determine the day of the week for the specified day number
-   * @param[in] day number as counted from January 1 of the epoch year.
+   * @param[in] dayno number as counted from January 1 of the epoch year.
    * @return weekday number 1..7, as for the /day/ member.
    */
   static uint8_t weekday_for(uint16_t dayno)
