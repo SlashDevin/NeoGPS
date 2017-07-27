@@ -5,14 +5,16 @@
  **/
 #ifdef ARDUINO
   #include <Arduino.h>
+  
   #include <Stream.h>
+  #include <Print.h>
   
   #ifdef __AVR__
     #include <avr/interrupt.h>
   #endif
 #else
   #include "platforms/Stream.h"
-  #include "platforms/Port.h"
+  #include "platforms/Print.h"
   #include "platforms/System.h"
   
   #include <stdint.h>
