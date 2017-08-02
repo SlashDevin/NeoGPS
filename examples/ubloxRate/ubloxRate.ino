@@ -227,7 +227,6 @@ void setup()
     Serial.println(
       F("LAST_SENTENCE_IN_INTERVAL is not properly defined in NMEAGPS_cfg.h!\n"
         "   See Prerequisite 4 above") );
-    for (;;); // hang here!
   }
   LastSentenceInInterval = NMEAGPS::NMEA_GLL;
 

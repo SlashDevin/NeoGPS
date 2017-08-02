@@ -229,7 +229,7 @@ protected:
 
     virtual bool intervalCompleted() const
       {
-        return ((nmeaMessage == UBX_MSG) &&
+        return ((nmeaMessage        == (nmea_msg_t) UBX_MSG) &&
                 (m_rx_msg.msg_class == UBX_LAST_MSG_CLASS_IN_INTERVAL) &&
                 (m_rx_msg.msg_id    == UBX_LAST_MSG_ID_IN_INTERVAL))
                         ||

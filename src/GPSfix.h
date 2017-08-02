@@ -125,6 +125,7 @@ public:
 
     int32_t altitude_cm() const { return alt.int32_00(); };
     float   altitude   () const { return alt.float_00(); };
+    float   altitude_ft() const { return altitude() * 3.28084; };
   #endif
 
   #ifdef GPS_FIX_SPEED

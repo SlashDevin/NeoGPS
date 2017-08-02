@@ -21,6 +21,7 @@ namespace ublox {
         UBX_AID  = 0x0B,  // Assist Now aiding messages
         UBX_TIM  = 0x0D,  // Timing messages
         UBX_NMEA = 0xF0,  // NMEA Standard messages
+        UBX_PUBX = 0xF1,  // NMEA proprietary messages (PUBX)
         UBX_UNK  = 0xFF
       }  __attribute__((packed));
 
@@ -54,7 +55,7 @@ namespace ublox {
       }  __attribute__((packed));
 
       struct msg_t : msg_hdr_t {
-          uint16_t length;  // should be sizeof(this)-sizeof(msg+hdr_t)
+          uint16_t length;  // should be sizeof(this)-sizeof(msg_hdr_t)
           #define UBX_MSG_LEN(msg) (sizeof(msg) - sizeof(ublox::msg_t))
 
           msg_t()

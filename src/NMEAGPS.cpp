@@ -245,8 +245,9 @@ NMEAGPS::decode_t NMEAGPS::decode( char c )
       chrCount++;
     } else if (cmd_res == DECODE_COMPLETED) {
       headerReceived();
-    } else // DECODE_CHR_INVALID
+    } else { // DECODE_CHR_INVALID
       sentenceUnrecognized();
+    }
 
 
   } else if (rxState == NMEA_RECEIVING_CRC) { //---------------------------
@@ -340,9 +341,9 @@ void NMEAGPS::storeFix()
 
     #if NMEAGPS_FIX_MAX > 0
       if (merging == EXPLICIT_MERGING) {
-      // Accumulate all sentences
-      buffer[ _currentFix ] |= fix();
-    }
+        // Accumulate all sentences
+        buffer[ _currentFix ] |= fix();
+      }
     #endif
 
     if ((merging == NO_MERGING) || intervalComplete()) {
@@ -843,8 +844,11 @@ bool NMEAGPS::parseGSV( char chr )
             case 2:
               if (chr != ',')
                 parseInt( satellites[sat_count].azimuth, chr );
-              else
-                sat_count++; // field 3 can be omitted, increment now
+              else {
+                // field 3 can be omitted, do some things now
+                satellites[sat_count].tracked = false;
+                sat_count++;
+              }
               break;
             case 3:
               if (chr != ',') {
@@ -884,7 +888,7 @@ bool NMEAGPS::parseRMC( char chr )
       case 7:  return parseSpeed  ( chr );
       case 8:  return parseHeading( chr );
       case 9:  return parseDDMMYY ( chr );
-      case 12: return parseFix    ( chr );
+      // case 12: return parseFix    ( chr );  ublox only!
     }
   #endif
 
