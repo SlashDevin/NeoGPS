@@ -1328,6 +1328,10 @@ bool NMEAGPS::parseLat( char chr )
 bool NMEAGPS::parseNS( char chr )
 {
   #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
+    if ((chr == ',') && (chrCount == 0) || 
+        ((chr != ',') && (chr != 'N') && (chr != 'S')))
+      group_valid = false;
+
     if (group_valid && (chr == 'S')) {
       #ifdef GPS_FIX_LOCATION
         m_fix.location._lat = -m_fix.location._lat;
@@ -1373,6 +1377,10 @@ bool NMEAGPS::parseLon( char chr )
 bool NMEAGPS::parseEW( char chr )
 {
   #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
+    if ((chr == ',') && (chrCount == 0) || 
+        ((chr != ',') && (chr != 'E') && (chr != 'W')))
+      group_valid = false;
+
     if (group_valid) {
       if (chr == 'W') {
         #ifdef GPS_FIX_LOCATION
