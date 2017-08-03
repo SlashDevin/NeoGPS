@@ -234,6 +234,25 @@
 #endif
 
 //------------------------------------------------------
+//  Becase the NMEA checksum is not very good at error detection, you can 
+//    choose to enable additional validity checks.  This trades a little more 
+//    code and execution time for more reliability.
+//
+//  Validation at the character level is a syntactic check only.  For 
+//    example, integer fields must contain characters in the range 0..9, 
+//    latitude hemisphere letters can be 'N' or 'S'.  Characters that are not 
+//    valid for a particular field will cause the entire sentence to be 
+//    rejected as an error, *regardless* of whether the checksum would pass.
+#define NMEAGPS_VALIDATE_CHARS true
+
+//  Validation at the field level is a semantic check.  For 
+//    example, latitude degrees must be in the range -90..+90.
+//    Values that are not valid for a particular field will cause the 
+//    entire sentence to be rejected as an error, *regardless* of whether the 
+//    checksum would pass.
+#define NMEAGPS_VALIDATE_FIELDS true
+
+//------------------------------------------------------
 // Some devices may omit trailing commas at the end of some 
 // sentences.  This may prevent the last field from being 
 // parsed correctly, because the parser for some types keep 

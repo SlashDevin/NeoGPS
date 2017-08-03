@@ -1328,13 +1328,27 @@ bool NMEAGPS::parseLat( char chr )
 bool NMEAGPS::parseNS( char chr )
 {
   #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
-    if (group_valid && (chr == 'S')) {
-      #ifdef GPS_FIX_LOCATION
-        m_fix.location._lat = -m_fix.location._lat;
-      #endif
-      #ifdef GPS_FIX_LOCATION_DMS
-        m_fix.latitudeDMS.hemisphere = SOUTH_H;
-      #endif
+    if (group_valid) {
+
+      if (chrCount == 0) {
+
+        // First char can only be 'N' or 'S'
+        if (chr == 'S') {
+          #ifdef GPS_FIX_LOCATION
+            m_fix.location._lat = -m_fix.location._lat;
+          #endif
+          #ifdef GPS_FIX_LOCATION_DMS
+            m_fix.latitudeDMS.hemisphere = SOUTH_H;
+          #endif
+        } else if ((validateChars() | validateFields()) && (chr != 'N')) {
+          sentenceInvalid();
+        }
+
+        // Second char can only be ','
+      } else if ((validateChars() | validateFields()) &&
+                 ((chrCount > 1) ||(chr != ','))) {
+        sentenceInvalid();
+      }
     }
   #endif
 

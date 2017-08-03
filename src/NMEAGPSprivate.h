@@ -62,6 +62,9 @@
 
     static const bool keepNewestFixes = NMEAGPS_KEEP_NEWEST_FIXES;
 
+    static const bool validateChars () { return NMEAGPS_VALIDATE_CHARS; }
+    static const bool validateFields() { return NMEAGPS_VALIDATE_FIELDS; }
+
     //.......................................................................
     //  Control access to this object.  This preserves atomicity when
     //     the processing style is interrupt-driven.
