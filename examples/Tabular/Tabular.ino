@@ -1,15 +1,43 @@
-#include <NeoSWSerial.h>
 #include <NMEAGPS.h>
 
 NMEAGPS     gps;
-//NeoSWSerial gpsPort(4, 3);
+
+//-----------------
+//  Prerequisites:
+//     1) NMEA.ino works with your device (correct TX/RX pins and baud rate)
+//     2) GPS_FIX_HDOP is defined in GPSfix_cfg.h
+//
+//  'Serial' is for debug output to the Serial Monitor window.
+//
+
+//-----------------
+//   Choose a serial port for the GPS device:
+//
+//   BEST: For a Mega, Leonardo or Due, use the extra hardware serial port
 #define gpsPort Serial1
 
-static const NeoGPS::Location_t London( 51.508131, -0.128002 );
+//   2nd BEST:  For other Arduinos, use AltSoftSerial on the required pins
+//                 (8&9 for an UNO)
+// #include <AltSoftSerial.h>
+// AltSoftSerial gpsPort;  // pin 8 to GPS TX, pin 9 to GPS RX
+
+//   3rd BEST:  If you can't use those specific pins (are you sure?),
+//                 use NeoSWSerial on any two pins @ 9600, 19200 or 38400
+// #include <NeoSWSerial.h>
+// NeoSWSerial gpsPort( 2, 3 ); // pin 2 to GPS TX, pin 3 to GPS RX
+
+//   WORST:  SoftwareSerial is NOT RECOMMENDED
+
+//-----------------
+// Check configuration
 
 #ifndef GPS_FIX_HDOP
   #error You must uncomment GPS_FIX_HDOP in GPSfix_cfg.h!
 #endif
+
+//-----------------
+
+static const NeoGPS::Location_t London( 51.508131, -0.128002 );
 
 void setup()
 {
@@ -26,6 +54,8 @@ void setup()
 
   gpsPort.begin(9600);
 }
+
+//-----------------
 
 void loop()
 {
@@ -56,6 +86,7 @@ void loop()
   }
 }
 
+//-----------------
 //  Print utilities
 
 static void repeat( char c, int8_t len )

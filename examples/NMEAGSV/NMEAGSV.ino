@@ -6,12 +6,11 @@ gps_fix  fix; // This holds on to the latest values
 //-----------------
 //  Prerequisites:
 //     1) NMEA.ino works with your device (correct TX/RX pins and baud rate)
-//     2) GPS_FIX_SATELLITES is enabled in GPSfix_cfg.h
-//     3) NMEAGPS_PARSE_SATELLITES and NMEAGPS_PARSE_SATELLITE_INFO are
+//     2) NMEAGPS_PARSE_SATELLITES and NMEAGPS_PARSE_SATELLITE_INFO are
 //              enabled in NMEAGPS_cfg.h
-//     4) The GSV sentence has been enabled in NMEAGPS_cfg.h.
-//     5) Your device emits the GSV sentence (use NMEAorder.ino to confirm).
-//     6) LAST_SENTENCE_IN_INTERVAL has been set to GSV (or any other enabled sentence)
+//     3) The GSV sentence has been enabled in NMEAGPS_cfg.h.
+//     4) Your device emits the GSV sentence (use NMEAorder.ino to confirm).
+//     5) LAST_SENTENCE_IN_INTERVAL has been set to GSV (or any other enabled sentence)
 //              in NMEAGPS_cfg.h (use NMEAorder.ino).
 //
 //  'Serial' is for debug output to the Serial Monitor window.
@@ -34,6 +33,21 @@ gps_fix  fix; // This holds on to the latest values
 // NeoSWSerial gpsPort( 2, 3 ); // pin 2 to GPS TX, pin 3 to GPS RX
 
 //   WORST:  SoftwareSerial is NOT RECOMMENDED
+
+//-----------------
+// Check configuration
+
+#ifndef NMEAGPS_PARSE_GSV
+  #error You must define NMEAGPS_PARSE_GSV in NMEAGPS_cfg.h!
+#endif
+
+#ifndef NMEAGPS_PARSE_SATELLITES
+  #error You must define NMEAGPS_PARSE_SATELLITE in NMEAGPS_cfg.h!
+#endif
+
+#ifndef NMEAGPS_PARSE_SATELLITE_INFO
+  #error You must define NMEAGPS_PARSE_SATELLITE_INFO in NMEAGPS_cfg.h!
+#endif
 
 //-----------------
 

@@ -33,8 +33,8 @@
 // However, the sentence type may still be recognized by /decode/ and 
 // stored in member /nmeaMessage/.  No valid flags would be available.
 
-#define NMEAGPS_PARSE_PUBX_00
-#define NMEAGPS_PARSE_PUBX_04
+//#define NMEAGPS_PARSE_PUBX_00
+//#define NMEAGPS_PARSE_PUBX_04
 
 // Ublox proprietary messages do not have a message type.  These
 // messages start with "$PUBX," which ends with the manufacturer ID.  The

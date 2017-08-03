@@ -17,6 +17,8 @@
 //      'r5' - send UBX binary command to set update rate to  5Hz
 //      'r0' - send UBX binary command to set update rate to 10Hz
 //      'r6' - send UBX binary command to set update rate to 16Hz
+//      '5'  - send NMEA PUBX text command to set baud rate to 115200
+//      '7'  - send NMEA PUBX text command to set baud rate to 57600
 //      '3'  - send NMEA PUBX text command to set baud rate to 38400
 //      '9'  - send NMEA PUBX text command to set baud rate to 9600
 //      'e'  - toggle echo of all characters received from GPS device.
@@ -156,25 +158,39 @@ const char enableGGA[] PROGMEM = "PUBX,40,GGA,0,1,0,0,0,0";
 const char enableVTG[] PROGMEM = "PUBX,40,VTG,0,1,0,0,0,0";
 const char enableZDA[] PROGMEM = "PUBX,40,ZDA,0,1,0,0,0,0";
 
-const char baud9600 [] PROGMEM = "PUBX,41,1,3,3,9600,0";
-const char baud38400[] PROGMEM = "PUBX,41,1,3,3,38400,0";
+const char baud9600  [] PROGMEM = "PUBX,41,1,3,3,9600,0";
+const char baud38400 [] PROGMEM = "PUBX,41,1,3,3,38400,0";
+const char baud57600 [] PROGMEM = "PUBX,41,1,3,3,57600,0";
+const char baud115200[] PROGMEM = "PUBX,41,1,3,3,115200,0";
 
 //--------------------------
+
+const uint32_t COMMAND_DELAY = 250;
 
 void changeBaud( const char *textCommand, unsigned long baud )
 {
   gps.send_P( &tee, (const __FlashStringHelper *) disableRMC );
-  gps.send_P( &tee, (const __FlashStringHelper *) disableGLL );
+  delay( COMMAND_DELAY );
+//  gps.send_P( &tee, (const __FlashStringHelper *) disableGLL );
+//  delay( COMMAND_DELAY );
   gps.send_P( &tee, (const __FlashStringHelper *) disableGSV );
+  delay( COMMAND_DELAY );
   gps.send_P( &tee, (const __FlashStringHelper *) disableGSA );
+  delay( COMMAND_DELAY );
   gps.send_P( &tee, (const __FlashStringHelper *) disableGGA );
+  delay( COMMAND_DELAY );
   gps.send_P( &tee, (const __FlashStringHelper *) disableVTG );
+  delay( COMMAND_DELAY );
   gps.send_P( &tee, (const __FlashStringHelper *) disableZDA );
+  delay( 500 );
   gps.send_P( &tee, (const __FlashStringHelper *) textCommand );
-
-  Serial.println( F("All sentences disabled for baud rate change.  Enter '1' to reenable sentences.") );
-  delay( 1000 );
+  gps_port.flush();
   gps_port.end();
+
+  Serial.print( F("All sentences disabled for baud rate ") );
+  Serial.print( baud );
+  Serial.println( F(" change.  Enter '1' to reenable sentences.") );
+  delay( 500 );
   gps_port.begin( baud );
 
 } // changeBaud
@@ -250,11 +266,17 @@ void loop()
           sendUBX( ubxRate10Hz, sizeof(ubxRate10Hz) );
         } else {
           gps.send_P( &tee, (const __FlashStringHelper *) disableRMC );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) enableGLL );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) disableGSV );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) disableGSA );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) disableGGA );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) disableVTG );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) disableZDA );
           LastSentenceInInterval = NMEAGPS::NMEA_GLL;
         }
@@ -264,39 +286,54 @@ void loop()
           sendUBX( ubxRate1Hz, sizeof(ubxRate1Hz) );
         } else {
           gps.send_P( &tee, (const __FlashStringHelper *) enableRMC );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) enableGLL );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) enableGSV );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) enableGSA );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) enableGGA );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) enableVTG );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) enableZDA );
           LastSentenceInInterval = NMEAGPS::NMEA_ZDA;
         }
         break;
       case '3':
-        changeBaud( baud38400, 38400 );
+        changeBaud( baud38400, 38400UL );
         break;
       case '5':
         if (lastChar == 'r') {
           sendUBX( ubxRate5Hz, sizeof(ubxRate5Hz) );
-        }
+        } else
+          changeBaud( baud115200, 115200UL );
         break;
       case '6':
         if (lastChar == 'r') {
           sendUBX( ubxRate16Hz, sizeof(ubxRate16Hz) );
         }
         break;
+      case '7':
+        changeBaud( baud57600, 57600UL );
+        break;
       case '9':
-        changeBaud( baud9600, 9600 );
+        changeBaud( baud9600, 9600UL );
         break;
 
       case 'd':
         sendUBX( ubxDisableRMC, sizeof(ubxDisableRMC) );
+          delay( COMMAND_DELAY );
         //sendUBX( ubxDisableGLL, sizeof(ubxDisableGLL) );
         sendUBX( ubxDisableGSV, sizeof(ubxDisableGSV) );
+          delay( COMMAND_DELAY );
         sendUBX( ubxDisableGSA, sizeof(ubxDisableGSA) );
+          delay( COMMAND_DELAY );
         sendUBX( ubxDisableGGA, sizeof(ubxDisableGGA) );
+          delay( COMMAND_DELAY );
         sendUBX( ubxDisableVTG, sizeof(ubxDisableVTG) );
+          delay( COMMAND_DELAY );
         sendUBX( ubxDisableZDA, sizeof(ubxDisableZDA) );
         LastSentenceInInterval = NMEAGPS::NMEA_GLL;
         break;

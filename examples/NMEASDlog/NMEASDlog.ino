@@ -369,64 +369,7 @@ void setup()
   // Enable the LED for blinking feedback
   pinMode( LED, OUTPUT );
 
-#ifdef SIMULATE_SD
-
-  DEBUG_PORT.println( F("  Simulating SD.") );
-  
-#else
-
-  DEBUG_PORT.println( F("Initializing SD card...") );
-
-  // see if the card is present and can be initialized:
-  if (!SD.begin(chipSelect)) {
-    DEBUG_PORT.println( F("  SD card failed, or not present") );
-    // don't do anything more:
-
-    // Flicker the LED
-    while (true) {
-      digitalWrite(LED,HIGH);
-      delay(75);
-      digitalWrite(LED,LOW);
-      delay(75);
-    }
-  }
-
-  DEBUG_PORT.println( F("  SD card initialized.") );
-
-  // Pick a numbered filename, 00 to 99.
-  char filename[15] = "data_##.txt";
-
-  for (uint8_t i=0; i<100; i++) {
-    filename[5] = '0' + i/10;
-    filename[6] = '0' + i%10;
-    if (!SD.exists(filename)) {
-      // Use this one!
-      break;
-    }
-  }
-
-  logfile = SD.open(filename, FILE_WRITE);
-  if (!logfile) {
-    DEBUG_PORT.print( F("Couldn't create ") ); 
-    DEBUG_PORT.println(filename);
-
-    // If the file can't be created for some reason this leaves the LED on
-    //   so I know there is a problem
-    digitalWrite(LED,HIGH);
-
-    while (true) {}
-  }
-
-  DEBUG_PORT.print( F("Writing to ") ); 
-  DEBUG_PORT.println(filename);
-
-  // GPS Visualizer requires a header to identify the CSV fields.
-  // If you are saving other data or don't need this, simply remove/change it
-  logfile.println( F("latitude,longitude,time,loggingTime") ); 
-
-  //trace_header( logfile ); // and uncomment #include Streamers.h
-  
-#endif
+  initSD();
 
   waitForFix();
 
@@ -443,3 +386,67 @@ void loop()
     DEBUG_PORT.println( F("DATA OVERRUN: fix data lost!") );
   }
 }
+
+//----------------------------------------------------------------
+
+void initSD()
+{
+  #ifdef SIMULATE_SD
+
+    DEBUG_PORT.println( F("  Simulating SD.") );
+    
+  #else
+
+    DEBUG_PORT.println( F("Initializing SD card...") );
+
+    // see if the card is present and can be initialized:
+    if (!SD.begin(chipSelect)) {
+      DEBUG_PORT.println( F("  SD card failed, or not present") );
+      // don't do anything more:
+
+      // Flicker the LED
+      while (true) {
+        digitalWrite(LED,HIGH);
+        delay(75);
+        digitalWrite(LED,LOW);
+        delay(75);
+      }
+    }
+
+    DEBUG_PORT.println( F("  SD card initialized.") );
+
+    // Pick a numbered filename, 00 to 99.
+    char filename[15] = "data_##.txt";
+
+    for (uint8_t i=0; i<100; i++) {
+      filename[5] = '0' + i/10;
+      filename[6] = '0' + i%10;
+      if (!SD.exists(filename)) {
+        // Use this one!
+        break;
+      }
+    }
+
+    logfile = SD.open(filename, FILE_WRITE);
+    if (!logfile) {
+      DEBUG_PORT.print( F("Couldn't create ") ); 
+      DEBUG_PORT.println(filename);
+
+      // If the file can't be created for some reason this leaves the LED on
+      //   so I know there is a problem
+      digitalWrite(LED,HIGH);
+
+      while (true) {}
+    }
+
+    DEBUG_PORT.print( F("Writing to ") ); 
+    DEBUG_PORT.println(filename);
+
+    // GPS Visualizer requires a header to identify the CSV fields.
+    // If you are saving other data or don't need this, simply remove/change it
+    logfile.println( F("latitude,longitude,time,loggingTime") ); 
+
+    //trace_header( logfile ); // and uncomment #include Streamers.h
+    
+  #endif
+} // initSD
