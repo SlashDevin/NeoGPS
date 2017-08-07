@@ -1,11 +1,7 @@
 #ifndef NEOGPS_LOCATION_H
 #define NEOGPS_LOCATION_H
 
-#ifdef ARDUINO
-  #include <Arduino.h>
-#else
-  #include "CosaCompat.h"
-#endif
+#include "Platform.h"
 
 #include "NeoGPS_cfg.h"
 
