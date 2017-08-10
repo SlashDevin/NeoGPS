@@ -455,15 +455,7 @@ namespace ublox {
         valid;
         int32_t  fractional_ToW; // nS
 
-        enum status_t {
-            NAV_STAT_NONE,
-            NAV_STAT_DR_ONLY,
-            NAV_STAT_2D,
-            NAV_STAT_3D,
-            NAV_STAT_GPS_DR,
-            NAV_STAT_TIME_ONLY
-        } __attribute__((packed))
-        status;
+        nav_status_t::status_t status;
 
         struct flags_t {
             bool gps_fix:1;
@@ -474,19 +466,19 @@ namespace ublox {
         } __attribute__((packed))
         flags;
 
-        static gps_fix::status_t to_status( enum status_t status, flags_t flags )
+        static gps_fix::status_t to_status( enum nav_status_t::status_t status, flags_t flags )
         {
             if (!flags.gps_fix)
-            return gps_fix::STATUS_NONE;
+              return gps_fix::STATUS_NONE;
             if (flags.diff_soln)
-            return gps_fix::STATUS_DGPS;
+              return gps_fix::STATUS_DGPS;
             switch (status) {
-                case NAV_STAT_DR_ONLY  : return gps_fix::STATUS_EST;
-                case NAV_STAT_2D       :
-                case NAV_STAT_3D       :
-                case NAV_STAT_GPS_DR   : return gps_fix::STATUS_STD;
-                case NAV_STAT_TIME_ONLY: return gps_fix::STATUS_TIME_ONLY;
-                default                : return gps_fix::STATUS_NONE;
+              case nav_status_t::status_t::NAV_STAT_DR_ONLY  : return gps_fix::STATUS_EST;
+              case nav_status_t::status_t::NAV_STAT_2D       :
+              case nav_status_t::status_t::NAV_STAT_3D       :
+              case nav_status_t::status_t::NAV_STAT_GPS_DR   : return gps_fix::STATUS_STD;
+              case nav_status_t::status_t::NAV_STAT_TIME_ONLY: return gps_fix::STATUS_TIME_ONLY;
+              default                : return gps_fix::STATUS_NONE;
             }
         }
 

@@ -990,7 +990,7 @@ bool ubloxGPS::parseHnrPvt( uint8_t chr )
         case 17:
         {
             ublox::hnr_pvt_t::flags_t flags = *((ublox::hnr_pvt_t::flags_t *) &chr);
-            m_fix.status = ublox::hnr_pvt_t::to_status( (ublox::hnr_pvt_t::status_t) m_fix.status, flags );
+            m_fix.status = ublox::hnr_pvt_t::to_status( (ublox::nav_status_t::status_t) m_fix.status, flags );
             break;
         }
 

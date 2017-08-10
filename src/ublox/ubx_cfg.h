@@ -25,7 +25,7 @@
 // For coherency, you must determine which UBX message is last!
 // This section *should* pick the correct last UBX message for NEO-6M devices.
 
-#if defined(UBLOX_PARSE_DOP)
+#if defined(UBLOX_PARSE_HNR_PVT)
   #define UBX_LAST_MSG_CLASS_IN_INTERVAL ublox::UBX_HNR
   #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_HNR_PVT
 #else
