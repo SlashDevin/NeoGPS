@@ -294,6 +294,8 @@ private:
     bool parseNavTimeUTC( uint8_t chr );
     bool parseNavSVInfo ( uint8_t chr );
 
+    bool parseHnrPvt( uint8_t chr );
+
     bool parseFix( uint8_t c );
 
     bool parseTOW( uint8_t chr )

@@ -17,6 +17,7 @@
 //#define UBLOX_PARSE_SVINFO
 //#define UBLOX_PARSE_CFGNAV5
 //#define UBLOX_PARSE_MONVER
+//#define UBLOX_PARSE_HNR_PVT
 
 //--------------------------------------------------------------------
 // Identify the last UBX message in an update interval.
@@ -24,18 +25,23 @@
 // For coherency, you must determine which UBX message is last!
 // This section *should* pick the correct last UBX message for NEO-6M devices.
 
-#define UBX_LAST_MSG_CLASS_IN_INTERVAL ublox::UBX_NAV
-
 #if defined(UBLOX_PARSE_DOP)
-  #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_DOP
-#elif defined(UBLOX_PARSE_VELNED)
-  #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_VELNED
-#elif defined(UBLOX_PARSE_POSLLH)
-  #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_POSLLH
-#elif defined(UBLOX_PARSE_SVINFO)
-  #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_SVINFO
+  #define UBX_LAST_MSG_CLASS_IN_INTERVAL ublox::UBX_HNR
+  #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_HNR_PVT
 #else
-  #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_STATUS
+  #define UBX_LAST_MSG_CLASS_IN_INTERVAL ublox::UBX_NAV
+
+  #if defined(UBLOX_PARSE_DOP)
+    #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_DOP
+  #elif defined(UBLOX_PARSE_VELNED)
+    #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_VELNED
+  #elif defined(UBLOX_PARSE_POSLLH)
+    #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_POSLLH
+  #elif defined(UBLOX_PARSE_SVINFO)
+    #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_SVINFO
+  #else
+    #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_STATUS
+  #endif
 #endif
 
 #endif
