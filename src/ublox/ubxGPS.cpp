@@ -516,11 +516,8 @@ bool ubloxGPS::parseNavStatus( uint8_t chr )
         break;
       case 5:
         {
-          ublox::nav_status_t::flags_t flags =
-            *((ublox::nav_status_t::flags_t *) &chr);
-          m_fix.status =
-            ublox::nav_status_t::to_status
-              ( (ublox::nav_status_t::status_t) m_fix.status, flags );
+          ublox::nav_status_t::flags_t flags = *((ublox::nav_status_t::flags_t *) &chr);
+          m_fix.status = ublox::nav_status_t::to_status( m_fix.status, flags );
 //trace << m_fix.status << ' ';
         }
         break;
@@ -990,7 +987,7 @@ bool ubloxGPS::parseHnrPvt( uint8_t chr )
         case 17:
         {
             ublox::hnr_pvt_t::flags_t flags = *((ublox::hnr_pvt_t::flags_t *) &chr);
-            m_fix.status = ublox::hnr_pvt_t::to_status( (ublox::nav_status_t::status_t) m_fix.status, flags );
+            m_fix.status = ublox::hnr_pvt_t::to_status( m_fix.status, flags );
             break;
         }
 
