@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 
 //======================================================================
@@ -16,25 +15,7 @@
 //
 //======================================================================
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
-#else  
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
-#include "GPSport.h"
-
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
+#include <GPSport.h>
 
 //------------------------------------------------------------
 // Check that the config files are set up properly
@@ -58,15 +39,15 @@ void setup()
 {
   DEBUG_PORT.begin(9600);
   DEBUG_PORT.println( F("NMEAdistance.ino started.") );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME) );
 
-  gps_port.begin(9600);
+  gpsPort.begin(9600);
 
 } // setup
 
 void loop()
 {
-  while (gps.available( gps_port )) {
+  while (gps.available( gpsPort )) {
     gps_fix fix = gps.read(); // save the latest
 
     // When we have a location, calculate how far away we are from the base location.

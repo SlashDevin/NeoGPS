@@ -57,28 +57,9 @@
 //
 //======================================================================
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
-#else
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
+#include <GPSport.h>
 
-#include "GPSport.h"
-
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
-
-#include "Streamers.h"
+#include <Streamers.h>
 
 static NMEAGPS  gps;
 static gps_fix  fix_data;
@@ -88,7 +69,7 @@ static char lastChar; // last command char
 static bool echoing = false;
 
 //  Use NeoTee to echo the NMEA text commands to the Serial Monitor window
-Stream *both[2] = { &Serial, &gps_port };
+Stream *both[2] = { &DEBUG_PORT, &gpsPort };
 NeoTeeStream tee( both, sizeof(both)/sizeof(both[0]) );
 
 //-------------------------------------------
@@ -123,19 +104,19 @@ const unsigned char ubxDisableZDA[] PROGMEM =
 
 void sendUBX( const unsigned char *progmemBytes, size_t len )
 {
-  gps_port.write( 0xB5 ); // SYNC1
-  gps_port.write( 0x62 ); // SYNC2
+  gpsPort.write( 0xB5 ); // SYNC1
+  gpsPort.write( 0x62 ); // SYNC2
 
   uint8_t a = 0, b = 0;
   while (len-- > 0) {
     uint8_t c = pgm_read_byte( progmemBytes++ );
     a += c;
     b += a;
-    gps_port.write( c );
+    gpsPort.write( c );
   }
 
-  gps_port.write( a ); // CHECKSUM A
-  gps_port.write( b ); // CHECKSUM B
+  gpsPort.write( a ); // CHECKSUM A
+  gpsPort.write( b ); // CHECKSUM B
 
 } // sendUBX
 
@@ -184,14 +165,14 @@ void changeBaud( const char *textCommand, unsigned long baud )
   gps.send_P( &tee, (const __FlashStringHelper *) disableZDA );
   delay( 500 );
   gps.send_P( &tee, (const __FlashStringHelper *) textCommand );
-  gps_port.flush();
-  gps_port.end();
+  gpsPort.flush();
+  gpsPort.end();
 
-  Serial.print( F("All sentences disabled for baud rate ") );
-  Serial.print( baud );
-  Serial.println( F(" change.  Enter '1' to reenable sentences.") );
+  DEBUG_PORT.print( F("All sentences disabled for baud rate ") );
+  DEBUG_PORT.print( baud );
+  DEBUG_PORT.println( F(" change.  Enter '1' to reenable sentences.") );
   delay( 500 );
-  gps_port.begin( baud );
+  gpsPort.begin( baud );
 
 } // changeBaud
 
@@ -209,13 +190,12 @@ static void doSomeWork()
 
 void setup()
 {
-  // Start the normal trace output
   DEBUG_PORT.begin(9600);
   while (!DEBUG_PORT)
     ;
 
   DEBUG_PORT.print( F("ubloxRate.INO: started\n") );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME) );
 
   #ifdef NMEAGPS_INTERRUPT_PROCESSING
     #error You must *NOT* define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
@@ -240,7 +220,7 @@ void setup()
   #endif
 
   if (LastSentenceInInterval != LAST_SENTENCE_IN_INTERVAL) {
-    Serial.println(
+    DEBUG_PORT.println(
       F("LAST_SENTENCE_IN_INTERVAL is not properly defined in NMEAGPS_cfg.h!\n"
         "   See Prerequisite 4 above") );
   }
@@ -249,16 +229,15 @@ void setup()
   trace_header( DEBUG_PORT );
   DEBUG_PORT.flush();
 
-  // Start the UART for the GPS device
-  gps_port.begin( 9600 );
+  gpsPort.begin( 9600 );
 }
 
 void loop()
 {
   // Check for commands
   
-  if (Serial.available()) {
-    char c = Serial.read();
+  if (DEBUG_PORT.available()) {
+    char c = DEBUG_PORT.read();
 
     switch (c) {
       case '0':
@@ -352,9 +331,9 @@ void loop()
   if (echoing) {
     // Use advanced character-oriented methods to echo received characters to
     //    the Serial Monitor window.
-    if (gps_port.available()) {
-      char c = gps_port.read();
-      Serial.write( c );
+    if (gpsPort.available()) {
+      char c = gpsPort.read();
+      DEBUG_PORT.write( c );
       gps.handle( c );
       if (gps.available()) {
         fix_data = gps.read();
@@ -364,7 +343,7 @@ void loop()
 
   } else {
     // Use the normal fix-oriented methods to display fixes
-    if (gps.available( gps_port )) {
+    if (gps.available( gpsPort )) {
       fix_data = gps.read();
       doSomeWork();
     }

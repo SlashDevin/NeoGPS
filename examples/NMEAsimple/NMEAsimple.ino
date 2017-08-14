@@ -1,8 +1,5 @@
 #include <NMEAGPS.h>
 
-NMEAGPS  gps; // This parses the GPS characters
-gps_fix  fix; // This holds on to the latest values
-
 //======================================================================
 //  Program: NMEAsimple.ino
 //
@@ -17,31 +14,19 @@ gps_fix  fix; // This holds on to the latest values
 //
 //  'Serial' is for debug output to the Serial Monitor window.
 //
-//   Choose a serial port for the GPS device:
-//
-//   BEST: For a Mega, Leonardo or Due, use the extra hardware serial port
-#define gpsPort Serial1
-
-//   2nd BEST:  For other Arduinos, use AltSoftSerial on the required pins 
-//                 (8&9 for an UNO)
-// #include <AltSoftSerial.h>
-// AltSoftSerial gpsPort;  // pin 8 to GPS TX, pin 9 to GPS RX
-
-//   3rd BEST:  If you can't use those specific pins (are you sure?), 
-//                 use NeoSWSerial on any two pins @ 9600, 19200 or 38400
-// #include <NeoSWSerial.h>
-// NeoSWSerial gpsPort( 2, 3 ); // pin 2 to GPS TX, pin 3 to GPS RX
-
-//   WORST:  SoftwareSerial is NOT RECOMMENDED
-
 //======================================================================
+
+#include <GPSport.h>
+
+NMEAGPS  gps; // This parses the GPS characters
+gps_fix  fix; // This holds on to the latest values
 
 void setup()
 {
-  Serial.begin(9600);
+  DEBUG_PORT.begin(9600);
   while (!Serial)
     ;
-  Serial.print( F("NMEAsimple.INO: started\n") );
+  DEBUG_PORT.print( F("NMEAsimple.INO: started\n") );
 
   gpsPort.begin(9600);
 }
@@ -53,17 +38,17 @@ void loop()
   while (gps.available( gpsPort )) {
     fix = gps.read();
 
-    Serial.print( F("Location: ") );
+    DEBUG_PORT.print( F("Location: ") );
     if (fix.valid.location) {
-      Serial.print( fix.latitude(), 6 );
-      Serial.print( ',' );
-      Serial.print( fix.longitude(), 6 );
+      DEBUG_PORT.print( fix.latitude(), 6 );
+      DEBUG_PORT.print( ',' );
+      DEBUG_PORT.print( fix.longitude(), 6 );
     }
 
-    Serial.print( F(", Altitude: ") );
+    DEBUG_PORT.print( F(", Altitude: ") );
     if (fix.valid.altitude)
-      Serial.print( fix.altitude() );
+      DEBUG_PORT.print( fix.altitude() );
 
-    Serial.println();
+    DEBUG_PORT.println();
   }
 }

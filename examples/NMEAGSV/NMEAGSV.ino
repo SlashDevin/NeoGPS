@@ -16,23 +16,7 @@ gps_fix  fix; // This holds on to the latest values
 //  'Serial' is for debug output to the Serial Monitor window.
 //
 
-//-----------------
-//   Choose a serial port for the GPS device:
-//
-//   BEST: For a Mega, Leonardo or Due, use the extra hardware serial port
-#define gpsPort Serial1
-
-//   2nd BEST:  For other Arduinos, use AltSoftSerial on the required pins
-//                 (8&9 for an UNO)
-// #include <AltSoftSerial.h>
-// AltSoftSerial gpsPort;  // pin 8 to GPS TX, pin 9 to GPS RX
-
-//   3rd BEST:  If you can't use those specific pins (are you sure?),
-//                 use NeoSWSerial on any two pins @ 9600, 19200 or 38400
-// #include <NeoSWSerial.h>
-// NeoSWSerial gpsPort( 2, 3 ); // pin 2 to GPS TX, pin 3 to GPS RX
-
-//   WORST:  SoftwareSerial is NOT RECOMMENDED
+#include <GPSport.h>
 
 //-----------------
 // Check configuration
@@ -53,10 +37,10 @@ gps_fix  fix; // This holds on to the latest values
 
 void setup()
 {
-  Serial.begin(9600);
+  DEBUG_PORT.begin(9600);
   while (!Serial)
     ;
-  Serial.print( F("NeoGPS GSV example started\n") );
+  DEBUG_PORT.print( F("NeoGPS GSV example started\n") );
 
   gpsPort.begin(9600);
 
@@ -78,23 +62,23 @@ void loop()
 
 void displaySatellitesInView()
 {
-  Serial.print( gps.sat_count );
-  Serial.print( ',' );
+  DEBUG_PORT.print( gps.sat_count );
+  DEBUG_PORT.print( ',' );
 
   for (uint8_t i=0; i < gps.sat_count; i++) {
-    Serial.print( gps.satellites[i].id );
-    Serial.print( ' ' );
-    Serial.print( gps.satellites[i].elevation );
-    Serial.print( '/' );
-    Serial.print( gps.satellites[i].azimuth );
-    Serial.print( '@' );
+    DEBUG_PORT.print( gps.satellites[i].id );
+    DEBUG_PORT.print( ' ' );
+    DEBUG_PORT.print( gps.satellites[i].elevation );
+    DEBUG_PORT.print( '/' );
+    DEBUG_PORT.print( gps.satellites[i].azimuth );
+    DEBUG_PORT.print( '@' );
     if (gps.satellites[i].tracked)
-      Serial.print( gps.satellites[i].snr );
+      DEBUG_PORT.print( gps.satellites[i].snr );
     else
-      Serial.print( '-' );
-    Serial.print( F(", ") );
+      DEBUG_PORT.print( '-' );
+    DEBUG_PORT.print( F(", ") );
   }
 
-  Serial.println();
+  DEBUG_PORT.println();
 
 } // displaySatellitesInView

@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 
 //======================================================================
@@ -15,7 +14,7 @@
 //
 //======================================================================
 
-#include "Streamers.h"
+#include <Streamers.h>
 
 static NMEAGPS gps;
 
@@ -42,7 +41,6 @@ static uint32_t time_it( const char *data )
 
 void setup()
 {
-  // Start the normal trace output
   Serial.begin(9600);
   Serial.println( F("NMEAbenchmark: started") );
   Serial.print( F("fix object size = ") );
@@ -53,12 +51,7 @@ void setup()
   trace_header( Serial );
 
   Serial.flush();
-}
 
-//--------------------------
-
-void loop()
-{
   const char *gga =
     "$GPGGA,092725.00,4717.11399,N,00833.91590,E,"
     "1,8,1.01,499.6,M,48.0,M,,0*5B\r\n";
@@ -87,6 +80,8 @@ void loop()
     Serial << F("GSV time = ") << time_it( gsv ) << '\n';
     trace_all( Serial, gps, gps.fix() );
   #endif
-
-  for (;;);
 }
+
+//--------------------------
+
+void loop() {}

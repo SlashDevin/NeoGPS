@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 
 //======================================================================
@@ -34,58 +33,7 @@ static gps_fix  fix; // This contains all the parsed pieces
   #error You must define NMEAGPS_PARSE_RMC or ZDA in NMEAGPS_cfg.h!
 #endif
 
-//--------------------------
-//   PICK A SERIAL PORT:
-//
-// *Best* choice is a HardwareSerial port:
-//    You could use Serial on any board, but you will have to
-//       disconnect the Arduino RX pin 0 from the GPS TX pin to
-//       upload a new sketch over USB.  This is very reliable
-//#define gpsPort Serial
-//#define GPS_PORT_NAME "Serial"
-
-// Use Serial1 on a Mega, Leo or Due board
-#define gpsPort Serial1
-#define GPS_PORT_NAME "Serial1"
-
-// Use NeoHWSerial if you want to handle GPS characters
-//   in an Interrupt Service Routine.
-//   Also uncomment NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h.
-//#include <NeoHWSerial.h>
-//#define gpsPort NeoSerial
-//#define GPS_PORT_NAME "NeoSerial"
-
-//--------------------------
-// 2nd best:
-//#include <AltSoftSerial.h>
-//AltSoftSerial gpsPort; // must be on specific pins (8 & 9 for an UNO)
-//#define GPS_PORT_NAME "AltSoftSerial"
-
-// Use NeoICSerial if you want to handle GPS characters
-//   in an Interrupt Service Routine.
-//   Also uncomment NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h.
-//#include <NeoICSerial.h>
-//NeoICSerial gpsPort; // must be on specific pins (8 & 9 for an UNO)
-//#define GPS_PORT_NAME "NeoICSerial"
-
-//--------------------------
-// 3rd best: must be baud rate 9600, 19200 or 38400
-//   NeoSWSerial supports handling GPS characters
-//   in an Interrupt Service Routine.  If you want to do that,
-//   also uncomment NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h.
-//#include <NeoSWSerial.h>
-//NeoSWSerial gpsPort(3, 2);
-//#define GPS_PORT_NAME "NeoSWSerial(3,2)"
-
-//--------------------------
-// Worst: SoftwareSerial NOT RECOMMENDED
-
-#ifdef NeoHWSerial_h
-  //  Can't use Serial when NeoHWSerial is used.  Print to "NeoSerial" instead.
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
+#include <GPSport.h>
 
 //--------------------------
 // Set these values to the offset of your timezone from GMT
@@ -199,7 +147,6 @@ static void GPSloop()
 
 void setup()
 {
-  // Start the normal trace output
   DEBUG_PORT.begin(9600);
   while (!DEBUG_PORT)
     ;
@@ -209,7 +156,6 @@ void setup()
   DEBUG_PORT.println( F("Local time") );
   DEBUG_PORT.flush();
   
-  // Start the UART for the GPS device
   gpsPort.begin( 9600 );
   #ifdef NMEAGPS_INTERRUPT_PROCESSING
     gpsPort.attachInterrupt( GPSisr );

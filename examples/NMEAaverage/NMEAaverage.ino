@@ -1,6 +1,4 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
-using namespace NeoGPS;
 
 //======================================================================
 //  Program: NMEAaverage.ino
@@ -17,26 +15,7 @@ using namespace NeoGPS;
 //
 //======================================================================
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
-#else
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
-
-#include "GPSport.h"
-
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
+#include <GPSport.h>
 
 //------------------------------------------------------------
 // Check that the config files are set up properly
@@ -66,6 +45,7 @@ static gps_fix  fix;  // This holds the latest GPS fix
 
 //------------------------------------------------------------
 
+using namespace NeoGPS;
 static gps_fix    first;            // good GPS data
 static clock_t    firstSecs;        // cached dateTime in seconds since EPOCH
 static Location_t avgLoc;           // gradually-calculated average location
@@ -230,7 +210,7 @@ static void doSomeWork()
 
 static void GPSloop()
 {
-  while (gps.available( gps_port )) {
+  while (gps.available( gpsPort )) {
     fix = gps.read();
     doSomeWork();
   }
@@ -241,7 +221,6 @@ static void GPSloop()
 
 void setup()
 {
-  // Start the normal trace output
   DEBUG_PORT.begin(9600);
   while (!DEBUG_PORT)
     ;
@@ -251,14 +230,13 @@ void setup()
   DEBUG_PORT.println( sizeof(gps.fix()) );
   DEBUG_PORT.print( F("  gps object size = ") );
   DEBUG_PORT.println( sizeof(gps) );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME) );
   DEBUG_PORT.println( F("Comparing current fix with averaged location.\n"
                         "count,avg lat,avg lon,dlat,dlon,distance(cm),"
                         "bearing deg,compass,lat/lon 10km away & recalc bearing") );
   DEBUG_PORT.flush();
 
-  // Start the UART for the GPS device
-  gps_port.begin( 9600 );
+  gpsPort.begin( 9600 );
 }
 
 //------------------------------------------------------------

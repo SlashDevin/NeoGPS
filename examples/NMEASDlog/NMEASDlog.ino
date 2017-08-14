@@ -19,32 +19,9 @@
 //
 //======================================================================
 
-#if defined( UBRR1H )
+#include <GPSport.h>
 
-  // Serial1 is available.  Use NeoSerial1 for the gps_port.
-
-  #include <NeoHWSerial.h>
-  // NOTE: There is an issue with IDEs before 1.6.6.  The above include 
-  // must be commented out for non-Mega boards, even though it is
-  // conditionally included.  If you are using an earlier IDE, 
-  // comment the above include.
-
-#else  
-
-  // Only one serial port is available, use a software serial on two other pins.
-  
-  // Uncomment one of the following includes.
-  //   Using NeoICSerial on pins 8 & 9 (UNO) is *strongly* recommended
-  //#include <NeoICSerial.h>
-  #include <NeoSWSerial.h>
-
-  // If you are using NeoSWSerial, you can define RX_PIN and TX_PIN here or
-  //    in GPSport.h
-
-#endif
-#include "GPSport.h"
-
-//#include "Streamers.h"
+//#include <Streamers.h>
 
 //----------------------------------------------------------------
 // Check configuration
@@ -59,18 +36,6 @@
 
 #ifndef NMEAGPS_INTERRUPT_PROCESSING
   #error You must define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
-#endif
-
-//----------------------------------------------------------------
-// If you are using NeoHWSerial, all Serial prints *must* use NeoSerial.print
-//    This define lets you use "DEBUG_PORT.print" everywhere below.  It is
-//    defined here to use the appropriate Serial or NeoSerial instance.
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT_TYPE NeoHWSerial
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT_TYPE HardwareSerial
-  #define DEBUG_PORT Serial
 #endif
 
 static const int LED = 13;
@@ -95,7 +60,7 @@ const int chipSelect = 8;
 
 #ifdef SIMULATE_SD
 
-  DEBUG_PORT_TYPE &logfile = DEBUG_PORT;
+  auto &logfile = DEBUG_PORT;
 
 #else
 
@@ -343,7 +308,6 @@ static void waitForFix()
 
 void setup()
 {
-  // Start the normal trace output
   DEBUG_PORT.begin(9600);
   while (!DEBUG_PORT)
     ; // wait for serial port to connect. 
@@ -357,14 +321,13 @@ void setup()
   if (gps.merging != NMEAGPS::EXPLICIT_MERGING)
     DEBUG_PORT.println( F("Warning: EXPLICIT_MERGING should be enabled for best results!") );
 
-  // Start the GPS device
-  gps_port.attachInterrupt( GPSisr );
-  gps_port.begin( 9600 );
+  gpsPort.attachInterrupt( GPSisr );
+  gpsPort.begin( 9600 );
 
   //  Configure the GPS.  These are commands for MTK GPS devices.  Other
   //    brands will have different commands.
-  gps.send_P( &gps_port, F("PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0") ); // RMC only for MTK GPS devices
-  gps.send_P( &gps_port, F("PMTK220,100") ); // 10Hz update rate for MTK GPS devices
+  gps.send_P( &gpsPort, F("PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0") ); // RMC only for MTK GPS devices
+  gps.send_P( &gpsPort, F("PMTK220,100") ); // 10Hz update rate for MTK GPS devices
 
   // Enable the LED for blinking feedback
   pinMode( LED, OUTPUT );

@@ -64,36 +64,60 @@ Connecting the 3.3V GPS TX pin to a 5V Arduino receive pin will not damage the G
 
 ### 4. Review `Libraries/NeoGPS/src/GPSport.h`
 
-This file chooses a default serial port for each type of Arduino.  You can either declare your own `gpsPort` variable in the .INO file, or you should confirm GPSport.h will choose the correct serial port for your GPS device.
+This file declares a the serial port to be used for the GPS device.  You can either:
 
-By default, Mega Boards will use `Serial1`.  If you have installed the [NeoHWSerial](https://github.com/SlashDevin/NeoHWSerial) library and included the header before `GPSport.h`, then `NeoSerial1` will be used.
+* Use the default `GPSport.h` and connect your GPS device according to what it chooses (see below); or
+* Replace the entire contents of `GPSport.h` and insert your own declarations (see below and comments in `GPSport.h`).
 
-If you have included the `AltSoftSerial` header befor GPSport.h, its specific pins will be used for the `gpsPort` (8 & 9 on an UNO).
+#### Default choices for GPSport.h
 
-For all other Boards, a `NeoSWSerial` instance will be created on pins 3 and 4.  If your GPS is on different pins, put these `#define` lines in the INO, before the `#include "GPSport.h"` line:
+By default, Mega, Leonardo and Due Boards will use `Serial1`.
+
+All other Boards will use a [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) instance on pins 3 and 4.  If your GPS is on different pins, you must edit these `#define` lines in 'GPSport.h`:
 
     #define RX_PIN 2
     #define TX_PIN 3
-    #include "GPSport.h"
+
+If you want to use a different serial port library (review step 2 above), you must edit these `#include` lines in `GPSport.h':
+
+```
+  //#include <NeoHWSerial.h>    // NeoSerial or NeoSerial1 Interrupt-style processing
+  //#include <AltSoftSerial.h>  // Two specific pins...
+  //#include <NeoICSerial.h>    //    ... with Interrupt-style processing
+  #include <NeoSWSerial.h>    // Any pins, only @ 9600, 19200 or 38400 baud
+  //#include <SoftwareSerial.h> // NOT RECOMMENDED!
+```
+
+Uncomment **one** of those include statements, and it will use that library for the GPS serial port.
+
+#### Choosing your own serial port
+
+If you know what serial port you want to use, you can **REPLACE EVERYTHING** in `GPSport.h' with the three declarations that are used by all example programs: 
+
+1. the `gpsPort` variable (include its library header if needed);
+2. the double-quoted C string for the `GPS_PORT_NAME` (displayed by all example programs); and
+3. the `DEBUG_PORT` to use for Serial Monitor print messages (usually `Serial`).
 
 All the example programs can use any of the following serial port types:
 
+* HardwareSerial (built-in `Serial`, `Serial1` et al. STRONGLY recommended)
 * [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) (default, works on most pins)
 * [NeoICSerial](https://github.com/SlashDevin/NeoICSerial) (only works on one specific Input Capture pin)
 * [AltSoftSerial](https://github.com/PaulStoffregen/AltSoftSerial) (only works on one specific Input Capture pin)
-* SoftwareSerial (built-in, not recommended)
+* SoftwareSerial (built-in, NOT recommended)
 
-To select one of the non-default types, simply include their header before including `GPSport.h`:
+For example, to make all examples use `Serial` for the GPS port **and** for Serial Monitor messages, `GPSport.h` should contain just these 3 declarations:
 
-    //#include <NeoHWSerial.h>
-    #include <NeoICSerial.h>
-    //#include <NeoSWSerial.h>
-    //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-    #include "GPSport.h"
+```
+#ifndef GPSport_h
+#define GPSport_h
 
-The above will cause `GPSport.h` to declare `gps_port` using the class `NeoICSerial`.
+#define gpsPort Serial
+#define GPS_PORT_NAME "Serial"
+#define DEBUG_PORT Serial
 
-Modify these defaults if necessary, or if you know what serial port to use, you can declare it yourself.  Be sure to delete the line `#include "GPSport.h"`, and delete the file `GPSport.h`.
+#endif
+```
 
 <hr>
 

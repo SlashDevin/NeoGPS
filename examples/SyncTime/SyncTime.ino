@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 
 //======================================================================
@@ -20,25 +19,7 @@
 //
 //======================================================================
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
-#else  
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
-#include "GPSport.h"
-
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
+#include <GPSport.h>
 
 static NMEAGPS gps;
 static gps_fix fix;
@@ -112,18 +93,18 @@ void setup()
     ;
 
   DEBUG_PORT.print( F("SyncTime.INO: started\n") );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME) );
   DEBUG_PORT.println( F("Local time seconds.milliseconds") );
   DEBUG_PORT.flush();
 
-  gps_port.begin( 9600 );
+  gpsPort.begin( 9600 );
 }
 
 //--------------------------
 
 void loop()
 {
-  while (gps.available( gps_port )) {
+  while (gps.available( gpsPort )) {
     fix = gps.read();
   }
 

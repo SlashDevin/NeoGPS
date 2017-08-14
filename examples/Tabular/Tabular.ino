@@ -10,23 +10,7 @@ NMEAGPS     gps;
 //  'Serial' is for debug output to the Serial Monitor window.
 //
 
-//-----------------
-//   Choose a serial port for the GPS device:
-//
-//   BEST: For a Mega, Leonardo or Due, use the extra hardware serial port
-#define gpsPort Serial1
-
-//   2nd BEST:  For other Arduinos, use AltSoftSerial on the required pins
-//                 (8&9 for an UNO)
-// #include <AltSoftSerial.h>
-// AltSoftSerial gpsPort;  // pin 8 to GPS TX, pin 9 to GPS RX
-
-//   3rd BEST:  If you can't use those specific pins (are you sure?),
-//                 use NeoSWSerial on any two pins @ 9600, 19200 or 38400
-// #include <NeoSWSerial.h>
-// NeoSWSerial gpsPort( 2, 3 ); // pin 2 to GPS TX, pin 3 to GPS RX
-
-//   WORST:  SoftwareSerial is NOT RECOMMENDED
+#include <GPSport.h>
 
 //-----------------
 // Check configuration
@@ -41,9 +25,9 @@ static const NeoGPS::Location_t London( 51.508131, -0.128002 );
 
 void setup()
 {
-  Serial.begin(9600);
+  DEBUG_PORT.begin(9600);
   
-  Serial.println
+  DEBUG_PORT.println
     (
       F( "Testing NeoGPS library\n\n"
          "Sats HDOP Latitude  Longitude  Date       Time     Alt    Speed  Heading    -- To London --    Chars Sentences Errors\n"
@@ -82,7 +66,7 @@ void loop()
     print( gps.statistics.ok    , true,  6 );
     print( gps.statistics.errors, true,  6 );
 
-    Serial.println();
+    DEBUG_PORT.println();
   }
 }
 
@@ -92,12 +76,12 @@ void loop()
 static void repeat( char c, int8_t len )
 {
   for (int8_t i=0; i<len; i++)
-    Serial.write( c );
+    DEBUG_PORT.write( c );
 }
 
 static void printInvalid( int8_t len )
 {
-  Serial.write( ' ' );
+  DEBUG_PORT.write( ' ' );
   repeat( '*', abs(len)-1 );
 }
 
@@ -108,7 +92,7 @@ static void print( float val, bool valid, int8_t len, int8_t prec )
   } else {
     char s[16];
     dtostrf( val, len, prec, s );
-    Serial.print( s );
+    DEBUG_PORT.print( s );
   }
 }
 
@@ -120,7 +104,7 @@ static void print( int32_t val, bool valid, int8_t len )
     char s[16];
     ltoa( val, s, 10 );
     repeat( ' ', len - strlen(s) );
-    Serial.print( s );
+    DEBUG_PORT.print( s );
   }
 }
 
@@ -131,7 +115,7 @@ static void print( const __FlashStringHelper *str, bool valid, int8_t len )
   } else {
     int slen = strlen_P( (const char *) str );
     repeat( ' ', len-slen );
-    Serial.print( str );
+    DEBUG_PORT.print( str );
   }
 }
 
@@ -140,7 +124,7 @@ static void print( const NeoGPS::time_t & dt, bool valid, int8_t len )
   if (!valid) {
     printInvalid( len );
   } else {
-    Serial.write( ' ' );
+    DEBUG_PORT.write( ' ' );
     Serial << dt; // this "streaming" operator outputs date and time
   }
 }

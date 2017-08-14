@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 
 //======================================================================
@@ -15,25 +14,7 @@
 //
 //======================================================================
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
-#else  
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
-#include "GPSport.h"
-
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
+#include <GPSport.h>
 
 //------------------------------------------------------------
 // Check that the config files are set up properly
@@ -67,6 +48,7 @@
 static NMEAGPS  gps; // This parses the GPS characters
 
 //----------------------------------------------------------------
+//  Print the 32-bit integer degrees *as if* they were high-precision floats
 
 static void printL( Print & outs, int32_t degE7 );
 static void printL( Print & outs, int32_t degE7 )
@@ -96,7 +78,7 @@ static void printL( Print & outs, int32_t degE7 )
   outs.print( degE7 );
 }
 
-static void doSomeWork();
+static void doSomeWork( const gps_fix & fix );
 static void doSomeWork( const gps_fix & fix )
 {
   //  This is the best place to do your time-consuming work, right after
@@ -146,7 +128,7 @@ static void doSomeWork( const gps_fix & fix )
 static void GPSloop();
 static void GPSloop()
 {
-  while (gps.available( gps_port ))
+  while (gps.available( gpsPort ))
     doSomeWork( gps.read() );
 
 } // GPSloop
@@ -164,7 +146,7 @@ void setup()
   DEBUG_PORT.println( sizeof(gps.fix()) );
   DEBUG_PORT.print( F("NMEAGPS object size = ") );
   DEBUG_PORT.println( sizeof(gps) );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME) );
 
   #ifdef NMEAGPS_NO_MERGING
     DEBUG_PORT.println( F("Only displaying data from xxRMC sentences.\n  Other sentences may be parsed, but their data will not be displayed.") );
@@ -172,9 +154,7 @@ void setup()
 
   DEBUG_PORT.flush();
 
-  
-  // Start the UART for the GPS device
-  gps_port.begin(9600);
+  gpsPort.begin(9600);
 }
 
 //--------------------------
@@ -182,9 +162,4 @@ void setup()
 void loop()
 {
   GPSloop();
-  
-  // If the GPS has been sending data, then the "fix" structure may have
-  //   valid data.  Remember, you must check the valid flags before you
-  //   use any of the data inside "fix".  See "doSomeWork" for an example
-  //   of checking whether any lat/lon data has been received yet.
 }

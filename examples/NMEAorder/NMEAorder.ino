@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 
 //======================================================================
@@ -24,26 +23,8 @@
 //
 //======================================================================
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
-#else  
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
-#include "GPSport.h"
+#include <GPSport.h>
   
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
-
 //------------------------------------------------------------
 // Check configuration
 
@@ -105,10 +86,10 @@ static void printSentenceOrder()
 
 static void GPSloop()
 {  
-  while (gps_port.available()) {
+  while (gpsPort.available()) {
     last_rx = millis();
 
-    if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
+    if (gps.decode( gpsPort.read() ) == NMEAGPS::DECODE_COMPLETED) {
 
       if (last_sentence_in_interval == NMEAGPS::NMEA_UNKNOWN) {
         // Still building the list
@@ -216,7 +197,6 @@ static void watchForLastSentence()
 
 void setup()
 {
-  // Start the normal trace output
   DEBUG_PORT.begin(9600);
   while (!DEBUG_PORT)
     ;
@@ -226,11 +206,10 @@ void setup()
   DEBUG_PORT.println( sizeof(gps.fix()) );
   DEBUG_PORT.print( F("NMEAGPS object size = ") );
   DEBUG_PORT.println( sizeof(gps) );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME) );
   DEBUG_PORT.flush();
   
-  // Start the UART for the GPS device
-  gps_port.begin( 9600 );
+  gpsPort.begin( 9600 );
 }
 
 //--------------------------
