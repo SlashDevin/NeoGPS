@@ -1169,6 +1169,8 @@ bool NMEAGPS::parseDDDMM
     char chr
   )
 {
+  bool done = false;
+
   #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
 
     if (chrCount == 0) {
@@ -1206,7 +1208,7 @@ bool NMEAGPS::parseDDDMM
         scratchpad.U4 = 0;
       #endif
 
-      if (chr == '.') return true;
+      if (chr == '.') return done;
     }
 
     if (chr == ',') {
@@ -1248,8 +1250,12 @@ bool NMEAGPS::parseDDDMM
         val += divu3(val*2 + 1); // same as 10 * ((val+30)/60) without trunc
       #endif
 
-    } else if (!decimal) {
+      done = true;
 
+    } else if (validateChars() && !isdigit(chr)) {
+      sentenceInvalid();
+
+    } else if (!decimal) {
       // BCD until *after* decimal point
 
       #ifdef GPS_FIX_LOCATION
@@ -1290,7 +1296,7 @@ bool NMEAGPS::parseDDDMM
 
   #endif
 
-  return true;
+  return done;
 
 } // parseDDDMM
 
@@ -1306,16 +1312,34 @@ bool NMEAGPS::parseLat( char chr )
     }
 
     if (group_valid) {
-      parseDDDMM
-        (
+
+      if (parseDDDMM
+            (
+              #if defined( GPS_FIX_LOCATION )
+                m_fix.location._lat, 
+              #endif
+              #if defined( GPS_FIX_LOCATION_DMS )
+                m_fix.latitudeDMS,
+              #endif
+              chr
+            )) {
+
+        if (validateFields()) {
+
           #if defined( GPS_FIX_LOCATION )
-            m_fix.location._lat, 
+            if (m_fix.location._lat > 900000000L)
+              sentenceInvalid();
           #endif
           #if defined( GPS_FIX_LOCATION_DMS )
-            m_fix.latitudeDMS,
+            if ((m_fix.latitudeDMS.degrees > 90) ||
+                ((m_fix.latitudeDMS.degrees == 90) &&
+                 ( (m_fix.latitudeDMS.minutes       > 0) ||
+                   (m_fix.latitudeDMS.seconds_whole > 0) ||
+                   (m_fix.latitudeDMS.seconds_frac  > 0) )))
+              sentenceInvalid();
           #endif
-          chr
-        );
+        }
+      }
     }
   #endif
 
@@ -1346,7 +1370,7 @@ bool NMEAGPS::parseNS( char chr )
 
         // Second char can only be ','
       } else if ((validateChars() | validateFields()) &&
-                 ((chrCount > 1) ||(chr != ','))) {
+                 ((chrCount > 1) || (chr != ','))) {
         sentenceInvalid();
       }
     }
@@ -1365,16 +1389,34 @@ bool NMEAGPS::parseLon( char chr )
       group_valid = false;
 
     if (group_valid) {
-      parseDDDMM
-        (
+
+      if (parseDDDMM
+            (
+              #if defined( GPS_FIX_LOCATION )
+                m_fix.location._lon, 
+              #endif
+              #if defined( GPS_FIX_LOCATION_DMS )
+                m_fix.longitudeDMS,
+              #endif
+              chr
+            )) {
+
+        if (validateFields()) {
+
           #if defined( GPS_FIX_LOCATION )
-            m_fix.location._lon, 
+            if (m_fix.location._lon > 1800000000L)
+              sentenceInvalid();
           #endif
           #if defined( GPS_FIX_LOCATION_DMS )
-            m_fix.longitudeDMS,
+            if ((m_fix.longitudeDMS.degrees > 180) ||
+                ((m_fix.longitudeDMS.degrees == 180) &&
+                 ( (m_fix.longitudeDMS.minutes       > 0) ||
+                   (m_fix.longitudeDMS.seconds_whole > 0) ||
+                   (m_fix.longitudeDMS.seconds_frac  > 0) )))
+              sentenceInvalid();
           #endif
-          chr
-        );
+        }
+      }
     }
   #endif
 
@@ -1388,15 +1430,27 @@ bool NMEAGPS::parseEW( char chr )
 {
   #if defined( GPS_FIX_LOCATION ) | defined( GPS_FIX_LOCATION_DMS )
     if (group_valid) {
-      if (chr == 'W') {
-        #ifdef GPS_FIX_LOCATION
-          m_fix.location._lon = -m_fix.location._lon;
-        #endif
-        #ifdef GPS_FIX_LOCATION_DMS
-          m_fix.longitudeDMS.hemisphere = WEST_H;
-        #endif
+
+      if (chrCount == 0) {
+        m_fix.valid.location = true; // assumption
+
+        // First char can only be 'W' or 'E'
+        if (chr == 'W') {
+          #ifdef GPS_FIX_LOCATION
+            m_fix.location._lon = -m_fix.location._lon;
+          #endif
+          #ifdef GPS_FIX_LOCATION_DMS
+            m_fix.longitudeDMS.hemisphere = WEST_H;
+          #endif
+        } else if ((validateChars() | validateFields()) && (chr != 'E')) {
+          sentenceInvalid();
+        }
+
+        // Second char can only be ','
+      } else if ((validateChars() | validateFields()) &&
+                 ((chrCount > 1) || (chr != ','))) {
+        sentenceInvalid();
       }
-      m_fix.valid.location = true;
     }
   #endif
   
@@ -1411,8 +1465,14 @@ bool NMEAGPS::parseSpeed( char chr )
   #ifdef GPS_FIX_SPEED
     if (chrCount == 0)
       NMEAGPS_INVALIDATE( speed );
-    if (parseFloat( m_fix.spd, chr, 3 ))
+    if (parseFloat( m_fix.spd, chr, 3 )) {
       m_fix.valid.speed = (chrCount != 0);
+
+      if (validateFields() && m_fix.valid.speed &&
+          ((m_fix.spd.whole < 0) || (m_fix.spd.frac < 0))) {
+        sentenceInvalid();
+      }
+    }
   #endif
 
   return true;
@@ -1426,8 +1486,16 @@ bool NMEAGPS::parseHeading( char chr )
   #ifdef GPS_FIX_HEADING
     if (chrCount == 0)
       NMEAGPS_INVALIDATE( heading );
-    if (parseFloat( m_fix.hdg, chr, 2 ))
+    if (parseFloat( m_fix.hdg, chr, 2 )) {
       m_fix.valid.heading = (chrCount != 0);
+
+      if (validateFields() && m_fix.valid.heading &&
+          ((m_fix.hdg.whole <    0) || (m_fix.hdg.frac < 0) ||
+           (m_fix.hdg.whole >  360) ||
+           ( (m_fix.hdg.whole == 360) && (m_fix.hdg.frac > 0) ))) {
+        sentenceInvalid();
+      }
+    }
   #endif
 
   return true;

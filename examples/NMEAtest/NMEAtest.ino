@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 using namespace NeoGPS;
 
@@ -24,7 +23,7 @@ using namespace NeoGPS;
 //
 //======================================================================
 
-#include "Streamers.h"
+#include <Streamers.h>
 
 //------------------------------------------------------------
 // Check that the config files are set up properly
@@ -289,7 +288,10 @@ static void checkLatLon
       }
       if (gps.fix().longitudeL() != lon) {
         Serial.print( F("FAILED wrong longitude ") );
-        Serial.println( gps.fix().longitudeL() );
+        Serial.print( gps.fix().longitudeL() );
+        Serial.print( F(" (expected ") );
+        Serial.print( lon );
+        Serial.println( ')' );
         failed++;
         ok = false;
       }
