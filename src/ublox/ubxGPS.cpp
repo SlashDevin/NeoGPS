@@ -26,6 +26,17 @@ using namespace ublox;
 
 void ubloxGPS::rxBegin()
 {
+  if (intervalComplete()) {
+    // GPS quiet time is over, this is the start of a new interval.
+
+    #if defined(NMEAGPS_TIMESTAMP_FROM_INTERVAL) & \
+        ( defined(GPS_FIX_DATE) | defined(GPS_FIX_TIME) )
+      _IntervalStart = micros();
+    #endif
+
+    intervalComplete( false );
+  }
+
   m_rx_msg.init();
   storage = (msg_t *) NULL;
   chrCount = 0;

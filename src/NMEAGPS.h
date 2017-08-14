@@ -277,7 +277,7 @@ public:
 
     #if defined(NMEAGPS_TIMESTAMP_FROM_PPS) |  \
         defined(NMEAGPS_TIMESTAMP_FROM_INTERVAL)
-      private:
+      protected:
         uint32_t _UTCsecondStart;
         #if defined(NMEAGPS_TIMESTAMP_FROM_INTERVAL) & \
             ( defined(GPS_FIX_DATE) | defined(GPS_FIX_TIME) )

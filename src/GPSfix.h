@@ -165,10 +165,10 @@ public:
     uint16_t           hdop; // Horizontal Dilution of Precision x 1000
   #endif
   #ifdef GPS_FIX_VDOP
-    uint16_t           vdop; // Horizontal Dilution of Precision x 1000
+    uint16_t           vdop; // Vertical Dilution of Precision x 1000
   #endif
   #ifdef GPS_FIX_PDOP
-    uint16_t           pdop; // Horizontal Dilution of Precision x 1000
+    uint16_t           pdop; // Position Dilution of Precision x 1000
   #endif
 
   //--------------------------------------------------------

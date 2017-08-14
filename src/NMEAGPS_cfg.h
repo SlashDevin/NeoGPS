@@ -243,14 +243,14 @@
 //    latitude hemisphere letters can be 'N' or 'S'.  Characters that are not 
 //    valid for a particular field will cause the entire sentence to be 
 //    rejected as an error, *regardless* of whether the checksum would pass.
-#define NMEAGPS_VALIDATE_CHARS true
+#define NMEAGPS_VALIDATE_CHARS false
 
 //  Validation at the field level is a semantic check.  For 
 //    example, latitude degrees must be in the range -90..+90.
 //    Values that are not valid for a particular field will cause the 
 //    entire sentence to be rejected as an error, *regardless* of whether the 
 //    checksum would pass.
-#define NMEAGPS_VALIDATE_FIELDS true
+#define NMEAGPS_VALIDATE_FIELDS false
 
 //------------------------------------------------------
 // Some devices may omit trailing commas at the end of some 
