@@ -1,6 +1,8 @@
 #pragma once
 
 #include <stdint.h>
+// If there is not already an implementation for your platform,
+// implement these functions.
 class Print {
 public:
   void print(char) const;

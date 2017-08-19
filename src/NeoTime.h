@@ -297,14 +297,33 @@ protected:
 
 }; // namespace NeoGPS
 
-class Print;
-
 /**
  * Print the date/time to the given stream with the format "YYYY-MM-DD HH:MM:SS".
  * @param[in] outs output stream.
  * @param[in] t time structure.
  * @return iostream.
  */
-Print & operator <<( Print & outs, const NeoGPS::time_t &t );
+template <class Print>
+Print & operator <<( Print & outs, const NeoGPS::time_t &t )
+{
+  outs.print( t.full_year( t.year ) );
+  outs.write( '-' );
+  if (t.month < 10) outs.write( '0' );
+  outs.print( t.month );
+  outs.write( '-' );
+  if (t.date < 10) outs.write( '0' );
+  outs.print( t.date );
+  outs.write( ' ' );
+  if (t.hours < 10) outs.write( '0' );
+  outs.print( t.hours );
+  outs.write( ':' );
+  if (t.minutes < 10) outs.write( '0' );
+  outs.print( t.minutes );
+  outs.write( ':' );
+  if (t.seconds < 10) outs.write( '0' );
+  outs.print( t.seconds );
+
+  return outs;
+}
 
 #endif
