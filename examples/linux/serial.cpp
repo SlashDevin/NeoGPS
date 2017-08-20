@@ -49,7 +49,7 @@ static int set_interface_attribs(int fd, int speed)
     return 0;
 }
 
-void set_mincount(int fd, int mcount)
+static void set_mincount(int fd, int mcount)
 {
     struct termios tty;
 
@@ -65,16 +65,14 @@ void set_mincount(int fd, int mcount)
         printf("Error tcsetattr: %s\n", strerror(errno));
 }
 
-static int fd;
-
-bool data_available()
+bool data_available(serial_dev_t fd)
 {
     fd_set rfds;
     struct timeval tv;
     tv.tv_sec = 0;
     tv.tv_usec = 0;
     
-    FD_ZERO(rfds);
+    FD_ZERO(&rfds);
     FD_SET(fd, &rfds);
     
     int retval = select(1, &rfds, NULL, NULL, &tv) > 0;
@@ -84,19 +82,19 @@ bool data_available()
     return retval > 0;
 }
   
-char read()
+char read(serial_dev_t fd)
 {
     char c;
     int rdlen = read(fd, &c, 1);
     if (rdlen > 0) {
-        printf("Read: %c\n", c);
+        return c;
     } else if (rdlen < 0) {
         printf("Error from read: %s\n", strerror(errno));
     }
     return '\0';
 }
 
-void write(const char* out)
+void write(serial_dev_t fd, const char* out)
 {
     int len = strlen(out);
     /* simple output */
@@ -107,13 +105,13 @@ void write(const char* out)
     tcdrain(fd);    /* delay for output */
 }
 
-void init(const char *portname)
+serial_dev_t init(const char *portname)
 {
     if (portname == nullptr) {
       portname = "/dev/ttyUSB0";
     }
     
-    fd = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
+    int fd = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
     if (fd < 0) {
         printf("Error opening %s: %s\n", portname, strerror(errno));
         return -1;
@@ -121,5 +119,6 @@ void init(const char *portname)
     /*baudrate 9600, 8 bits, no parity, 1 stop bit */
     set_interface_attribs(fd, B9600);
     //set_mincount(fd, 0);                /* set to pure timed read */
-
+    
+    return fd;
 }

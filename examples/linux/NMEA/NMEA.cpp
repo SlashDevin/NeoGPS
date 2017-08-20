@@ -1,9 +1,8 @@
-#include <serial.h>
+#include <GpsPort.h>
 #include <NMEAGPS.h>
+#include <platforms/Print.h>
 
 //======================================================================
-//  Program: NMEA.ino
-//
 //  Description:  This program uses the fix-oriented methods available() and
 //    read() to handle complete fix structures.
 //
@@ -18,53 +17,17 @@
 //
 //  Prerequisites:
 //     1) Your GPS device has been correctly powered.
-//          Be careful when connecting 3.3V devices.
-//     2) Your GPS device is correctly connected to an Arduino serial port.
-//          See GPSport.h for the default connections.
+//     2) Your GPS device is correctly connected using a serial adapter.
+//          By default /dev/ttyUSB0 is used.
 //     3) You know the default baud rate of your GPS device.
-//          If 9600 does not work, use NMEAdiagnostic.ino to
-//          scan for the correct baud rate.
+//          By default 9600 is assumed.  If this doesn't work change it in serial.cpp
 //     4) LAST_SENTENCE_IN_INTERVAL is defined to be the sentence that is
 //          sent *last* in each update interval (usually once per second).
 //          The default is NMEAGPS::NMEA_RMC (see NMEAGPS_cfg.h).  Other
 //          programs may need to use the sentence identified by NMEAorder.ino.
 //     5) NMEAGPS_RECOGNIZE_ALL is defined in NMEAGPS_cfg.h
 //
-//  'Serial' is for debug output to the Serial Monitor window.
-//
 //======================================================================
-
-//-------------------------------------------------------------------------
-//  The GPSport.h include file tries to choose a default serial port
-//  for the GPS device.  If you know which serial port you want to use,
-//  delete this section and declare it here:
-//
-//    HardwareSerial & gps_port = Serial2; // an alias
-//          or
-//    AltSoftSerial gps_port; // depends on Arduino - pins 8 & 9 on UNO
-//          or
-//    NeoSWSerial gps_port( rxpin, txpin ); // to GPS TX, RX
-//          or
-//    Search and replace all occurrences of "gps_port" with your port's name.
-//
-//  See Installation instructions for additional information.
-
-#ifdef ARDUINO
-  #if defined( UBRR1H ) | defined( ID_USART0 )
-    // Default is to use Serial1 when available.  You could also
-    // use NeoHWSerial, especially if you want to handle GPS characters
-    // in an Interrupt Service Routine.
-    //#include <NeoHWSerial.h>
-  #else
-    // Only one serial port is available, uncomment one of the following:
-    //#include <NeoICSerial.h>
-    //#include <AltSoftSerial.h>
-    #include <NeoSWSerial.h>
-    //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-  #endif
-#endif
-
-#include "GPSport.h"
 
 //------------------------------------------------------------
 // For the NeoGPS example programs, "Streamers" is common set
@@ -74,26 +37,6 @@
 // If you don't need these formatters, simply delete this section.
 
 #include "Streamers.h"
-
-//------------------------------------------------------------
-// When NeoHWSerial is used, none of the built-in HardwareSerial
-//   variables can be used: Serial, Serial1, Serial2 and Serial3
-//   *cannot* be used.  Instead, you must use the corresponding
-//   NeoSerial, NeoSerial1, NeoSerial2 or NeoSerial3.  This define
-//   is used to substitute the appropriate Serial variable in
-//   all debug prints below.
-
-#ifndef DEBUG_PORT
-  #ifdef NeoHWSerial_h
-    #define DEBUG_PORT NeoSerial
-  #else
-    #define DEBUG_PORT Serial
-  #endif
-#endif
-
-#ifndef USING_GPS_PORT
-  #define USING_GPS_PORT "unknown port"
-#endif
 
 //------------------------------------------------------------
 // This object parses received characters
@@ -116,6 +59,8 @@ static gps_fix  fix_data;
 //  By doing the "hard" work during the quiet time, the CPU can get back to
 //  reading the GPS chars as they come in, so that no chars are lost.
 
+static Print DEBUG_PORT;
+
 static void doSomeWork()
 {
   // Print all the things!
@@ -127,7 +72,7 @@ static void doSomeWork()
 //------------------------------------
 //  This is the main GPS parsing loop.
 
-static void GPSloop()
+static void GPSloop(GpsPort gps_port)
 {
   while (gps.available( gps_port )) {
     fix_data = gps.read();
@@ -138,19 +83,16 @@ static void GPSloop()
 
 //--------------------------
 
-void setup()
+GpsPort setup(char *usbDev)
 {
   // Start the normal trace output
-  DEBUG_PORT.begin(9600);
-  while (!DEBUG_PORT)
-    ;
-
-  DEBUG_PORT.print( F("NMEA.INO: started\n") );
-  DEBUG_PORT.print( F("  fix object size = ") );
-  DEBUG_PORT.println( sizeof(gps.fix()) );
-  DEBUG_PORT.print( F("  gps object size = ") );
-  DEBUG_PORT.println( sizeof(gps) );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.print( "NMEA: started\n" );
+  DEBUG_PORT.print( "  fix object size = " );
+  DEBUG_PORT.print( (uint32_t)sizeof(gps.fix()) );
+  DEBUG_PORT.print( "\n  gps object size = " );
+  DEBUG_PORT.print( (uint32_t)sizeof(gps) );
+  DEBUG_PORT.print( "\nLooking for GPS device on " );
+  DEBUG_PORT.print( usbDev );
 
   #ifndef NMEAGPS_RECOGNIZE_ALL
     #error You must define NMEAGPS_RECOGNIZE_ALL in NMEAGPS_cfg.h!
@@ -169,31 +111,35 @@ void setup()
 
   #else
     if (gps.merging == NMEAGPS::NO_MERGING) {
-      DEBUG_PORT.print  ( F("\nWARNING: displaying data from ") );
-      DEBUG_PORT.print  ( gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
-      DEBUG_PORT.print  ( F(" sentences ONLY, and only if ") );
-      DEBUG_PORT.print  ( gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
-      DEBUG_PORT.println( F(" is enabled.\n"
+      DEBUG_PORT.print( F("\nWARNING: displaying data from ") );
+      DEBUG_PORT.print( gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
+      DEBUG_PORT.print( F(" sentences ONLY, and only if ") );
+      DEBUG_PORT.print( gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
+      DEBUG_PORT.print( F(" is enabled.\n"
                             "  Other sentences may be parsed, but their data will not be displayed.") );
+      DEBUG_PORT.print( "\n" );
     }
   #endif
 
-  DEBUG_PORT.print  ( F("\nGPS quiet time is assumed to begin after a ") );
-  DEBUG_PORT.print  ( gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
-  DEBUG_PORT.println( F(" sentence is received.\n"
-                        "  You should confirm this with NMEAorder.ino\n") );
+  DEBUG_PORT.print( "\nGPS quiet time is assumed to begin after a ");
+  DEBUG_PORT.print( gps.string_for( LAST_SENTENCE_IN_INTERVAL ) );
+  DEBUG_PORT.print( " sentence is received.\n"
+                    "  You should confirm this with NMEAorder.ino\n" );
+  DEBUG_PORT.print( "\n" );
+  
+  GpsPort gps_port = GpsPort(usbDev);
 
   trace_header( DEBUG_PORT );
-
-  DEBUG_PORT.flush();
-
-  // Start the UART for the GPS device
-  gps_port.begin( 9600 );
+  
+  return gps_port;
 }
 
 //--------------------------
 
-void loop()
-{
-  GPSloop();
+int main(int argc, char *argv[]) {
+  auto gps_port = setup(argc > 1 ? argv[1] : nullptr);
+  for (;;) {
+      GPSloop(gps_port);
+  }
+  return 0;
 }
