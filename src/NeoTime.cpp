@@ -33,7 +33,7 @@ bool time_t::parse(str_P s)
     strcpy_P(buf, s);
     char* sp = &buf[0];
   #else
-    char* sp = &s[0];
+    char* sp = (char *)&s[0];
   #endif
   uint16_t value = strtoul(sp, &sp, 10);
 

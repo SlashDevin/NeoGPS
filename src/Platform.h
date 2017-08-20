@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CosaCompat.h"
+
 /**
  * This file contains platform related definitions and imports.
  **/
@@ -16,13 +18,12 @@
   #include "platforms/System.h"
   
   #include <stdint.h>
-  #define __PROGMEM
+  //#define __PROGMEM
   #define PROGMEM
 
   #define pgm_read_byte(x) (*(x))
   #define __FlashStringHelper char
   #define F(x) (x)
-  #define str_P char *
 
   #include <math.h>
   
