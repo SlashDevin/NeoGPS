@@ -5,10 +5,7 @@ GpsPort::GpsPort(const char* usbDev) {
 }
 
 bool GpsPort::available() {
-    return true;
-    //bool available = ::data_available(_device);
-    //std::cout << "Availabe: " << available << std::endl;
-    //return available;
+    return ::data_available(_device);
 }
 
 char GpsPort::read() {
