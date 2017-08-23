@@ -2,13 +2,41 @@
 
 NMEAGPS     gps;
 
-//-----------------
+//======================================================================
+//  Program: SyncTime.ino
+//
+//  Description:  This program displays all GPS fields in the default configuration
+//     in a tabular display.  To be comparable to other libraries' tabular displays,
+//     you must also enable HDOP in GPSfix_cfg.h.
+//
+//     Most NeoGPS examples display *all* configured GPS fields in a CSV format
+//     (e.g., NMEA.ino).
+//
 //  Prerequisites:
 //     1) NMEA.ino works with your device (correct TX/RX pins and baud rate)
 //     2) GPS_FIX_HDOP is defined in GPSfix_cfg.h
 //
 //  'Serial' is for debug output to the Serial Monitor window.
 //
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
+//======================================================================
 
 #include <GPSport.h>
 
