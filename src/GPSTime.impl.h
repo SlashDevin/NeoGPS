@@ -1,6 +1,3 @@
-#ifndef COSACOMPAT_H
-#define COSACOMPAT_H
-
 //  Copyright (C) 2014-2017, SlashDevin
 //
 //  This file is part of NeoGPS
@@ -18,17 +15,11 @@
 //  You should have received a copy of the GNU General Public License
 //  along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifdef __AVR__
+// Just to be sure.  This file should only be included in GPSTime.h which
+// protects against multiple includes already.
+#pragma once
 
-  #include <avr/pgmspace.h>
+#include "GPSTime.header.h"
 
-#else
-
-  #define PGM_P const char *
-
-#endif
-
-typedef PGM_P str_P;
-#define __PROGMEM PROGMEM
-
-#endif
+uint8_t         GPSTime::leap_seconds    = 0;
+NeoGPS::clock_t GPSTime::s_start_of_week = 0;

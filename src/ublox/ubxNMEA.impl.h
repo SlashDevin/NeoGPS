@@ -15,7 +15,11 @@
 //  You should have received a copy of the GNU General Public License
 //  along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "ublox/ubxNMEA.h"
+// Just to be sure.  This file should only be included in ubxNMEA.h which
+// protects against multiple includes already.
+#pragma once
+
+#include "ubxNMEA.header.h"
 
 // Disable the entire file if derived types are not allowed.
 #ifdef NMEAGPS_DERIVED_TYPES

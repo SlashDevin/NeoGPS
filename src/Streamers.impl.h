@@ -15,26 +15,14 @@
 //  You should have received a copy of the GNU General Public License
 //  along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "Streamers.h"
-#include "NMEAGPS.h"
+// Just to be sure.  This file should only be included in Streamers.h which
+// protects against multiple includes already.
+#pragma once
 
-//#define USE_FLOAT
+#include "Streamers.header.h"
 
-Print& operator <<( Print &outs, const bool b )
-  { outs.print( b ? 't' : 'f' ); return outs; }
+#include "GPSfix.h"
 
-Print& operator <<( Print &outs, const char c ) { outs.print(c); return outs; }
-
-Print& operator <<( Print &outs, const uint16_t v ) { outs.print(v); return outs; }
-
-Print& operator <<( Print &outs, const uint32_t v ) { outs.print(v); return outs; }
-
-Print& operator <<( Print &outs, const int32_t v ) { outs.print(v); return outs; }
-
-Print& operator <<( Print &outs, const uint8_t v ) { outs.print(v); return outs; }
-
-Print& operator <<( Print &outs, const __FlashStringHelper *s )
-{ outs.print(s); return outs; }
 
 //------------------------------------------
 
@@ -119,36 +107,35 @@ const char gps_fix_header[] __PROGMEM =
 
 #ifdef GPS_FIX_LOCATION_DMS
 
-  static void printDMS( Print & outs, const DMS_t & dms )
+  static void printDMS( NEO_GPS_PRINT & outs, const DMS_t & dms )
   {
     if (dms.degrees < 10)
-      outs.write( '0' );
-    outs.print( dms.degrees );
-    outs.write( ' ' );
+      outs << '0';
+    outs << dms.degrees << ' ';
 
     if (dms.minutes < 10)
-      outs.write( '0' );
-    outs.print( dms.minutes );
-    outs.print( F("\' ") );
+      outs << '0';
+    outs << dms.minutes;
+    outs << F("\' ");
 
     if (dms.seconds_whole < 10)
-      outs.write( '0' );
-    outs.print( dms.seconds_whole );
-    outs.write( '.' );
+      outs << '0';
+    outs << dms.seconds_whole;
+    outs << '.';
 
     if (dms.seconds_frac < 100)
-      outs.write( '0' );
+      outs << '0';
     if (dms.seconds_frac < 10)
-      outs.write( '0' );
-    outs.print( dms.seconds_frac );
-    outs.print( F("\" ") );
+      outs << '0';
+    outs << dms.seconds_frac;
+    outs << F("\" ");
 
   } // printDMS
 
 #endif
 //...............
 
-Print & operator <<( Print &outs, const gps_fix &fix )
+NEO_GPS_PRINT & operator <<( NEO_GPS_PRINT &outs, const gps_fix &fix )
 {
   if (fix.valid.status)
     outs << (uint8_t) fix.status;
@@ -187,9 +174,9 @@ Print & operator <<( Print &outs, const gps_fix &fix )
   #ifdef USE_FLOAT
     #ifdef GPS_FIX_LOCATION
       if (fix.valid.location) {
-        outs.print( fix.latitude(), 6 );
+        printFloat(outs, fix.latitude(), 6);
         outs << ',';
-        outs.print( fix.longitude(), 6 );
+        printFloat(outs, fix.longitude(), 6);
       } else
         outs << ',';
       outs << ',';
@@ -197,66 +184,66 @@ Print & operator <<( Print &outs, const gps_fix &fix )
     #ifdef GPS_FIX_LOCATION_DMS
       if (fix.valid.location) {
         printDMS( outs, fix.latitudeDMS );
-        outs.print( fix.latitudeDMS.NS() );
+        outs << fix.latitudeDMS.NS();
         outs.write( ' ' );
         if (fix.longitudeDMS.degrees < 100)
-          outs.write( '0' );
+          outs << '0';
         printDMS( outs, fix.longitudeDMS );
-        outs.print( fix.longitudeDMS.EW() );
+        outs << fix.longitudeDMS.EW();
       }
       outs << ',';
     #endif
     #ifdef GPS_FIX_HEADING
       if (fix.valid.heading)
-        outs.print( fix.heading(), 2 );
+        printFloat( outs, fix.heading(), 2);
       outs << ',';
     #endif
     #ifdef GPS_FIX_SPEED
       if (fix.valid.speed)
-        outs.print( fix.speed(), 3 ); // knots
+        printFloat( outs, fix.speed(), 3);
       outs << ',';
     #endif
     #ifdef GPS_FIX_ALTITUDE
       if (fix.valid.altitude)
-        outs.print( fix.altitude(), 2 );
+        printFloat( outs, fix.altitude(), 2);
       outs << ',';
     #endif
 
     #ifdef GPS_FIX_HDOP
       if (fix.valid.hdop)
-        outs.print( (fix.hdop * 0.001), 3 );
+        printFloat( outs, (fix.hdop * 0.001), 3 );
       outs << ',';
     #endif
     #ifdef GPS_FIX_VDOP
       if (fix.valid.vdop)
-        outs.print( (fix.vdop * 0.001), 3 );
+        printFloat( outs, (fix.vdop * 0.001), 3 );
       outs << ',';
     #endif
     #ifdef GPS_FIX_PDOP
       if (fix.valid.pdop)
-        outs.print( (fix.pdop * 0.001), 3 );
+        printFloat( outs, (fix.pdop * 0.001), 3 );
       outs << ',';
     #endif
 
     #ifdef GPS_FIX_LAT_ERR
       if (fix.valid.lat_err)
-        outs.print( fix.lat_err(), 2 );
+        printFloat( outs, fix.lat_err(), 2 );
       outs << ',';
     #endif
     #ifdef GPS_FIX_LON_ERR
       if (fix.valid.lon_err)
-        outs.print( fix.lon_err(), 2 );
+        printFloat( outs, fix.lon_err(), 2 );
       outs << ',';
     #endif
     #ifdef GPS_FIX_ALT_ERR
       if (fix.valid.alt_err)
-        outs.print( fix.alt_err(), 2 );
+        printFloat( outs, fix.alt_err(), 2 );
       outs << ',';
     #endif
 
     #ifdef GPS_FIX_GEOID_HEIGHT
       if (fix.valid.geoidHeight)
-        outs.print( fix.geoidHeight(), 2 );
+        printFloat( outs, fix.geoidHeight(), 2 );
       outs << ',';
     #endif
 
@@ -274,12 +261,12 @@ Print & operator <<( Print &outs, const gps_fix &fix )
     #ifdef GPS_FIX_LOCATION_DMS
       if (fix.valid.location) {
         printDMS( outs, fix.latitudeDMS );
-        outs.print( fix.latitudeDMS.NS() );
-        outs.write( ' ' );
+        outs << fix.latitudeDMS.NS();
+        outs << ' ';
         if (fix.longitudeDMS.degrees < 100)
-          outs.write( '0' );
+          outs << '0';
         printDMS( outs, fix.longitudeDMS );
-        outs.print( fix.longitudeDMS.EW() );
+        outs << fix.longitudeDMS.EW();
       }
       outs << ',';
     #endif
@@ -369,17 +356,17 @@ static const char NMEAGPS_header[] __PROGMEM =
 
   "";
 
-void trace_header( Print & outs )
+void trace_header( NEO_GPS_PRINT & outs )
 {
-  outs.print( (const __FlashStringHelper *) &gps_fix_header[0] );
-  outs.print( (const __FlashStringHelper *) &NMEAGPS_header[0] );
+  outs << ((const __FlashStringHelper *) &gps_fix_header[0]);
+  outs << ((const __FlashStringHelper *) &NMEAGPS_header[0]);
 
   outs << '\n';
 }
 
 //--------------------------
 
-void trace_all( Print & outs, const NMEAGPS &gps, const gps_fix &fix )
+void trace_all( NEO_GPS_PRINT & outs, const NMEAGPS &gps, const gps_fix &fix )
 {
   outs << fix;
 

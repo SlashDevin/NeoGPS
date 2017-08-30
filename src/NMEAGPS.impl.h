@@ -15,9 +15,15 @@
 //  You should have received a copy of the GNU General Public License
 //  along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "NMEAGPS.h"
 
-#include <Stream.h>
+// Just to be sure.  This file should only be included in NMEAGPS.h which
+// protects against multiple includes already.
+#pragma once
+
+#pragma push_macro( "CR" )
+#pragma push_macro( "LF" )
+
+#include "NMEAGPS.header.h"
 
 // Check configurations
  
@@ -724,6 +730,8 @@ bool NMEAGPS::parseGGA( char chr )
         case  9: return parseAlt( chr );
         case 11: return parseGeoidHeight( chr );
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -740,6 +748,8 @@ bool NMEAGPS::parseGLL( char chr )
         case 5: return parseTime( chr );
         case 7: return parseFix( chr );
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -805,6 +815,8 @@ bool NMEAGPS::parseGSA( char chr )
         #endif
       #endif
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -822,6 +834,8 @@ bool NMEAGPS::parseGST( char chr )
       case 7: return parse_lon_err( chr );
       case 8: return parse_alt_err( chr );
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -869,6 +883,8 @@ bool NMEAGPS::parseGSV( char chr )
         }
       }
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -889,6 +905,8 @@ bool NMEAGPS::parseRMC( char chr )
       case 9:  return parseDDMMYY ( chr );
       // case 12: return parseFix    ( chr );  ublox only!
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -905,6 +923,8 @@ bool NMEAGPS::parseVTG( char chr )
       case 5: return parseSpeed( chr );
       case 9: return parseFix( chr );
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -942,6 +962,8 @@ bool NMEAGPS::parseZDA( char chr )
           break;
       #endif
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -966,6 +988,8 @@ bool NMEAGPS::parseTime(char chr)
               m_fix.valid.time = true;
               break;
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -988,6 +1012,8 @@ bool NMEAGPS::parseDDMMYY( char chr )
               m_fix.valid.date = true;
               break;
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1141,6 +1167,7 @@ bool NMEAGPS::parseFloat( uint16_t & val, char chr, uint8_t max_decimal )
 
 static uint32_t divu3( uint32_t n )
 {
+  // FIXME  for all microcontrollers interesting
   #ifdef __AVR__
     uint32_t q = (n >> 2) + (n >> 4); // q = n*0.0101 (approx).
     q = q + (q >> 4); // q = n*0.01010101.
@@ -1251,7 +1278,7 @@ bool NMEAGPS::parseDDDMM
 
       done = true;
 
-    } else if (validateChars() && !isdigit(chr)) {
+    } else if (validateChars() && !( chr >= '0' && chr <= '9' )) {
       sentenceInvalid();
 
     } else if (!decimal) {
@@ -1340,6 +1367,8 @@ bool NMEAGPS::parseLat( char chr )
         }
       }
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1373,6 +1402,8 @@ bool NMEAGPS::parseNS( char chr )
         sentenceInvalid();
       }
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1417,6 +1448,8 @@ bool NMEAGPS::parseLon( char chr )
         }
       }
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1451,6 +1484,8 @@ bool NMEAGPS::parseEW( char chr )
         sentenceInvalid();
       }
     }
+  #else
+    (void) chr;
   #endif
   
   return true;
@@ -1472,6 +1507,8 @@ bool NMEAGPS::parseSpeed( char chr )
         sentenceInvalid();
       }
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1495,6 +1532,8 @@ bool NMEAGPS::parseHeading( char chr )
         sentenceInvalid();
       }
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1510,6 +1549,8 @@ bool NMEAGPS::parseAlt(char chr )
       NMEAGPS_INVALIDATE( altitude );
     if (parseFloat( m_fix.alt, chr, 2 ))
       m_fix.valid.altitude = (chrCount != 0);
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1525,6 +1566,8 @@ bool NMEAGPS::parseGeoidHeight( char chr )
       NMEAGPS_INVALIDATE( geoidHeight );
     if (parseFloat( m_fix.geoidHt, chr, 2 ))
       m_fix.valid.geoidHeight = (chrCount != 0);
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1541,6 +1584,8 @@ bool NMEAGPS::parseSatellites( char chr )
     if (parseInt( m_fix.satellites, chr )) {
       m_fix.valid.satellites = true;
     }
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1556,6 +1601,8 @@ bool NMEAGPS::parseHDOP( char chr )
       NMEAGPS_INVALIDATE( hdop );
     if (parseFloat( m_fix.hdop, chr, 3 ))
       m_fix.valid.hdop = (chrCount != 0);
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1571,6 +1618,8 @@ bool NMEAGPS::parseVDOP( char chr )
       NMEAGPS_INVALIDATE( vdop );
     if (parseFloat( m_fix.vdop, chr, 3 ))
       m_fix.valid.vdop = (chrCount != 0);
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1586,6 +1635,8 @@ bool NMEAGPS::parsePDOP( char chr )
       NMEAGPS_INVALIDATE( pdop );
     if (parseFloat( m_fix.pdop, chr, 3 ))
       m_fix.valid.pdop = (chrCount != 0);
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1601,6 +1652,8 @@ bool NMEAGPS::parse_lat_err( char chr )
       NMEAGPS_INVALIDATE( lat_err );
     if (parseFloat( m_fix.lat_err_cm, chr, 2 ))
       m_fix.valid.lat_err = (chrCount != 0);
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1616,6 +1669,8 @@ bool NMEAGPS::parse_lon_err( char chr )
       NMEAGPS_INVALIDATE( lon_err );
     if (parseFloat( m_fix.lon_err_cm, chr, 2 ))
       m_fix.valid.lon_err = (chrCount != 0);
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1631,6 +1686,8 @@ bool NMEAGPS::parse_alt_err( char chr )
       NMEAGPS_INVALIDATE( alt_err );
     if (parseFloat( m_fix.alt_err_cm, chr, 2 ))
       m_fix.valid.alt_err = (chrCount != 0);
+  #else
+    (void) chr;
   #endif
 
   return true;
@@ -1670,7 +1727,7 @@ const gps_fix NMEAGPS::read()
 
 //----------------------------------------------------------------
 
-void NMEAGPS::poll( Stream *device, nmea_msg_t msg )
+void NMEAGPS::poll( NEO_GPS_STREAM *device, nmea_msg_t msg )
 {
   //  Only the ublox documentation references talker ID "EI".  
   //  Other manufacturer's devices use "II" and "GP" talker IDs for the GPQ sentence.
@@ -1745,13 +1802,13 @@ void NMEAGPS::poll( Stream *device, nmea_msg_t msg )
 
 //----------------------------------------------------------------
 
-static void send_trailer( Stream *device, uint8_t crc )
+static void send_trailer( NEO_GPS_STREAM *device, uint8_t crc )
 {
-  device->print('*');
+  device->print( '*' );
 
   char hexDigit = formatHex( crc>>4 );
   device->print( hexDigit );
-
+  
   hexDigit = formatHex( crc );
   device->print( hexDigit );
 
@@ -1762,12 +1819,12 @@ static void send_trailer( Stream *device, uint8_t crc )
 
 //----------------------------------------------------------------
 
-void NMEAGPS::send( Stream *device, const char *msg )
+void NMEAGPS::send( NEO_GPS_STREAM *device, const char *msg )
 {
   if (msg && *msg) {
     if (*msg == '$')
       msg++;
-    device->print('$');
+    device->print( '$' );
     uint8_t sent_trailer = 0;
     uint8_t crc          = 0;
     while (*msg) {
@@ -1786,13 +1843,13 @@ void NMEAGPS::send( Stream *device, const char *msg )
 
 //----------------------------------------------------------------
 
-void NMEAGPS::send_P( Stream *device, const __FlashStringHelper *msg )
+void NMEAGPS::send_P( NEO_GPS_STREAM *device, const __FlashStringHelper *msg )
 {
   if (msg) {
     const char *ptr = (const char *)msg;
           char  chr = pgm_read_byte(ptr++);
 
-    device->print('$');
+    device->print( '$' );
     if (chr == '$')
       chr = pgm_read_byte(ptr++);
     uint8_t sent_trailer = 0;
@@ -1812,3 +1869,6 @@ void NMEAGPS::send_P( Stream *device, const __FlashStringHelper *msg )
   }
 
 } // send_P
+
+#pragma pop_macro( "LF" )
+#pragma pop_macro( "CR" )

@@ -124,6 +124,10 @@
 //      so that you could use one of the other recommended ports.
 //-----------------------------------------------------------
 
+#ifndef ARDUINO
+  #error "GPSport.h is only useful for the Arduino platform."
+#endif
+
 // DEFAULT file contents:
 //   *GUESS* which port should be used.  If you know what port you want to use,
 //             *DELETE* the rest of this file and declare your own port

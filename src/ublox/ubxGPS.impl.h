@@ -15,11 +15,15 @@
 //  You should have received a copy of the GNU General Public License
 //  along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
 
+// Just to be sure.  This file should only be included in ubxGPS.h which
+// protects against multiple includes already.
+#pragma once
+
 #include "NMEAGPS_cfg.h"
 // Disable the entire file if derived types are not allowed.
 #ifdef NMEAGPS_DERIVED_TYPES
 
-#include "ublox/ubxGPS.h"
+#include "ubxGPS.header.h"
 
 // Check configurations
  
@@ -36,8 +40,6 @@
   #error You must enable NMEAGPS_PARSING_SCRATCHPAD in NMEAGPS_cfg.h
 
 #endif
-
-using namespace ublox;
 
 //----------------------------------
 

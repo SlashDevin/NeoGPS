@@ -289,6 +289,7 @@ static MyGPS gps( &gpsPort );
 
 static void configNMEA( uint8_t rate )
 {
+  (void) rate;
   for (uint8_t i=NMEAGPS::NMEA_FIRST_MSG; i<=NMEAGPS::NMEA_LAST_MSG; i++) {
     ublox::configNMEA( gps, (NMEAGPS::nmea_msg_t) i, rate );
   }
