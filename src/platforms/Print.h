@@ -4,7 +4,6 @@
 
 #ifndef NEO_GPS_PRINT
   #define NEO_GPS_PRINT NeoGPS::Print
-#endif
 
 /**
  * This file implements a non working dummy implemenation for Print
@@ -25,3 +24,5 @@ namespace NeoGPS {
     void printFloat( Print &, float f, uint8_t decPlaces ) {}
   #endif
 }
+
+#endif

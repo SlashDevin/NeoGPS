@@ -2,7 +2,6 @@
 
 #ifndef NEO_GPS_STREAM
   #define NEO_GPS_STREAM NeoGPS::Stream
-#endif
 
 /**
  * This file implements a non working dummy implementation for Stream.
@@ -16,3 +15,4 @@ namespace NeoGPS {
     void print(char) {}
   };
 }
+#endif
