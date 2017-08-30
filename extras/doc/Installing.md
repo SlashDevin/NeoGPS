@@ -34,7 +34,7 @@ README.md
 
 On any Arduino board, you can connect the GPS device to the `Serial` pins (0 & 1).  You can still print debug statements, and they will show up on the Serial Monitor window.  The received GPS characters will not interfere with those prints, and you will not see those characters on the Serial Monitor window.
 
-However, when you need to upload a new sketch to the Arduino, **you must disconnect the GPS TX from the Arduino RX pin 0.**  Otherwise, the GPS characters will interfere with the upload data.
+However, when you need to upload a new sketch to the Arduino over USB, **you must disconnect the GPS TX from the Arduino RX pin 0.**  Otherwise, the GPS characters will interfere with the upload data.  Some people put a switch in that connection to make it easy to upload without disturbing the wires.
 
 For Mega, Due and Teensy boards, you can connect the GPS device to the `Serial1`,  `Serial2` or `Serial3` pins.
 
@@ -71,14 +71,14 @@ This file declares a the serial port to be used for the GPS device.  You can eit
 
 #### Default choices for GPSport.h
 
-By default, Mega, Leonardo and Due Boards will use `Serial1`.
+By default, Mega, Leonardo, Due and Teensy boards will use `Serial1`.
 
 All other Boards will use a [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) instance on pins 3 and 4.  If your GPS is on different pins, you must edit these `#define` lines in 'GPSport.h`:
 
-    #define RX_PIN 2
+    #define RX_PIN 4
     #define TX_PIN 3
 
-If you want to use a different serial port library (review step 2 above), you must edit these `#include` lines in `GPSport.h':
+If you want to use a different serial port library (review step 2 above), you must edit these `#include` lines in `GPSport.h`:
 
 ```
   //#include <NeoHWSerial.h>    // NeoSerial or NeoSerial1 Interrupt-style processing
