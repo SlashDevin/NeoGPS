@@ -129,7 +129,7 @@
 //             *DELETE* the rest of this file and declare your own port
 //             and port name string (see above).
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
+#if defined( UBRR1H ) | defined( ID_USART0 ) | defined( TEENSYDUINO )
   //  If the Arduino has more than one hardware serial port, 
   //      use Serial1 (or NeoSerial1).
 
