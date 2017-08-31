@@ -22,15 +22,15 @@
 #include "GPSfix_cfg.h"
 
 #if defined( GPS_FIX_DATE ) | defined( GPS_FIX_TIME )
-  #include "NeoTime.header.h"
+  #include "NeoTime.h"
 #endif
 
 #ifdef GPS_FIX_LOCATION_DMS
-  #include "DMS.header.h"
+  #include "DMS.h"
 #endif
 
 #ifdef GPS_FIX_LOCATION
-  #include "Location.header.h"
+  #include "Location.h"
 #endif
 
 /**

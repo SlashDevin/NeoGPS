@@ -4,10 +4,10 @@
   #include <iostream>
   #include <iomanip>
   
-  #define NEO_GPS_PRINT std::iostream
+  #define NEO_GPS_PRINT decltype(std::cout)
   
   #ifdef USE_FLOAT
-    void printFloat( std::iostream & io, float f, uint8_t decPlaces ) {
+    void printFloat( NEO_GPS_PRINT & io, float f, uint8_t decPlaces ) {
       std::streamsize ss = std::cout.precision();
       io << std::setprecision(decPlaces) << std::fixed << f << std::setprecision(ss);
     }
@@ -15,7 +15,7 @@
 #endif
 
 #ifndef NEO_GPS_STREAM
-  #include "GpsPort.h"
+  #include "GpsPort.header.h"
   #define NEO_GPS_STREAM GpsPort
 #endif
 

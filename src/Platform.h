@@ -4,8 +4,6 @@
 
 #ifdef ARDUINO
   #include <platforms/arduino/platform.h>
-#elif defined LINUX
-  #include <platforms/linux/platform.h>
 #else
   #include <platforms/Stream.h>
   #include <platforms/Print.h>
