@@ -37,8 +37,8 @@
       { return &nmea_msg_table; };
 
     //.......................................................................
-    //  These virtual methods can accept or reject 
-    //    the talker ID (for standard sentences) or 
+    //  These virtual methods can accept or reject
+    //    the talker ID (for standard sentences) or
     //    the manufacturer ID (for proprietary sentences).
     //  The default is to accept *all* IDs.
     //  Override them if you want to reject certain IDs, or you want
@@ -74,7 +74,7 @@
       merging = NMEAGPS_MERGING; // see NMEAGPS_cfg.h
 
     enum processing_style_t { PS_POLLING, PS_INTERRUPT };
-    static const processing_style_t 
+    static const processing_style_t
       processing_style = NMEAGPS_PROCESSING_STYLE;  // see NMEAGPS_cfg.h
 
     static const bool keepNewestFixes = NMEAGPS_KEEP_NEWEST_FIXES;
@@ -178,7 +178,7 @@
     //.......................................................................
     // Indicate that the next sentence should initialize the internal data.
     //    This is useful for coherency or custom filtering.
-    
+
     bool intervalComplete() const { return _intervalComplete; }
     void intervalComplete( bool val ) { _intervalComplete = val; }
 
@@ -287,13 +287,26 @@
 
     bool parseInt( uint8_t &val, uint8_t chr )
     {
+      negative = false;
       bool is_comma = (chr == ',');
+
       if (chrCount == 0) {
         if (is_comma)
           return false; // empty field!
-        val = (chr - '0');
-      } else if (!is_comma)
-        val = (val*10) + (chr - '0');
+
+        if (((validateChars() || validateFields()) && (chr == '-')) ||
+            (validateChars() && !isdigit( chr )))
+          sentenceInvalid();
+        else
+          val = (chr - '0');
+
+      } else if (!is_comma) {
+
+        if (validateChars() && !isdigit( chr ))
+          sentenceInvalid();
+        else
+          val = (val*10) + (chr - '0');
+      }
       return true;
     }
 
@@ -309,11 +322,12 @@
         if (is_comma)
           return false; // empty field!
 
-        if (chr == '-') {
-          negative = true;
+        negative = (chr == '-');
+        if (negative) {
           comma_needed( true ); // to negate
-        } else if (chr == '+') {
-          ;
+          val = 0;
+        } else if (validateChars() && !isdigit( chr )) {
+          sentenceInvalid();
         } else {
           val = (chr - '0');
         }
@@ -333,13 +347,26 @@
 
     bool parseInt( uint16_t &val, uint8_t chr )
     {
+      negative = false;
+
       bool is_comma = (chr == ',');
       if (chrCount == 0) {
         if (is_comma)
           return false; // empty field!
-        val = (chr - '0');
-      } else if (!is_comma)
-        val = (val*10) + (chr - '0');
+
+        if (((validateChars() || validateFields()) && (chr == '-')) ||
+            (validateChars() && !isdigit( chr )))
+          sentenceInvalid();
+        else
+          val = (chr - '0');
+
+      } else if (!is_comma) {
+
+        if (validateChars() && !isdigit( chr ))
+          sentenceInvalid();
+        else
+          val = (val*10) + (chr - '0');
+      }
       return true;
     }
 
@@ -349,13 +376,26 @@
 
     bool parseInt( uint32_t &val, uint8_t chr )
     {
+      negative = false;
+
       bool is_comma = (chr == ',');
       if (chrCount == 0) {
         if (is_comma)
           return false; // empty field!
-        val = (chr - '0');
-      } else if (!is_comma)
-        val = (val*10) + (chr - '0');
+
+        if (((validateChars() || validateFields()) && (chr == '-')) ||
+            (validateChars() && !isdigit( chr )))
+          sentenceInvalid();
+        else
+          val = (chr - '0');
+
+      } else if (!is_comma) {
+
+        if (validateChars() && !isdigit( chr ))
+          sentenceInvalid();
+        else
+          val = (val*10) + (chr - '0');
+      }
       return true;
     }
 
