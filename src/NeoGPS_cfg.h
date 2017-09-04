@@ -18,21 +18,20 @@
 //  You should have received a copy of the GNU General Public License
 //  along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Enable/disable packed data structures.
- *
- * Enabling packed data structures will use two less-portable language
- * features of GCC to reduce RAM requirements.  Although it was expected to slightly increase execution time and code size, the reverse is true on 8-bit AVRs: the code is smaller and faster with packing enabled.
- *
- * Disabling packed data structures will be very portable to other
- * platforms.  NeoGPS configurations will use slightly more RAM, and on
- * 8-bit AVRs, the speed is slightly slower, and the code is slightly
- * larger.  There may be no choice but to disable packing on processors 
- * that do not support packed structures.
- *
- * There may also be compiler-specific switches that affect packing and the
- * code which accesses packed members.  YMMV.
- **/
+//------------------------------------------------------------------------
+// Enable/disable packed data structures.
+//
+// Enabling packed data structures will use two less-portable language
+// features of GCC to reduce RAM requirements.  Although it was expected to slightly increase execution time and code size, the reverse is true on 8-bit AVRs: the code is smaller and faster with packing enabled.
+//
+// Disabling packed data structures will be very portable to other
+// platforms.  NeoGPS configurations will use slightly more RAM, and on
+// 8-bit AVRs, the speed is slightly slower, and the code is slightly
+// larger.  There may be no choice but to disable packing on processors 
+// that do not support packed structures.
+//
+// There may also be compiler-specific switches that affect packing and the
+// code which accesses packed members.  YMMV.
 
 #ifdef __AVR__
   #define NEOGPS_PACKED_DATA
@@ -61,33 +60,32 @@
 
 #endif
 
-/*
- *  Accommodate C++ compiler and IDE changes.
- *
- *  Declaring constants as class data instead of instance data helps avoid
- *  collisions with #define names, and allows the compiler to perform more
- *  checks on their usage.
- *
- *  Until C++ 10 and IDE 1.6.8, initialized class data constants 
- *  were declared like this:
- *
- *      static const <valued types> = <constant-value>;
- *
- *  Now, non-simple types (e.g., float) must be declared as
- *
- *      static constexpr <nonsimple-types> = <expression-treated-as-const>;
- *
- *  The good news is that this allows the compiler to optimize out an
- *  expression that is "promised" to be "evaluatable" as a constant.
- *  The bad news is that it introduces a new language keyword, and the old
- *  code raises an error.
- *
- *  TODO: Evaluate the requirement for the "static" keyword.
- *  TODO: Evaluate using a C++ version preprocessor symbol for the #if.
- *
- *  The CONST_CLASS_DATA define will expand to the appropriate keywords.
- *
- */
+//------------------------------------------------------------------------
+//  Accommodate C++ compiler and IDE changes.
+//
+//  Declaring constants as class data instead of instance data helps avoid
+//  collisions with #define names, and allows the compiler to perform more
+//  checks on their usage.
+//
+//  Until C++ 10 and IDE 1.6.8, initialized class data constants 
+//  were declared like this:
+//
+//      static const <valued types> = <constant-value>;
+//
+//  Now, non-simple types (e.g., float) must be declared as
+//
+//      static constexpr <nonsimple-types> = <expression-treated-as-const>;
+//
+//  The good news is that this allows the compiler to optimize out an
+//  expression that is "promised" to be "evaluatable" as a constant.
+//  The bad news is that it introduces a new language keyword, and the old
+//  code raises an error.
+//
+//  TODO: Evaluate the requirement for the "static" keyword.
+//  TODO: Evaluate using a C++ version preprocessor symbol for the #if.
+//
+//  The CONST_CLASS_DATA define will expand to the appropriate keywords.
+//
 
 #if (ARDUINO < 10606) | ((10700 <= ARDUINO) & (ARDUINO <= 10799)) | ((107000 <= ARDUINO) & (ARDUINO <= 107999))
 
@@ -98,5 +96,15 @@
   #define CONST_CLASS_DATA static constexpr
   
 #endif
+
+//------------------------------------------------------------------------
+// The PROGMEM definitions are not correct for Zero and MKR1000
+
+#if !defined(__AVR__)
+  // TODO: use the Zero/MKR1000-specific symbols
+  #undef pgm_read_ptr
+  #define pgm_read_ptr(addr) (*(const void **)(addr))
+#endif
+
 
 #endif

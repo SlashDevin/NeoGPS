@@ -71,24 +71,28 @@ This file declares a the serial port to be used for the GPS device.  You can eit
 
 #### Default choices for GPSport.h
 
-By default, Mega, Leonardo, Due and Teensy boards will use `Serial1`.
+By default, Mega, Leonardo, Due, Zero/MKR1000 and Teensy boards will use `Serial1`.
 
-All other Boards will use a [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) instance on pins 3 and 4.  If your GPS is on different pins, you must edit these `#define` lines in 'GPSport.h`:
-
-    #define RX_PIN 4
-    #define TX_PIN 3
+All other Boards will use [AltSoftSerial](https://github.com/PaulStoffregen/AltSoftSerial) on two specific pins (see table at linked page).
 
 If you want to use a different serial port library (review step 2 above), you must edit these `#include` lines in `GPSport.h`:
 
 ```
   //#include <NeoHWSerial.h>    // NeoSerial or NeoSerial1 Interrupt-style processing
-  //#include <AltSoftSerial.h>  // Two specific pins...
-  //#include <NeoICSerial.h>    //    ... with Interrupt-style processing
-  #include <NeoSWSerial.h>    // Any pins, only @ 9600, 19200 or 38400 baud
+  #include <AltSoftSerial.h>    // <-- DEFAULT.  Two specific pins required (see docs)
+  //#include <NeoICSerial.h>    // AltSoftSerial with Interrupt-style processing
+  //#include <NeoSWSerial.h>    // Any pins, only @ 9600, 19200 or 38400 baud
   //#include <SoftwareSerial.h> // NOT RECOMMENDED!
 ```
 
 Uncomment **one** of those include statements, and it will use that library for the GPS serial port.
+
+If you uncomment the `NeoSWSerial.h` include, pins 3 and 4 will be used for the GPS.  If your GPS is on different pins, you must edit these `#define` lines in `GPSport.h`:
+
+    #define RX_PIN 4
+    #define TX_PIN 3
+
+
 
 #### Choosing your own serial port
 

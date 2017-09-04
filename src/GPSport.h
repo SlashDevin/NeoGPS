@@ -24,7 +24,7 @@
 //  I.  AS IS, which tries to *guess* which port a beginner should use.
 //      If you include <SoftwareSerial.h>, <NeoSWSerial.h>, <AltSoftSerial.h>, 
 //      <NeoICSerial.h>  *OR*  <NeoHWSerial.h> before this file (in the INO) 
-//      or on line 132 below, one of those ports will be used for the GPS.  
+//      or on line 152 below, one of those ports will be used for the GPS.  
 //      This file cannot always guess what you want, so you may need to use it 
 //      in the 2nd way...
 //
@@ -126,30 +126,40 @@
 
 // DEFAULT file contents:
 //   *GUESS* which port should be used.  If you know what port you want to use,
-//             *DELETE* the rest of this file and declare your own port
-//             and port name string (see above).
+//             *DELETE* the rest of this file and declare your own GPS port variable,
+//             GPS port name string, and debug print port variable (see above).
 
-#if defined( UBRR1H ) | defined( ID_USART0 ) | defined( TEENSYDUINO )
-  //  If the Arduino has more than one hardware serial port, 
-  //      use Serial1 (or NeoSerial1).
+#if defined(SERIAL_PORT_HARDWARE_OPEN)
+
+  #if SERIAL_PORT_HARDWARE_OPEN == Serial1
+
+    //  This Arduino has more than one hardware serial port, 
+    //      use Serial1 (or NeoSerial1).
+    #define NEOGPS_USE_SERIAL1
+
+  #endif
+
+#endif
+
+#ifdef NEOGPS_USE_SERIAL1
 
   #if defined( NMEAGPS_INTERRUPT_PROCESSING )
     #include <NeoHWSerial.h>
-    NeoHWSerial & gpsPort = NeoSerial1;
+    #define gpsPort NeoSerial1
     #define GPS_PORT_NAME "NeoSerial1"
   #else
-    HardwareSerial & gpsPort = Serial1;
+    #define gpsPort Serial1
     #define GPS_PORT_NAME "Serial1"
   #endif
 
 #else
-  //   Otherwise, a software serial port will be used for the GPS port.
-  //      Uncomment *one* of the serial port library includes:
+  //      Uncomment *zero* or *one* of the serial port library includes.
+  //      If none of these includes are uncommented, Serial will be used.
   //
   //#include <NeoHWSerial.h>    // NeoSerial or NeoSerial1 Interrupt-style processing
-  //#include <AltSoftSerial.h>  // Two specific pins...
-  //#include <NeoICSerial.h>    //    ... with Interrupt-style processing
-  #include <NeoSWSerial.h>    // Any pins, only @ 9600, 19200 or 38400 baud
+  #include <AltSoftSerial.h>    // <-- DEFAULT.  Two specific pins required
+  //#include <NeoICSerial.h>    // AltSoftSerial with Interrupt-style processing (see docs)
+  //#include <NeoSWSerial.h>    // Any pins, only @ 9600, 19200 or 38400 baud
   //#include <SoftwareSerial.h> // NOT RECOMMENDED!
 
   #if defined( SoftwareSerial_h )
@@ -178,19 +188,25 @@
     #define TX_PIN -1  //    ...on two specific pins
 
   #elif defined( NeoHWSerial_h )
-    NeoHWSerial & gpsPort = NeoSerial;
+    #define gpsPort NeoSerial
     #define GPS_PORT_NAME "NeoSerial"
+    #warning Using Serial (actually NeoSerial) for GPS connection.
 
   #else
-    #error Unable to choose serial port for GPS device.  \
-    You must include a serial header before "#include GPSport.h" in the INO or modify GPSport.h!  \
-    NeoSWSerial, NeoICSerial, NeoHWSerial, AltSoftSerial and SoftwareSerial are supported.
+    // No serial library files were included before this file, just use Serial.
+    #define gpsPort Serial
+    #define GPS_PORT_NAME "Serial"
+    #warning Using Serial for GPS connection.
     
-    // You will see this error if you want to use Serial for the GPS, because no
-    //   software serial port libraries were included.  That is a good choice,
-    //   but this file cannot *guess* that you want to do that.  Follow the
-    //   instructions above for declaring your own "gpsPort" variable.  The
-    //   rest of this file should be deleted.
+    // You will see this warning if you want to use Serial for the GPS, because no
+    // software serial port libraries were included.  That is a good choice.
+    //
+    // To use a different serial port for GPS device, you must include a serial header 
+    // before "#include GPSport.h" in the INO.  It may be simpler to replace the 
+    // entire contents of this file with your own declarations.  Follow the
+    // instructions above for declaring your own "gpsPort" variable. Everything else
+    // in this file should be deleted. See Installation instructions for more
+    // information.
   #endif
 #endif
 
@@ -222,9 +238,9 @@
     xstr(SS_TYPE) "( RX pin " xstr(RX_PIN) \
                   ", TX pin " xstr(TX_PIN) " )"
 
-  #if defined( UBRR1H ) | defined( ID_USART0 )
-    //  If you *really* want to do this, or you just happened
-    //  to include SoftwareSerial.h for something else, you're
+  #ifdef NEOGPS_USE_SERIAL1
+    //  If you *really* want to do this, or you just happened to include 
+    //  a software serial library header for something else, you're
     //  better off *not* including this file.  Just declare
     //  your own gpsPort in your INO file.
 
