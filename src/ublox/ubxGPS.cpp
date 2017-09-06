@@ -375,7 +375,7 @@ void ubloxGPS::write_P( const msg_t & msg )
   uint8_t  crc_a = 0;
   uint8_t  crc_b = 0;
   uint8_t *ptr   = (uint8_t *) &msg;
-  uint16_t l     = msg.length + sizeof(msg_t);
+  uint16_t l     = pgm_read_word( &msg.length ) + sizeof(msg_t);
   uint32_t dword;
 
   while (l > 0) {
@@ -397,8 +397,8 @@ void ubloxGPS::write_P( const msg_t & msg )
   m_device->print( (char) crc_a );
   m_device->print( (char) crc_b );
 
-  sent.msg_class = msg.msg_class;
-  sent.msg_id    = msg.msg_id;
+  sent.msg_class = (msg_class_t) pgm_read_byte( &msg.msg_class );
+  sent.msg_id    = (msg_id_t)    pgm_read_byte( &msg.msg_id    );
 
 } // write
 
