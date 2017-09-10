@@ -151,9 +151,11 @@ Status,UTC Date/Time,Lat,Lon,Hdg,Spd,Alt,Sats,Rx ok,Rx err,Rx chars,
 3,2016-05-24 01:21:31.00,472852315,85652647,,449,24080,7,17,0,1048,
   etc.
 ```
-The default NeoGPS configuration is **Nominal**, as described [here](Configurations.md#typical-configurations).  This output can be copy & pasted into a spreadsheet for graphing or analysis, or into a text editor for saving as a CSV file.
+The default NeoGPS configuration is **Nominal**, as described [here](Configurations.md#typical-configurations).  If you do not see this output, please review the  [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section.
 
-If you do not see this output, please review the  [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section.
+This output can be copy & pasted into a into a text editor for saving as a CSV file, which can then be imported into a spreadsheet program for graphing or analysis.
+
+<img src="images/example.png"/>
 
 <hr>
 
