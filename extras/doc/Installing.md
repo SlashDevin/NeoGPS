@@ -34,7 +34,7 @@ README.md
 
 On any Arduino board, you can connect the GPS device to the `Serial` pins (0 & 1).  You can still print debug statements, and they will show up on the Serial Monitor window.  The received GPS characters will not interfere with those prints, and you will not see those characters on the Serial Monitor window.
 
-However, when you need to upload a new sketch to the Arduino, **you must disconnect the GPS TX from the Arduino RX pin 0.**  Otherwise, the GPS characters will interfere with the upload data.
+However, when you need to upload a new sketch to the Arduino over USB, **you must disconnect the GPS TX from the Arduino RX pin 0.**  Otherwise, the GPS characters will interfere with the upload data.  Some people put a switch in that connection to make it easy to upload without disturbing the wires.
 
 For Mega, Due and Teensy boards, you can connect the GPS device to the `Serial1`,  `Serial2` or `Serial3` pins.
 
@@ -71,24 +71,28 @@ This file declares a the serial port to be used for the GPS device.  You can eit
 
 #### Default choices for GPSport.h
 
-By default, Mega, Leonardo and Due Boards will use `Serial1`.
+By default, Mega, Leonardo, Due, Zero/MKR1000 and Teensy boards will use `Serial1`.
 
-All other Boards will use a [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) instance on pins 3 and 4.  If your GPS is on different pins, you must edit these `#define` lines in 'GPSport.h`:
+All other Boards will use [AltSoftSerial](https://github.com/PaulStoffregen/AltSoftSerial) on two specific pins (see table at linked page).
 
-    #define RX_PIN 2
-    #define TX_PIN 3
-
-If you want to use a different serial port library (review step 2 above), you must edit these `#include` lines in `GPSport.h':
+If you want to use a different serial port library (review step 2 above), you must edit these `#include` lines in `GPSport.h`:
 
 ```
   //#include <NeoHWSerial.h>    // NeoSerial or NeoSerial1 Interrupt-style processing
-  //#include <AltSoftSerial.h>  // Two specific pins...
-  //#include <NeoICSerial.h>    //    ... with Interrupt-style processing
-  #include <NeoSWSerial.h>    // Any pins, only @ 9600, 19200 or 38400 baud
+  #include <AltSoftSerial.h>    // <-- DEFAULT.  Two specific pins required (see docs)
+  //#include <NeoICSerial.h>    // AltSoftSerial with Interrupt-style processing
+  //#include <NeoSWSerial.h>    // Any pins, only @ 9600, 19200 or 38400 baud
   //#include <SoftwareSerial.h> // NOT RECOMMENDED!
 ```
 
 Uncomment **one** of those include statements, and it will use that library for the GPS serial port.
+
+If you uncomment the `NeoSWSerial.h` include, pins 3 and 4 will be used for the GPS.  If your GPS is on different pins, you must edit these `#define` lines in `GPSport.h`:
+
+    #define RX_PIN 4
+    #define TX_PIN 3
+
+
 
 #### Choosing your own serial port
 
@@ -147,9 +151,11 @@ Status,UTC Date/Time,Lat,Lon,Hdg,Spd,Alt,Sats,Rx ok,Rx err,Rx chars,
 3,2016-05-24 01:21:31.00,472852315,85652647,,449,24080,7,17,0,1048,
   etc.
 ```
-The default NeoGPS configuration is **Nominal**, as described [here](Configurations.md#typical-configurations).  This output can be copy & pasted into a spreadsheet for graphing or analysis, or into a text editor for saving as a CSV file.
+The default NeoGPS configuration is **Nominal**, as described [here](Configurations.md#typical-configurations).  If you do not see this output, please review the  [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section.
 
-If you do not see this output, please review the  [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section.
+This output can be copy & pasted into a into a text editor for saving as a CSV file, which can then be imported into a spreadsheet program for graphing or analysis.
+
+<img src="images/example.png"/>
 
 <hr>
 
