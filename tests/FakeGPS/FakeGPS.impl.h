@@ -2,17 +2,22 @@
 
 #include "FakeGPS.header.h"
 
-#include <unistd.h>
 #include <string.h>
+#include <sys/time.h>
 
 
 FakeGPS::FakeGPS(const char* fakeContent, bool repeat)
-  : _fakeContent(fakeContent), _repeat(repeat), _next_char_ts(0) {}
+  : _fakeContent(fakeContent), _repeat(repeat) {
+    _next_char_tv.tv_sec = 1; // 0 is our stop condition
+    _next_char_tv.tv_usec = 0;
+  }
 
 bool FakeGPS::available() {
-  //std::cout << "_next_char_ts: " << _next_char_ts << " std::time( 0 ): " << std::time( 0 ) << std::endl;
-  //std::cout << "available: " << (_next_char_ts >= 0 && _next_char_ts <= std::time( 0 )) << std::endl;
-  return _next_char_ts >= 0 && _next_char_ts <= std::time( 0 );
+  struct timeval now;
+  gettimeofday(&now, NULL);
+  return _next_char_tv.tv_sec > 0 && 
+    _next_char_tv.tv_sec <= now.tv_sec &&
+    _next_char_tv.tv_usec <= now.tv_usec;
 }
 
     
@@ -25,13 +30,16 @@ char FakeGPS::read() {
     
     if (c == '\n') {
       if (!_repeat && runner == 0) {
-        _next_char_ts = -1;
+        _next_char_tv.tv_sec = 0;
       } else {
-        _next_char_ts = std::time( 0 ) + 1;
+        _next_char_tv.tv_usec += 100000;
+        if (_next_char_tv.tv_usec > 1000000) {
+        _next_char_tv.tv_usec -= 1000000;
+          ++_next_char_tv.tv_sec;
+        }
       }
     }
     
-    //std::cout << c;
     return c;
 }
 

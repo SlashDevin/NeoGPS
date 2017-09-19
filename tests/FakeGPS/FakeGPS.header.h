@@ -6,7 +6,7 @@ class FakeGPS {
 private:
   const char* _fakeContent;
   bool _repeat;
-  std::time_t _next_char_ts;
+  struct timeval _next_char_tv;
 
 public:
   FakeGPS(const char* fakeOutput, bool repeat);

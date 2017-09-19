@@ -22,6 +22,7 @@
 
 #include "GPSfix.h"
 #include "NMEAGPS_cfg.h"
+#include <ctype.h>
 
 //------------------------------------------------------
 //

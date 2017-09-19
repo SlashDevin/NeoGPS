@@ -1498,7 +1498,7 @@ bool NMEAGPS::parseDDDMM
 
       done = true;
 
-    } else if (validateChars() && !( chr >= '0' && chr <= '9' )) {
+    } else if (validateChars() && !isdigit(chr)) {
       sentenceInvalid();
 
     } else if (!decimal) {
