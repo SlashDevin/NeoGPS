@@ -30,19 +30,19 @@ NEO_GPS_PRINT & operator<<( NEO_GPS_PRINT& outs, const NeoGPS::time_t& t )
   outs << t.full_year( t.year );
   outs << '-';
   if (t.month < 10) outs << '0';
-  outs << t.month;
+  outs << (int) t.month;
   outs << '-';
   if (t.date < 10) outs << '0';
-  outs << t.date;
+  outs << (int) t.date;
   outs << ' ';
   if (t.hours < 10) outs << '0';
-  outs << t.hours;
+  outs << (int) t.hours;
   outs << ':';
   if (t.minutes < 10) outs << '0';
-  outs << t.minutes;
+  outs << (int) t.minutes;
   outs << ':';
   if (t.seconds < 10) outs << '0';
-  outs << t.seconds;
+  outs << (int) t.seconds;
 
   return outs;
 }

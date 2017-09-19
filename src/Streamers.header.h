@@ -36,5 +36,3 @@ NEO_GPS_PRINT & operator <<( NEO_GPS_PRINT & outs, const gps_fix &fix ) NEO_GPS_
 void trace_header( NEO_GPS_PRINT & outs ) NEO_GPS_PRINT_DEFAULT_IMPL_WARN;
 
 void trace_all( NEO_GPS_PRINT & outs, const NMEAGPS &gps, const gps_fix &fix ) NEO_GPS_PRINT_DEFAULT_IMPL_WARN;
-
-#include <Streamers.impl.h>
