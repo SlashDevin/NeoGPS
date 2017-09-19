@@ -4,7 +4,7 @@
 //
 //    When the last character of the LAST_SENTENCE_IN_INTERVAL (see NMEAGPS_cfg.h)
 //    is decoded, a completed fix structure becomes available and is returned
-//    from read().  The new fix is saved the 'fix_data' structure, and can be used
+//    from read().  The new fix is saved the 'fix' structure, and can be used
 //    anywhere, at any time.
 //
 //    If no messages are enabled in NMEAGPS_cfg.h, or
@@ -52,7 +52,7 @@ static NMEAGPS  gps;
 //  hold on to the various pieces as they are received from
 //  an RMC sentence.  It can be used anywhere in your sketch.
 
-static gps_fix  fix_data;
+static gps_fix  fix;
 
 //----------------------------------------------------------------
 //  This function gets called about once per second, during the GPS
@@ -68,7 +68,7 @@ static void doSomeWork()
 {
   // Print all the things!
 
-  trace_all( DEBUG_PORT, gps, fix_data );
+  trace_all( DEBUG_PORT, gps, fix );
 
 } // doSomeWork
 
@@ -78,7 +78,7 @@ static void doSomeWork()
 static void GPSloop(FakeGPS & fakeGPS)
 {
   while (gps.available( fakeGPS )) {
-    fix_data = gps.read();
+    fix = gps.read();
     doSomeWork();
   }
 
@@ -86,7 +86,50 @@ static void GPSloop(FakeGPS & fakeGPS)
 
 //--------------------------
 
+void outputHeader()
+{
+  DEBUG_PORT << "NMEA.cpp: started" << std::endl;
+  DEBUG_PORT << "  fix object size = " << sizeof(gps.fix()) << std::endl;
+  DEBUG_PORT << "  gps object size = " << sizeof(gps) << std::endl;
+
+  #ifndef NMEAGPS_RECOGNIZE_ALL
+    #error You must define NMEAGPS_RECOGNIZE_ALL in NMEAGPS_cfg.h!
+  #endif
+
+  #ifdef NMEAGPS_INTERRUPT_PROCESSING
+    #error You must *NOT* define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
+  #endif
+
+  #if !defined( NMEAGPS_PARSE_GGA ) && !defined( NMEAGPS_PARSE_GLL ) && \
+      !defined( NMEAGPS_PARSE_GSA ) && !defined( NMEAGPS_PARSE_GSV ) && \
+      !defined( NMEAGPS_PARSE_RMC ) && !defined( NMEAGPS_PARSE_VTG ) && \
+      !defined( NMEAGPS_PARSE_ZDA ) && !defined( NMEAGPS_PARSE_GST )
+
+    DEBUG_PORT << std::endl << "WARNING: No NMEA sentences are enabled: no fix data will be displayed.";
+
+  #else
+    if (gps.merging == NMEAGPS::NO_MERGING) {
+      DEBUG_PORT << std::endl;
+      DEBUG_PORT << "WARNING: displaying data from " << gps.string_for( LAST_SENTENCE_IN_INTERVAL )
+                 << " sentences ONLY, and only if " << gps.string_for( LAST_SENTENCE_IN_INTERVAL )
+                 << " is enabled." << std::endl;
+      DEBUG_PORT << "  Other sentences may be parsed, but their data will not be displayed.";
+    }
+  #endif
+
+  DEBUG_PORT << std::endl << "GPS quiet time is assumed to begin after a "
+             << gps.string_for( LAST_SENTENCE_IN_INTERVAL )
+             << " sentence is received." << std::endl;
+  DEBUG_PORT << "  You should confirm this with NMEAorder.cpp" << std::endl << std::endl;
+
+  trace_header( DEBUG_PORT );
+}
+
+//--------------------------
+
+
 int main() {
+  outputHeader();
   auto fakeGPS = FakeGPS(fake_gps_content::INTERNET_SAMPLE, true);
   for (;;) {
       GPSloop(fakeGPS);
