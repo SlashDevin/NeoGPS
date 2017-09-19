@@ -299,6 +299,6 @@ protected:
  * @param[in] t time structure.
  * @return iostream.
  */
-NEO_GPS_PRINT & operator <<( NEO_GPS_PRINT & outs, const NeoGPS::time_t &t );
+NEO_GPS_PRINT & operator <<( NEO_GPS_PRINT & outs, const NeoGPS::time_t &t ) NEO_GPS_PRINT_DEFAULT_IMPL_WARN;
 
 #endif

@@ -46,10 +46,10 @@ public:
   void  From( int32_t deg_1E7 );
 
   // Print DMS as the funky NMEA DDDMM.mmmm format
-  void printDDDMMmmmm( NEO_GPS_PRINT & outs ) const;
+  void printDDDMMmmmm( NEO_GPS_PRINT & outs ) const NEO_GPS_PRINT_DEFAULT_IMPL_WARN;
 
 } NEOGPS_PACKED;
 
-extern NEO_GPS_PRINT & operator << ( NEO_GPS_PRINT & outs, const DMS_t & );
+NEO_GPS_PRINT & operator << ( NEO_GPS_PRINT & outs, const DMS_t & ) NEO_GPS_PRINT_DEFAULT_IMPL_WARN;
 
 #endif

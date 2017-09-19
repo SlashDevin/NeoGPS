@@ -33,9 +33,8 @@
 // If you don't need these formatters, simply delete this section.
 
 // platform.h must be included before NMEAGPS.h
-#include <platforms/linux/platform.h>
-
-#include <platforms/linux/GpsPort.h>
+#include <platform.h>
+#include <FakeGPS.h>
 #include <NMEAGPS.h>
 
 #include <Streamers.h>
@@ -76,9 +75,9 @@ static void doSomeWork()
 //------------------------------------
 //  This is the main GPS parsing loop.
 
-static void GPSloop(GpsPort gps_port)
+static void GPSloop(FakeGPS & fakeGPS)
 {
-  while (gps.available( gps_port )) {
+  while (gps.available( fakeGPS )) {
     fix_data = gps.read();
     doSomeWork();
   }
@@ -87,68 +86,10 @@ static void GPSloop(GpsPort gps_port)
 
 //--------------------------
 
-GpsPort setup(const char * usbDev, const char * speed)
-{
-  // Start the normal trace output
-  DEBUG_PORT << "NMEA: started\n";
-  DEBUG_PORT << "  fix object size = ";
-  DEBUG_PORT << (uint32_t)sizeof(gps.fix());
-  DEBUG_PORT << "\n  gps object size = ";
-  DEBUG_PORT << (uint32_t)sizeof(gps);
-  DEBUG_PORT << "\nLooking for GPS device on ";
-  DEBUG_PORT << ( usbDev == nullptr ? "default" : usbDev );
-  DEBUG_PORT << " with speed ";
-  DEBUG_PORT << ( speed == nullptr ? "default" : speed );
-
-  #ifndef NMEAGPS_RECOGNIZE_ALL
-    #error You must define NMEAGPS_RECOGNIZE_ALL in NMEAGPS_cfg.h!
-  #endif
-
-  #ifdef NMEAGPS_INTERRUPT_PROCESSING
-    #error You must *NOT* define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
-  #endif
-
-  #if !defined( NMEAGPS_PARSE_GGA ) & !defined( NMEAGPS_PARSE_GLL ) & \
-      !defined( NMEAGPS_PARSE_GSA ) & !defined( NMEAGPS_PARSE_GSV ) & \
-      !defined( NMEAGPS_PARSE_RMC ) & !defined( NMEAGPS_PARSE_VTG ) & \
-      !defined( NMEAGPS_PARSE_ZDA ) & !defined( NMEAGPS_PARSE_GST )
-
-    DEBUG_PORT << ( F("\nWARNING: No NMEA sentences are enabled: no fix data will be displayed.\n") );
-
-  #else
-    if (gps.merging == NMEAGPS::NO_MERGING) {
-      DEBUG_PORT << F("\nWARNING: displaying data from ");
-      DEBUG_PORT << gps.string_for( LAST_SENTENCE_IN_INTERVAL );
-      DEBUG_PORT << F(" sentences ONLY, and only if ");
-      DEBUG_PORT << gps.string_for( LAST_SENTENCE_IN_INTERVAL );
-      DEBUG_PORT << F(" is enabled.\n"
-                            "  Other sentences may be parsed, but their data will not be displayed.");
-      DEBUG_PORT << "\n";
-    }
-  #endif
-
-  DEBUG_PORT << "\nGPS quiet time is assumed to begin after a ";
-  DEBUG_PORT << gps.string_for( LAST_SENTENCE_IN_INTERVAL );
-  DEBUG_PORT << " sentence is received.\n"
-                    "  You should confirm this with NMEAorder.ino\n";
-  DEBUG_PORT << "\n";
-  
-  GpsPort gps_port = GpsPort(usbDev, speed);
-
-  trace_header( DEBUG_PORT );
-  
-  return gps_port;
-}
-
-//--------------------------
-
-int main(int argc, char *argv[]) {
-  auto dev = argc >= 2 ? argv[1] : nullptr;
-  auto speed = argc >=3 ? argv[2] : nullptr;
-  
-  auto gps_port = setup(dev, speed);
+int main() {
+  auto fakeGPS = FakeGPS(fake_gps_content::INTERNET_SAMPLE, true);
   for (;;) {
-      GPSloop(gps_port);
+      GPSloop(fakeGPS);
   }
   return 0;
 }

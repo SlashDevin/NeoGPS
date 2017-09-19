@@ -10,7 +10,9 @@ FakeGPS::FakeGPS(const char* fakeContent, bool repeat)
   : _fakeContent(fakeContent), _repeat(repeat), _next_char_ts(0) {}
 
 bool FakeGPS::available() {
-  return _next_char_ts > 0 && _next_char_ts <= std::time( 0 );
+  //std::cout << "_next_char_ts: " << _next_char_ts << " std::time( 0 ): " << std::time( 0 ) << std::endl;
+  //std::cout << "available: " << (_next_char_ts >= 0 && _next_char_ts <= std::time( 0 )) << std::endl;
+  return _next_char_ts >= 0 && _next_char_ts <= std::time( 0 );
 }
 
     
@@ -29,6 +31,7 @@ char FakeGPS::read() {
       }
     }
     
+    //std::cout << c;
     return c;
 }
 

@@ -89,13 +89,13 @@
     //  Control access to this object.  This preserves atomicity when
     //     the processing style is interrupt-driven.
 
-    void lock() const
+    void lock() const NEO_GPS_SYSTEM_DEFAULT_IMPL_WARN
       {
         if (processing_style == PS_INTERRUPT)
           NEO_GPS_SYSTEM::lock();
       }
 
-    void unlock() const
+    void unlock() const NEO_GPS_SYSTEM_DEFAULT_IMPL_WARN
       {
         if (processing_style == PS_INTERRUPT)
           NEO_GPS_SYSTEM::unlock();

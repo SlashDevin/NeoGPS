@@ -31,9 +31,10 @@
  * @param[in] fix gps_fix instance.
  * @return The outs object.
  */
-NEO_GPS_PRINT & operator <<( NEO_GPS_PRINT &outs, const gps_fix &fix );
+NEO_GPS_PRINT & operator <<( NEO_GPS_PRINT & outs, const gps_fix &fix ) NEO_GPS_PRINT_DEFAULT_IMPL_WARN;
 
-extern void trace_header( NEO_GPS_PRINT & outs );
-extern void trace_all( NEO_GPS_PRINT & outs, const NMEAGPS &gps, const gps_fix &fix );
+void trace_header( NEO_GPS_PRINT & outs ) NEO_GPS_PRINT_DEFAULT_IMPL_WARN;
+
+void trace_all( NEO_GPS_PRINT & outs, const NMEAGPS &gps, const gps_fix &fix ) NEO_GPS_PRINT_DEFAULT_IMPL_WARN;
 
 #include <Streamers.impl.h>

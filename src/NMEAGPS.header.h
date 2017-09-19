@@ -107,7 +107,7 @@ public:
     //   are available to be "read" from the fix buffer.  The GPS port
     //   object is passed in so a char can be read if port.available().
 
-    uint8_t available( NEO_GPS_STREAM & port )
+    uint8_t available( NEO_GPS_STREAM & port ) NEO_GPS_STREAM_DEFAULT_IMPL_WARN
       {
         if (processing_style == PS_POLLING)
           while (port.available())
@@ -320,14 +320,14 @@ public:
     //.......................................................................
     // Request the specified NMEA sentence.  Not all devices will respond.
 
-    static void poll( NEO_GPS_STREAM *device, nmea_msg_t msg );
+    static void poll( NEO_GPS_STREAM *device, nmea_msg_t msg ) NEO_GPS_STREAM_DEFAULT_IMPL_WARN;
 
     //.......................................................................
     // Send a message to the GPS device.
     // The '$' is optional, and the '*' and CS will be added automatically.
 
-    static void send( NEO_GPS_STREAM *device, const char *msg );
-    static void send_P( NEO_GPS_STREAM *device, const __FlashStringHelper *msg );
+    static void send( NEO_GPS_STREAM *device, const char *msg ) NEO_GPS_STREAM_DEFAULT_IMPL_WARN;
+    static void send_P( NEO_GPS_STREAM *device, const __FlashStringHelper *msg ) NEO_GPS_STREAM_DEFAULT_IMPL_WARN;
 
   #include "NMEAGPSprivate.h"
 
