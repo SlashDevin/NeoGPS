@@ -1,5 +1,5 @@
 #pragma once
-/*
+
 #ifndef NEO_GPS_PRINT
   #include <iostream>
   #include <iomanip>
@@ -13,7 +13,6 @@
     }
   #endif
 #endif
-*/
 
 #ifndef NEO_GPS_STREAM
   #include "FakeGPS.header.h"
