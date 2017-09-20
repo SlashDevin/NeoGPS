@@ -15,9 +15,12 @@
 //  You should have received a copy of the GNU General Public License
 //  along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "Location.h"
 
-using namespace NeoGPS;
+// Just to be sure.  This file should only be included in Location.h which
+// protects against multiple includes already.
+#pragma once
+
+#include "Location.header.h"
 
 //---------------------------------------------------------------------
 //  Calculate dLon with integers, less one bit to avoid overflow
@@ -41,8 +44,8 @@ int32_t safeDLon( int32_t p2, int32_t p1 )
 
 //---------------------------------------------------------------------
 
-float Location_t::DistanceRadians
-  ( const Location_t & p1, const Location_t & p2 )
+float NeoGPS::Location_t::DistanceRadians
+  ( const NeoGPS::Location_t & p1, const NeoGPS::Location_t & p2 )
 {
   int32_t dLonL   = safeDLon( p2.lon(), p1.lon() );
   int32_t dLatL   = p2.lat() - p1.lat();
@@ -77,8 +80,8 @@ float Location_t::DistanceRadians
 
 //---------------------------------------------------------------------
 
-float Location_t::EquirectDistanceRadians
-  ( const Location_t & p1, const Location_t & p2 )
+float NeoGPS::Location_t::EquirectDistanceRadians
+  ( const NeoGPS::Location_t & p1, const NeoGPS::Location_t & p2 )
 {
   // Equirectangular calculation from http://www.movable-type.co.uk/scripts/latlong.html
 
@@ -91,7 +94,7 @@ float Location_t::EquirectDistanceRadians
 
 //---------------------------------------------------------------------
 
-float Location_t::BearingTo( const Location_t & p1, const Location_t & p2 )
+float NeoGPS::Location_t::BearingTo( const NeoGPS::Location_t & p1, const NeoGPS::Location_t & p2 )
 {
   int32_t dLonL   = safeDLon( p2.lon(), p1.lon() );
   float   dLon    = dLonL * RAD_PER_DEG * LOC_SCALE;
@@ -123,7 +126,7 @@ float Location_t::BearingTo( const Location_t & p1, const Location_t & p2 )
 
 //---------------------------------------------------------------------
 
-void Location_t::OffsetBy( float distR, float bearingR )
+void NeoGPS::Location_t::OffsetBy( float distR, float bearingR )
 {
   float lat1   = lat() * RAD_PER_DEG * LOC_SCALE;
   float newLat = asin( sin(lat1)*cos(distR) +  

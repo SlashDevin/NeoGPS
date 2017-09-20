@@ -15,9 +15,11 @@
 //  You should have received a copy of the GNU General Public License
 //  along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "DMS.h"
+// Just to be sure.  This file should only be included in DMS.h which
+// protects against multiple includes already.
+#pragma once
 
-#include <Print.h>
+#include "DMS.header.h"
 
 //----------------------------------------------------------------
 //   Note that no division is used, and shifts are on byte boundaries.  Fast!
@@ -66,26 +68,26 @@ void DMS_t::From( int32_t deg_1E7 )
 
 //----------------------------------------------------------------
 
-Print & operator << ( Print & outs, const DMS_t & dms )
+NEO_GPS_PRINT & operator << ( NEO_GPS_PRINT & outs, const DMS_t & dms )
 {
   if (dms.degrees < 10)
-    outs.write( '0' );
-  outs.print( dms.degrees );
-  outs.write( ' ' );
+    outs << '0';
+  outs << +dms.degrees;
+  outs << ' ';
   if (dms.minutes < 10)
-    outs.write( '0' );
-  outs.print( dms.minutes );
-  outs.print( F("\' ") );
+    outs << '0';
+  outs << +dms.minutes;
+  outs << F("\' ");
   if (dms.seconds_whole < 10)
-    outs.write( '0' );
-  outs.print( dms.seconds_whole );
-  outs.write( '.' );
+    outs << '0';
+  outs << +dms.seconds_whole;
+  outs << '.';
   if (dms.seconds_frac < 100)
-    outs.write( '0' );
+    outs << '0';
   if (dms.seconds_frac < 10)
-    outs.write( '0' );
-  outs.print( dms.seconds_frac );
-  outs.print( F("\" ") );
+    outs << '0';
+  outs << +dms.seconds_frac;
+  outs << F("\" ");
 
   return outs;
   
@@ -93,14 +95,14 @@ Print & operator << ( Print & outs, const DMS_t & dms )
 
 //----------------------------------------------------------------
 
-void DMS_t::printDDDMMmmmm( Print & outs ) const
+void DMS_t::printDDDMMmmmm( NEO_GPS_PRINT & outs ) const
 {
-  outs.print( degrees );
+  outs << degrees;
 
   if (minutes < 10)
-    outs.print( '0' );
-  outs.print( minutes );
-  outs.print( '.' );
+    outs << '0';
+  outs << +minutes;
+  outs << '.';
 
   //  Calculate the fractional minutes from the seconds,
   //     *without* using floating-point numbers.
@@ -112,10 +114,10 @@ void DMS_t::printDDDMMmmmm( Print & outs ) const
 
   //  print leading zeroes, if necessary
   if (mmmm < 1000)
-    outs.print( '0' );
+    outs << '0';
   if (mmmm <  100)
-    outs.print( '0' );
+    outs << '0';
   if (mmmm <   10)
-    outs.print( '0' );
-  outs.print( mmmm );
+    outs << '0';
+  outs << +mmmm;
 }
