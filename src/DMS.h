@@ -21,9 +21,7 @@
 
 #include "NeoGPS_cfg.h"
 #include <stdint.h>
-#ifdef ARDUINO
-  class Print;
-#endif
+class Print;
 
 enum Hemisphere_t { NORTH_H = 0, SOUTH_H = 1, EAST_H = 0, WEST_H = 1 };
 
@@ -53,8 +51,6 @@ public:
 
 } NEOGPS_PACKED;
 
-#ifdef ARDUINO
-  extern Print & operator << ( Print & outs, const DMS_t & );
-#endif
+extern Print & operator << ( Print & outs, const DMS_t & );
 
 #endif

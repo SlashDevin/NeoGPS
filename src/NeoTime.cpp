@@ -24,31 +24,29 @@
 // For strtoul declaration
 #include <stdlib.h>
 
-#ifdef ARDUINO
-  #include <Print.h>
-  
-  Print & operator<<( Print& outs, const NeoGPS::time_t& t )
-  {
-    outs.print( t.full_year( t.year ) );
-    outs.write( '-' );
-    if (t.month < 10) outs.write( '0' );
-    outs.print( t.month );
-    outs.write( '-' );
-    if (t.date < 10) outs.write( '0' );
-    outs.print( t.date );
-    outs.write( ' ' );
-    if (t.hours < 10) outs.write( '0' );
-    outs.print( t.hours );
-    outs.write( ':' );
-    if (t.minutes < 10) outs.write( '0' );
-    outs.print( t.minutes );
-    outs.write( ':' );
-    if (t.seconds < 10) outs.write( '0' );
-    outs.print( t.seconds );
-  
-    return outs;
-  }
-#endif
+#include <Print.h>
+
+Print & operator<<( Print& outs, const NeoGPS::time_t& t )
+{
+  outs.print( t.full_year( t.year ) );
+  outs.write( '-' );
+  if (t.month < 10) outs.write( '0' );
+  outs.print( t.month );
+  outs.write( '-' );
+  if (t.date < 10) outs.write( '0' );
+  outs.print( t.date );
+  outs.write( ' ' );
+  if (t.hours < 10) outs.write( '0' );
+  outs.print( t.hours );
+  outs.write( ':' );
+  if (t.minutes < 10) outs.write( '0' );
+  outs.print( t.minutes );
+  outs.write( ':' );
+  if (t.seconds < 10) outs.write( '0' );
+  outs.print( t.seconds );
+
+  return outs;
+}
 
 using NeoGPS::time_t;
 

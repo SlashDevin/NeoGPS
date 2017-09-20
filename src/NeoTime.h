@@ -22,9 +22,7 @@
 #ifndef TIME_H
 #define TIME_H
 
-#ifdef ARDUINO
-  #include <Arduino.h>
-#endif
+#include <Arduino.h>
 
 #include "NeoGPS_cfg.h"
 #include "CosaCompat.h"
@@ -300,16 +298,14 @@ protected:
 
 }; // namespace NeoGPS
 
-#ifdef ARDUINO
-  class Print;
-  
-  /**
-   * Print the date/time to the given stream with the format "YYYY-MM-DD HH:MM:SS".
-   * @param[in] outs output stream.
-   * @param[in] t time structure.
-   * @return iostream.
-   */
-  Print & operator <<( Print & outs, const NeoGPS::time_t &t );
-#endif
+class Print;
+
+/**
+ * Print the date/time to the given stream with the format "YYYY-MM-DD HH:MM:SS".
+ * @param[in] outs output stream.
+ * @param[in] t time structure.
+ * @return iostream.
+ */
+Print & operator <<( Print & outs, const NeoGPS::time_t &t );
 
 #endif
