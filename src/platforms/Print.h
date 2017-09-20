@@ -6,7 +6,7 @@
   #define NEO_GPS_PRINT NeoGPS::Print
   #ifdef __GNUC__
     #define NEO_GPS_PRINT_DEFAULT_IMPL_WARN \
-    __attribute__((deprecated("You are using a function which uses NEO_GPS_PRINT with the default implementation, which does nothing!")))
+    __attribute__((deprecated("You are using a function which uses NEO_GPS_PRINT without defining the type.  Compilation will fail.  To fix this #define NEO_GPS_PRINT your_print_type_t  before including platform.h")))
   #endif
 
 /**

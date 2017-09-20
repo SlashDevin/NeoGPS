@@ -309,7 +309,7 @@ private:
 
         if (chrCount == 3) {
           uint32_t tow = *((uint32_t *) &m_fix.dateTime);
-          //trace << PSTR("@ ") << tow;
+          //trace << PSTR("@ ") << +tow;
 
           uint16_t ms;
           if (GPSTime::from_TOWms( tow, m_fix.dateTime, ms )) {
@@ -318,7 +318,7 @@ private:
             m_fix.valid.date = true;
           } else
             m_fix.dateTime.init();
-          //trace << PSTR(".") << m_fix.dateTime_cs;
+          //trace << PSTR(".") << +m_fix.dateTime_cs;
         }
       #endif
 

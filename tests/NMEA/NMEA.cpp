@@ -11,18 +11,6 @@
 //    no 'gps_fix' members are enabled in GPSfix_cfg.h, no information will be
 //    parsed, copied or printed.
 //
-//  Prerequisites:
-//     1) Your GPS device has been correctly powered.
-//     2) Your GPS device is correctly connected using a serial adapter.
-//          By default /dev/ttyUSB0 is used.
-//     3) You know the default baud rate of your GPS device.
-//          By default 9600 is assumed.  If this doesn't work change it in serial.cpp
-//     4) LAST_SENTENCE_IN_INTERVAL is defined to be the sentence that is
-//          sent *last* in each update interval (usually once per second).
-//          The default is NMEAGPS::NMEA_RMC (see NMEAGPS_cfg.h).  Other
-//          programs may need to use the sentence identified by NMEAorder.ino.
-//     5) NMEAGPS_RECOGNIZE_ALL is defined in NMEAGPS_cfg.h
-//
 //======================================================================
 
 //------------------------------------------------------------
@@ -34,12 +22,18 @@
 
 // platform.h must be included before NMEAGPS.h
 #include <platform.h>
+
+// We fake the GPS using FakeGPS.
 #include <FakeGPS.h>
+
+// platform.h defines delctype(std::cout) as the NEO_GPS_PRINT type.
+// We can therefore pass std::cout to all functions which expect a
+// NEO_GPS_PRINT object.
+#include <iostream>
+
 #include <NMEAGPS.h>
 
 #include <Streamers.h>
-
-#include <iostream>
 
 //------------------------------------------------------------
 // This object parses received characters
@@ -89,8 +83,8 @@ static void GPSloop(FakeGPS & fakeGPS)
 void outputHeader()
 {
   DEBUG_PORT << "NMEA.cpp: started" << std::endl;
-  DEBUG_PORT << "  fix object size = " << sizeof(gps.fix()) << std::endl;
-  DEBUG_PORT << "  gps object size = " << sizeof(gps) << std::endl;
+  DEBUG_PORT << "  fix object size = " << +sizeof(gps.fix()) << std::endl;
+  DEBUG_PORT << "  gps object size = " << +sizeof(gps) << std::endl;
 
   #ifndef NMEAGPS_RECOGNIZE_ALL
     #error You must define NMEAGPS_RECOGNIZE_ALL in NMEAGPS_cfg.h!

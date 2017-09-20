@@ -72,21 +72,21 @@ NEO_GPS_PRINT & operator << ( NEO_GPS_PRINT & outs, const DMS_t & dms )
 {
   if (dms.degrees < 10)
     outs << '0';
-  outs << dms.degrees;
+  outs << +dms.degrees;
   outs << ' ';
   if (dms.minutes < 10)
     outs << '0';
-  outs << dms.minutes;
+  outs << +dms.minutes;
   outs << F("\' ");
   if (dms.seconds_whole < 10)
     outs << '0';
-  outs << dms.seconds_whole;
+  outs << +dms.seconds_whole;
   outs << '.';
   if (dms.seconds_frac < 100)
     outs << '0';
   if (dms.seconds_frac < 10)
     outs << '0';
-  outs << dms.seconds_frac;
+  outs << +dms.seconds_frac;
   outs << F("\" ");
 
   return outs;
@@ -101,7 +101,7 @@ void DMS_t::printDDDMMmmmm( NEO_GPS_PRINT & outs ) const
 
   if (minutes < 10)
     outs << '0';
-  outs << minutes;
+  outs << +minutes;
   outs << '.';
 
   //  Calculate the fractional minutes from the seconds,
@@ -119,5 +119,5 @@ void DMS_t::printDDDMMmmmm( NEO_GPS_PRINT & outs ) const
     outs << '0';
   if (mmmm <   10)
     outs << '0';
-  outs << mmmm;
+  outs << +mmmm;
 }

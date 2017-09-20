@@ -364,7 +364,7 @@ void ubloxGPS::write( const msg_t & msg )
 
   sent.msg_class = msg.msg_class;
   sent.msg_id    = msg.msg_id;
-//trace << F("::write ") << msg.msg_class << F("/") << msg.msg_id << endl;
+//trace << F("::write ") << msg.msg_class << F("/") << (int) msg.msg_id << endl;
 }
 
 //---------------------------------------------------------
@@ -409,7 +409,7 @@ void ubloxGPS::write_P( const msg_t & msg )
 
 bool ubloxGPS::send( const msg_t & msg, msg_t *reply_msg )
 {
-//trace << F("::send - ") << (uint8_t) msg.msg_class << F(" ") << (uint8_t) msg.msg_id << F(" ");
+//trace << F("::send - ") << (int) msg.msg_class << F(" ") << (int) msg.msg_id << F(" ");
   bool ok = true;
 
   write( msg );
@@ -467,7 +467,7 @@ bool ubloxGPS::parseField( char c )
   switch (rx().msg_class) {
 
     case UBX_NAV: //=================================================
-//if (chrCount == 0) Serial << F( " NAV ") << (uint8_t) rx().msg_id;
+//if (chrCount == 0) Serial << F( " NAV ") << (int) rx().msg_id;
       switch (rx().msg_id) {
         case UBX_NAV_STATUS : return parseNavStatus ( chr );
         case UBX_NAV_POSLLH : return parseNavPosLLH ( chr );
@@ -670,12 +670,12 @@ bool ubloxGPS::parseNavPosLLH( uint8_t chr )
           if (chrCount == 19) {
             gps_fix::whole_frac *altp = &m_fix.alt;
             int32_t height_MSLmm = *((int32_t *)altp);
-//trace << F(" alt = ") << height_MSLmm;
+//trace << F(" alt = ") << +height_MSLmm;
             m_fix.alt.whole = height_MSLmm / 1000UL;
             m_fix.alt.frac  = ((uint16_t)(height_MSLmm - (m_fix.alt.whole * 1000UL)))/10;
-//trace << F(" = ") << m_fix.alt.whole << F(".");
+//trace << F(" = ") << +m_fix.alt.whole << F(".");
 //if (m_fix.alt.frac < 10) trace << '0';
-//trace << m_fix.alt.frac;
+//trace << +m_fix.alt.frac;
             m_fix.valid.altitude = true;
           }
           break;
@@ -774,7 +774,7 @@ bool ubloxGPS::parseNavVelNED( uint8_t chr )
             m_fix.spd.frac   = (nmiph_E19 * 125)    >> 16;
 
             m_fix.valid.speed = true;
-//trace << m_fix.speed_mkn() << F(" nmi/h ");
+//trace << +m_fix.speed_mkn() << F(" nmi/h ");
           }
           break;
       #endif
@@ -788,14 +788,14 @@ bool ubloxGPS::parseNavVelNED( uint8_t chr )
             gps_fix::whole_frac *hdgp = &m_fix.hdg;
             uint32_t ui = *((uint32_t *)hdgp);
 //trace << F("hdg ");
-//trace << ui;
+//trace << +ui;
 //trace << F("E-5, ");
 
             m_fix.hdg.whole = ui / 100000UL;
             ui -= ((uint32_t)m_fix.hdg.whole) * 100000UL;
             m_fix.hdg.frac  = (ui/1000UL);  // hundredths
             m_fix.valid.heading = true;
-//trace << m_fix.heading_cd() << F("E-2 ");
+//trace << +m_fix.heading_cd() << F("E-2 ");
           }
           break;
       #endif
@@ -829,7 +829,7 @@ bool ubloxGPS::parseNavTimeGPS( uint8_t chr )
               *((ublox::nav_timegps_t::valid_t *) &chr);
             if (!v.leap_seconds)
               GPSTime::leap_seconds = 0; // oops!
-//else trace << F("leap ") << GPSTime::leap_seconds << ' ';
+//else trace << F("leap ") << +GPSTime::leap_seconds << ' ';
             if (GPSTime::leap_seconds != 0) {
               if (!v.time_of_week) {
                 m_fix.valid.date =
@@ -837,7 +837,7 @@ bool ubloxGPS::parseNavTimeGPS( uint8_t chr )
               } else if ((GPSTime::start_of_week() == 0) &&
                          m_fix.valid.date && m_fix.valid.time) {
                 GPSTime::start_of_week( m_fix.dateTime );
-//trace << m_fix.dateTime << '.' << m_fix.dateTime_cs;
+//trace << m_fix.dateTime << '.' << +m_fix.dateTime_cs;
               }
             }
           }
@@ -896,7 +896,7 @@ bool ubloxGPS::parseNavTimeUTC( uint8_t chr )
                   (GPSTime::leap_seconds    != 0))
                 GPSTime::start_of_week( m_fix.dateTime );
             #endif
-//trace << m_fix.dateTime << F(".") << m_fix.dateTime_cs;
+//trace << m_fix.dateTime << F(".") << +m_fix.dateTime_cs;
 //trace << ' ' << v.UTC << ' ' << v.time_of_week << ' ' << start_of_week();
           }
           break;

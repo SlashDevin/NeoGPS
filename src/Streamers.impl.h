@@ -111,23 +111,23 @@ const char gps_fix_header[] __PROGMEM =
   {
     if (dms.degrees < 10)
       outs << '0';
-    outs << dms.degrees << ' ';
+    outs << +dms.degrees << ' ';
 
     if (dms.minutes < 10)
       outs << '0';
-    outs << dms.minutes;
+    outs << +dms.minutes;
     outs << F("\' ");
 
     if (dms.seconds_whole < 10)
       outs << '0';
-    outs << dms.seconds_whole;
+    outs << +dms.seconds_whole;
     outs << '.';
 
     if (dms.seconds_frac < 100)
       outs << '0';
     if (dms.seconds_frac < 10)
       outs << '0';
-    outs << dms.seconds_frac;
+    outs << +dms.seconds_frac;
     outs << F("\" ");
 
   } // printDMS
@@ -138,7 +138,7 @@ const char gps_fix_header[] __PROGMEM =
 NEO_GPS_PRINT & operator <<( NEO_GPS_PRINT &outs, const gps_fix &fix )
 {
   if (fix.valid.status)
-    outs << (uint8_t) fix.status;
+    outs << (uint) fix.status;
   outs << ',';
 
   #if defined(GPS_FIX_DATE) | defined(GPS_FIX_TIME)
@@ -159,7 +159,7 @@ NEO_GPS_PRINT & operator <<( NEO_GPS_PRINT &outs, const gps_fix &fix )
         outs << '0';
       if (ms < 10)
         outs << '0';
-      outs << ms;
+      outs << +ms;
     }
     outs << ',';
 
@@ -167,7 +167,7 @@ NEO_GPS_PRINT & operator <<( NEO_GPS_PRINT &outs, const gps_fix &fix )
 
     //  Date/Time not enabled, just output the interval number
     static uint32_t sequence = 0L;
-    outs << sequence++ << ',';
+    outs << +sequence++ << ',';
 
   #endif
 
@@ -253,7 +253,7 @@ NEO_GPS_PRINT & operator <<( NEO_GPS_PRINT &outs, const gps_fix &fix )
 
     #ifdef GPS_FIX_LOCATION
       if (fix.valid.location)
-        outs << fix.latitudeL() << ',' << fix.longitudeL();
+        outs << +fix.latitudeL() << ',' << +fix.longitudeL();
       else
         outs << ',';
       outs << ',';
@@ -272,55 +272,55 @@ NEO_GPS_PRINT & operator <<( NEO_GPS_PRINT &outs, const gps_fix &fix )
     #endif
     #ifdef GPS_FIX_HEADING
       if (fix.valid.heading)
-        outs << fix.heading_cd();
+        outs << +fix.heading_cd();
       outs << ',';
     #endif
     #ifdef GPS_FIX_SPEED
       if (fix.valid.speed)
-        outs << fix.speed_mkn();
+        outs << +fix.speed_mkn();
       outs << ',';
     #endif
     #ifdef GPS_FIX_ALTITUDE
       if (fix.valid.altitude)
-        outs << fix.altitude_cm();
+        outs << +fix.altitude_cm();
       outs << ',';
     #endif
 
     #ifdef GPS_FIX_HDOP
       if (fix.valid.hdop)
-        outs << fix.hdop;
+        outs << +fix.hdop;
       outs << ',';
     #endif
     #ifdef GPS_FIX_VDOP
       if (fix.valid.vdop)
-        outs << fix.vdop;
+        outs << +fix.vdop;
       outs << ',';
     #endif
     #ifdef GPS_FIX_PDOP
       if (fix.valid.pdop)
-        outs << fix.pdop;
+        outs << +fix.pdop;
       outs << ',';
     #endif
 
     #ifdef GPS_FIX_LAT_ERR
       if (fix.valid.lat_err)
-        outs << fix.lat_err_cm;
+        outs << +fix.lat_err_cm;
       outs << ',';
     #endif
     #ifdef GPS_FIX_LON_ERR
       if (fix.valid.lon_err)
-        outs << fix.lon_err_cm;
+        outs << +fix.lon_err_cm;
       outs << ',';
     #endif
     #ifdef GPS_FIX_ALT_ERR
       if (fix.valid.alt_err)
-        outs << fix.alt_err_cm;
+        outs << +fix.alt_err_cm;
       outs << ',';
     #endif
 
     #ifdef GPS_FIX_GEOID_HEIGHT
       if (fix.valid.geoidHeight)
-        outs << fix.geoidHeight_cm();
+        outs << +fix.geoidHeight_cm();
       outs << ',';
     #endif
     
@@ -328,7 +328,7 @@ NEO_GPS_PRINT & operator <<( NEO_GPS_PRINT &outs, const gps_fix &fix )
 
   #ifdef GPS_FIX_SATELLITES
     if (fix.valid.satellites)
-      outs << fix.satellites;
+      outs << +fix.satellites;
     outs << ',';
   #endif
 
@@ -371,7 +371,7 @@ void trace_all( NEO_GPS_PRINT & outs, const NMEAGPS &gps, const gps_fix &fix )
   outs << fix;
 
   #if defined(NMEAGPS_TIMESTAMP_FROM_INTERVAL) | defined(NMEAGPS_TIMESTAMP_FROM_PPS)
-    outs << gps.UTCsecondStart();
+    outs << +gps.UTCsecondStart();
     outs << ',';
   #endif
 
@@ -379,14 +379,14 @@ void trace_all( NEO_GPS_PRINT & outs, const NMEAGPS &gps, const gps_fix &fix )
     outs << '[';
 
     for (uint8_t i=0; i < gps.sat_count; i++) {
-      outs << gps.satellites[i].id;
+      outs << +gps.satellites[i].id;
 
       #if defined(NMEAGPS_PARSE_SATELLITE_INFO)
         outs << ' ' << 
-          gps.satellites[i].elevation << '/' << gps.satellites[i].azimuth;
+          +gps.satellites[i].elevation << '/' << +gps.satellites[i].azimuth;
         outs << '@';
         if (gps.satellites[i].tracked)
-          outs << gps.satellites[i].snr;
+          outs << +gps.satellites[i].snr;
         else
           outs << '-';
       #endif

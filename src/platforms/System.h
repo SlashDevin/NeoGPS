@@ -4,7 +4,7 @@
   #define NEO_GPS_SYSTEM NeoGPS::System
   #ifdef __GNUC__
     #define NEO_GPS_SYSTEM_DEFAULT_IMPL_WARN \
-    __attribute__((deprecated("You are using a function which uses NEO_GPS_SYSTEM with the default implementation, which does nothing!")))
+    __attribute__((deprecated("You are using a function which uses NEO_GPS_STREAM without defining the type.  Compilation will succeed, but the default implementation does not lock / unlock (enable / disable irqs).  To fix this #define NEO_GPS_SYSTEM your_system_wrapper_class_t  before including platform.h")))
   #endif
 
 /**

@@ -73,7 +73,7 @@ public:
     static bool from_TOWms
       ( uint32_t time_of_week_ms, NeoGPS::time_t &dt, uint16_t &ms )
     {
-//trace << PSTR("from_TOWms(") << time_of_week_ms << PSTR("), sow = ") << start_of_week() << PSTR(", leap = ") << leap_seconds << endl;
+//trace << PSTR("from_TOWms(") << +time_of_week_ms << PSTR("), sow = ") << start_of_week() << PSTR(", leap = ") << +leap_seconds << endl;
       bool ok = (start_of_week() != 0) && (leap_seconds != 0);
       if (ok) {
         NeoGPS::clock_t tow_s = time_of_week_ms/1000UL;

@@ -4,7 +4,7 @@
   #define NEO_GPS_STREAM NeoGPS::Stream
   #ifdef __GNUC__
     #define NEO_GPS_STREAM_DEFAULT_IMPL_WARN \
-    __attribute__((deprecated("You are using a function which uses NEO_GPS_STREAM with the default implementation, which does nothing!")))
+    __attribute__((deprecated("You are using a function which uses NEO_GPS_STREAM without defining the type.  Compilation will fail.  To fix this #define NEO_GPS_STREAM your_stream_type_t  before including platform.h")))
   #endif
 
 /**
