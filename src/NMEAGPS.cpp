@@ -444,7 +444,7 @@ static const char * const std_nmea[] __PROGMEM =
 const NMEAGPS::msg_table_t NMEAGPS::nmea_msg_table __PROGMEM =
   {
     NMEAGPS::NMEA_FIRST_MSG,
-    (const msg_table_t *) nullptr,
+    (const msg_table_t *) 0x00,
     sizeof(std_nmea)/sizeof(std_nmea[0]),
     std_nmea
   };
@@ -659,7 +659,7 @@ const __FlashStringHelper *NMEAGPS::string_for( nmea_msg_t msg ) const
         continue;
     #endif
 
-    return (const __FlashStringHelper *)  nullptr;
+    return (const __FlashStringHelper *)  0x00;
   }
 
 } // string_for
