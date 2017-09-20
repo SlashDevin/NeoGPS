@@ -1,1 +1,0 @@
-g++ -flto -Wall ../../../src/DMS.cpp ../../../src/GPSTime.cpp ../../../src/Location.cpp ../../../src/NeoTime.cpp ../../../src/NMEAGPS.cpp ../GpsPort.cpp ../Print.cpp NMEA.cpp ../serial.cpp -I ../ -I ../../../src
