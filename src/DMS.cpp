@@ -18,6 +18,10 @@
 
 #include "DMS.h"
 
+#ifdef ARDUINO
+  #include <Print.h>
+#endif
+
 //----------------------------------------------------------------
 //   Note that no division is used, and shifts are on byte boundaries.  Fast!
 
@@ -64,6 +68,7 @@ void DMS_t::From( int32_t deg_1E7 )
 } // From
 
 //----------------------------------------------------------------
+#ifdef ARDUINO
 
 Print & operator << ( Print & outs, const DMS_t & dms )
 {
@@ -118,3 +123,4 @@ void DMS_t::printDDDMMmmmm( Print & outs ) const
     outs.print( '0' );
   outs.print( mmmm );
 }
+#endif

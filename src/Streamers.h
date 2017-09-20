@@ -1,7 +1,7 @@
 #ifndef STREAMERS_H
 #define STREAMERS_H
 
-#include "Platform.h"
+#include <Arduino.h>
 
 extern Print & operator <<( Print & outs, const bool b );
 extern Print & operator <<( Print & outs, const char c );

@@ -26,8 +26,9 @@
   #define str_P char *
 
   #include <math.h>
+  constexpr double pi() { return std::atan(1)*4; }
   
-  const double PI = 3.14159265358979323846;
-  #define TWO_PI PI * 2.0
+  #define PI pi()
+  #define TWO_PI pi() * 2.0
   
 #endif
