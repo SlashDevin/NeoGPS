@@ -13,10 +13,11 @@
     #include <avr/interrupt.h>
   #endif
 #else
+  #include "platforms/Stream.h"
+  #include "platforms/Print.h"
   #include "platforms/System.h"
   
   #include <stdint.h>
-  #define __PROGMEM
   #define PROGMEM
 
   #define pgm_read_byte(x) (*(x))
@@ -26,14 +27,7 @@
 
   #include <math.h>
   
-  #define PI 3.14159265358979323846
+  const double PI = 3.14159265358979323846;
   #define TWO_PI PI * 2.0
   
-#endif
-
-#ifndef CR
-  #define CR ((char)13)
-#endif
-#ifndef LF
-  #define LF ((char)10)
 #endif

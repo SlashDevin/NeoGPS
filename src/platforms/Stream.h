@@ -6,6 +6,6 @@
 class Stream {
 public:
   bool available();
-  char read();
-  void print(char);
+  uint8_t read();
+  void print(uint8_t);
 };
