@@ -50,14 +50,10 @@ using NeoGPS::time_t;
 
 bool time_t::parse(str_P s)
 {
-  #ifdef AVR
-    static size_t BUF_MAX = 32;
-    char buf[BUF_MAX];
-    strcpy_P(buf, s);
-    char* sp = &buf[0];
-  #else
-    char* sp = &s[0];
-  #endif
+  static size_t BUF_MAX = 32;
+  char buf[BUF_MAX];
+  strcpy_P(buf, s);
+  char* sp = &buf[0];
   uint16_t value = strtoul(sp, &sp, 10);
 
   if (*sp != '-') return false;

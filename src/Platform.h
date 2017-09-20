@@ -23,7 +23,6 @@
   #define pgm_read_byte(x) (*(x))
   #define __FlashStringHelper char
   #define F(x) (x)
-  #define str_P char *
 
   #include <math.h>
   constexpr double pi() { return std::atan(1)*4; }
