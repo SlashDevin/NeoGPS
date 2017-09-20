@@ -21,7 +21,12 @@
 
 #include "CosaCompat.h"
 
-#include "Platform.h"
+#ifdef ARDUINO
+  #include <Arduino.h>
+  #ifdef __AVR__
+    #include <avr/interrupt.h>
+  #endif
+#endif
 
 #include "GPSfix.h"
 #include "NMEAGPS_cfg.h"
@@ -93,22 +98,24 @@ public:
     CONST_CLASS_DATA nmea_msg_t NMEA_FIRST_MSG = (nmea_msg_t) (NMEA_UNKNOWN+1);
     CONST_CLASS_DATA nmea_msg_t NMEA_LAST_MSG  = (nmea_msg_t) (NMEAMSG_END-1);
 
-    //=======================================================================
-    // FIX-ORIENTED methods: available, read and handle
-    //=======================================================================
-
-    //.......................................................................
-    // The available(...) functions return the number of *fixes* that
-    //   are available to be "read" from the fix buffer.  The GPS port
-    //   object is passed in so a char can be read if port.available().
-
-    uint8_t available( Stream & port )
-      {
-        if (processing_style == PS_POLLING)
-          while (port.available())
-            handle( port.read() );
-        return _available();
-      }
+    #ifdef ARDUINO
+      //=======================================================================
+      // FIX-ORIENTED methods: available, read and handle
+      //=======================================================================
+  
+      //.......................................................................
+      // The available(...) functions return the number of *fixes* that
+      //   are available to be "read" from the fix buffer.  The GPS port
+      //   object is passed in so a char can be read if port.available().
+  
+      uint8_t available( Stream & port )
+        {
+          if (processing_style == PS_POLLING)
+            while (port.available())
+              handle( port.read() );
+          return _available();
+        }
+    #endif
     
     uint8_t available() const volatile { return _available(); };
 
@@ -225,17 +232,19 @@ public:
       } statistics;
     #endif
 
-    //.......................................................................
-    // Request the specified NMEA sentence.  Not all devices will respond.
-
-    static void poll( Stream *device, nmea_msg_t msg );
-
-    //.......................................................................
-    // Send a message to the GPS device.
-    // The '$' is optional, and the '*' and CS will be added automatically.
-
-    static void send( Stream *device, const char *msg );
-    static void send_P( Stream *device, const __FlashStringHelper *msg );
+    #ifdef ARDUINO
+      //.......................................................................
+      // Request the specified NMEA sentence.  Not all devices will respond.
+  
+      static void poll( Stream *device, nmea_msg_t msg );
+  
+      //.......................................................................
+      // Send a message to the GPS device.
+      // The '$' is optional, and the '*' and CS will be added automatically.
+  
+      static void send( Stream *device, const char *msg );
+      static void send_P( Stream *device, const __FlashStringHelper *msg );
+    #endif
 
     //.......................................................................
     // Indicate that the next sentence should initialize the internal data.
@@ -338,17 +347,22 @@ public:
     //  Control access to this object.  This preserves atomicity when
     //     the processing style is interrupt-driven.
 
-    void lock() const
-      {
-        if (processing_style == PS_INTERRUPT)
-          noInterrupts();
-      }
-
-    void unlock() const
-      {
-        if (processing_style == PS_INTERRUPT)
-          interrupts();
-      }
+    #ifdef ARDUINO
+      void lock() const
+        {
+          if (processing_style == PS_INTERRUPT)
+            noInterrupts();
+        }
+  
+      void unlock() const
+        {
+          if (processing_style == PS_INTERRUPT)
+            interrupts();
+        }
+    #else
+      void lock() const;
+      void unlock() const;
+    #endif
 
 protected:
     //  Current fix

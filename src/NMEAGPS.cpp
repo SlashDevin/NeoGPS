@@ -18,6 +18,9 @@
 
 #include "NMEAGPS.h"
 
+#ifdef ARDUINO
+  #include <Stream.h>
+#endif
 
 // Check configurations
  
@@ -1588,145 +1591,147 @@ const gps_fix NMEAGPS::read()
 
 //----------------------------------------------------------------
 
-void NMEAGPS::poll( Stream *device, nmea_msg_t msg )
-{
-  //  Only the ublox documentation references talker ID "EI".  
-  //  Other manufacturer's devices use "II" and "GP" talker IDs for the GPQ sentence.
-  //  However, "GP" is reserved for the GPS device, so it seems inconsistent
-  //  to use that talker ID when requesting something from the GPS device.
-
-  #if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
-    static const char gga[] __PROGMEM = "EIGPQ,GGA";
-  #endif
-  #if defined(NMEAGPS_PARSE_GLL) | defined(NMEAGPS_RECOGNIZE_ALL)
-    static const char gll[] __PROGMEM = "EIGPQ,GLL";
-  #endif
-  #if defined(NMEAGPS_PARSE_GSA) | defined(NMEAGPS_RECOGNIZE_ALL)
-    static const char gsa[] __PROGMEM = "EIGPQ,GSA";
-  #endif
-  #if defined(NMEAGPS_PARSE_GST) | defined(NMEAGPS_RECOGNIZE_ALL)
-    static const char gst[] __PROGMEM = "EIGPQ,GST";
-  #endif
-  #if defined(NMEAGPS_PARSE_GSV) | defined(NMEAGPS_RECOGNIZE_ALL)
-    static const char gsv[] __PROGMEM = "EIGPQ,GSV";
-  #endif
-  #if defined(NMEAGPS_PARSE_RMC) | defined(NMEAGPS_RECOGNIZE_ALL)
-    static const char rmc[] __PROGMEM = "EIGPQ,RMC";
-  #endif
-  #if defined(NMEAGPS_PARSE_VTG) | defined(NMEAGPS_RECOGNIZE_ALL)
-    static const char vtg[] __PROGMEM = "EIGPQ,VTG";
-  #endif
-  #if defined(NMEAGPS_PARSE_ZDA) | defined(NMEAGPS_RECOGNIZE_ALL)
-    static const char zda[] __PROGMEM = "EIGPQ,ZDA";
-  #endif
-
-  static const char * const poll_msgs[] __PROGMEM =
-    {
-      #if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
-        gga,
-      #endif
-      #if defined(NMEAGPS_PARSE_GLL) | defined(NMEAGPS_RECOGNIZE_ALL)
-        gll,
-      #endif
-      #if defined(NMEAGPS_PARSE_GSA) | defined(NMEAGPS_RECOGNIZE_ALL)
-        gsa,
-      #endif
-      #if defined(NMEAGPS_PARSE_GST) | defined(NMEAGPS_RECOGNIZE_ALL)
-        gst,
-      #endif
-      #if defined(NMEAGPS_PARSE_GSV) | defined(NMEAGPS_RECOGNIZE_ALL)
-        gsv,
-      #endif
-      #if defined(NMEAGPS_PARSE_RMC) | defined(NMEAGPS_RECOGNIZE_ALL)
-        rmc,
-      #endif
-      #if defined(NMEAGPS_PARSE_VTG) | defined(NMEAGPS_RECOGNIZE_ALL)
-        vtg,
-      #endif
-      #if defined(NMEAGPS_PARSE_ZDA) | defined(NMEAGPS_RECOGNIZE_ALL)
-        zda
-      #endif
-    };
-
-  if ((NMEA_FIRST_MSG <= msg) && (msg <= NMEA_LAST_MSG)) {
-    #ifdef __AVR__
-      const __FlashStringHelper * pollCmd =
-        (const __FlashStringHelper *) pgm_read_word(&poll_msgs[msg-NMEA_FIRST_MSG]);
-    #else
-      const __FlashStringHelper * pollCmd =
-        (const __FlashStringHelper *) poll_msgs[msg-NMEA_FIRST_MSG];
+#ifdef ARDUINO
+  void NMEAGPS::poll( Stream *device, nmea_msg_t msg )
+  {
+    //  Only the ublox documentation references talker ID "EI".  
+    //  Other manufacturer's devices use "II" and "GP" talker IDs for the GPQ sentence.
+    //  However, "GP" is reserved for the GPS device, so it seems inconsistent
+    //  to use that talker ID when requesting something from the GPS device.
+  
+    #if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char gga[] __PROGMEM = "EIGPQ,GGA";
     #endif
-    send_P( device, pollCmd );
-  }
-
-} // poll
-
-//----------------------------------------------------------------
-
-static void send_trailer( Stream *device, uint8_t crc )
-{
-  device->print('*');
-
-  char hexDigit = formatHex( crc>>4 );
-  device->print( hexDigit );
-
-  hexDigit = formatHex( crc );
-  device->print( hexDigit );
-
-  device->print( CR );
-  device->print( LF );
-
-} // send_trailer
-
-//----------------------------------------------------------------
-
-void NMEAGPS::send( Stream *device, const char *msg )
-{
-  if (msg && *msg) {
-    if (*msg == '$')
-      msg++;
-    device->print('$');
-    uint8_t sent_trailer = 0;
-    uint8_t crc          = 0;
-    while (*msg) {
-      if ((*msg == '*') || (sent_trailer > 0))
-        sent_trailer++;
-      else
-        crc ^= *msg;
-      device->print( *msg++ );
+    #if defined(NMEAGPS_PARSE_GLL) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char gll[] __PROGMEM = "EIGPQ,GLL";
+    #endif
+    #if defined(NMEAGPS_PARSE_GSA) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char gsa[] __PROGMEM = "EIGPQ,GSA";
+    #endif
+    #if defined(NMEAGPS_PARSE_GST) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char gst[] __PROGMEM = "EIGPQ,GST";
+    #endif
+    #if defined(NMEAGPS_PARSE_GSV) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char gsv[] __PROGMEM = "EIGPQ,GSV";
+    #endif
+    #if defined(NMEAGPS_PARSE_RMC) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char rmc[] __PROGMEM = "EIGPQ,RMC";
+    #endif
+    #if defined(NMEAGPS_PARSE_VTG) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char vtg[] __PROGMEM = "EIGPQ,VTG";
+    #endif
+    #if defined(NMEAGPS_PARSE_ZDA) | defined(NMEAGPS_RECOGNIZE_ALL)
+      static const char zda[] __PROGMEM = "EIGPQ,ZDA";
+    #endif
+  
+    static const char * const poll_msgs[] __PROGMEM =
+      {
+        #if defined(NMEAGPS_PARSE_GGA) | defined(NMEAGPS_RECOGNIZE_ALL)
+          gga,
+        #endif
+        #if defined(NMEAGPS_PARSE_GLL) | defined(NMEAGPS_RECOGNIZE_ALL)
+          gll,
+        #endif
+        #if defined(NMEAGPS_PARSE_GSA) | defined(NMEAGPS_RECOGNIZE_ALL)
+          gsa,
+        #endif
+        #if defined(NMEAGPS_PARSE_GST) | defined(NMEAGPS_RECOGNIZE_ALL)
+          gst,
+        #endif
+        #if defined(NMEAGPS_PARSE_GSV) | defined(NMEAGPS_RECOGNIZE_ALL)
+          gsv,
+        #endif
+        #if defined(NMEAGPS_PARSE_RMC) | defined(NMEAGPS_RECOGNIZE_ALL)
+          rmc,
+        #endif
+        #if defined(NMEAGPS_PARSE_VTG) | defined(NMEAGPS_RECOGNIZE_ALL)
+          vtg,
+        #endif
+        #if defined(NMEAGPS_PARSE_ZDA) | defined(NMEAGPS_RECOGNIZE_ALL)
+          zda
+        #endif
+      };
+  
+    if ((NMEA_FIRST_MSG <= msg) && (msg <= NMEA_LAST_MSG)) {
+      #ifdef __AVR__
+        const __FlashStringHelper * pollCmd =
+          (const __FlashStringHelper *) pgm_read_word(&poll_msgs[msg-NMEA_FIRST_MSG]);
+      #else
+        const __FlashStringHelper * pollCmd =
+          (const __FlashStringHelper *) poll_msgs[msg-NMEA_FIRST_MSG];
+      #endif
+      send_P( device, pollCmd );
     }
-
-    if (!sent_trailer)
-      send_trailer( device, crc );
-  }
-
-} // send
-
-//----------------------------------------------------------------
-
-void NMEAGPS::send_P( Stream *device, const __FlashStringHelper *msg )
-{
-  if (msg) {
-    const char *ptr = (const char *)msg;
-          char  chr = pgm_read_byte(ptr++);
-
-    device->print('$');
-    if (chr == '$')
-      chr = pgm_read_byte(ptr++);
-    uint8_t sent_trailer = 0;
-    uint8_t crc          = 0;
-    while (chr) {
-      if ((chr == '*') || (sent_trailer > 0))
-        sent_trailer++;
-      else
-        crc ^= chr;
-      device->print( chr );
-
-      chr = pgm_read_byte(ptr++);
+  
+  } // poll
+  
+  //----------------------------------------------------------------
+  
+  static void send_trailer( Stream *device, uint8_t crc )
+  {
+    device->print('*');
+  
+    char hexDigit = formatHex( crc>>4 );
+    device->print( hexDigit );
+  
+    hexDigit = formatHex( crc );
+    device->print( hexDigit );
+  
+    device->print( CR );
+    device->print( LF );
+  
+  } // send_trailer
+  
+  //----------------------------------------------------------------
+  
+  void NMEAGPS::send( Stream *device, const char *msg )
+  {
+    if (msg && *msg) {
+      if (*msg == '$')
+        msg++;
+      device->print('$');
+      uint8_t sent_trailer = 0;
+      uint8_t crc          = 0;
+      while (*msg) {
+        if ((*msg == '*') || (sent_trailer > 0))
+          sent_trailer++;
+        else
+          crc ^= *msg;
+        device->print( *msg++ );
+      }
+  
+      if (!sent_trailer)
+        send_trailer( device, crc );
     }
-
-    if (!sent_trailer)
-      send_trailer( device, crc );
-  }
-
-} // send_P
+  
+  } // send
+  
+  //----------------------------------------------------------------
+  
+  void NMEAGPS::send_P( Stream *device, const __FlashStringHelper *msg )
+  {
+    if (msg) {
+      const char *ptr = (const char *)msg;
+            char  chr = pgm_read_byte(ptr++);
+  
+      device->print('$');
+      if (chr == '$')
+        chr = pgm_read_byte(ptr++);
+      uint8_t sent_trailer = 0;
+      uint8_t crc          = 0;
+      while (chr) {
+        if ((chr == '*') || (sent_trailer > 0))
+          sent_trailer++;
+        else
+          crc ^= chr;
+        device->print( chr );
+  
+        chr = pgm_read_byte(ptr++);
+      }
+  
+      if (!sent_trailer)
+        send_trailer( device, crc );
+    }
+  
+  } // send_P
+#endif
