@@ -1,23 +1,22 @@
 #ifndef _UBXNMEA_H_
 #define _UBXNMEA_H_
 
-/**
- * @file UBXNMEA.h
- * @version 2.1
- *
- * @section License
- * Copyright (C) 2014, SlashDevin
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- */
+//  Copyright (C) 2014-2017, SlashDevin
+//
+//  This file is part of NeoGPS
+//
+//  NeoGPS is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  NeoGPS is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "NMEAGPS_cfg.h"
 
@@ -33,8 +32,8 @@
 // However, the sentence type may still be recognized by /decode/ and 
 // stored in member /nmeaMessage/.  No valid flags would be available.
 
-#define NMEAGPS_PARSE_PUBX_00
-#define NMEAGPS_PARSE_PUBX_04
+//#define NMEAGPS_PARSE_PUBX_00
+//#define NMEAGPS_PARSE_PUBX_04
 
 // Ublox proprietary messages do not have a message type.  These
 // messages start with "$PUBX," which ends with the manufacturer ID.  The

@@ -8,7 +8,7 @@
 //
 //    When the last character of the LAST_SENTENCE_IN_INTERVAL (see NMEAGPS_cfg.h)
 //    is decoded, a completed fix structure becomes available and is returned
-//    from read().  The new fix is saved the 'fix_data' structure, and can be used
+//    from read().  The new fix is saved the 'fix' structure, and can be used
 //    anywhere, at any time.
 //
 //    If no messages are enabled in NMEAGPS_cfg.h, or
@@ -31,37 +31,32 @@
 //
 //  'Serial' is for debug output to the Serial Monitor window.
 //
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
 //======================================================================
 
 //-------------------------------------------------------------------------
 //  The GPSport.h include file tries to choose a default serial port
 //  for the GPS device.  If you know which serial port you want to use,
-//  delete this section and declare it here:
-//
-//    HardwareSerial & gps_port = Serial2; // an alias
-//          or
-//    AltSoftSerial gps_port; // depends on Arduino - pins 8 & 9 on UNO
-//          or
-//    NeoSWSerial gps_port( rxpin, txpin ); // to GPS TX, RX
-//          or
-//    Search and replace all occurrences of "gps_port" with your port's name.
-//
-//  See Installation instructions for additional information.
+//  edit the GPSport.h file.
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
-#else
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
-
-#include "GPSport.h"
+#include <GPSport.h>
 
 //------------------------------------------------------------
 // For the NeoGPS example programs, "Streamers" is common set
@@ -70,21 +65,7 @@
 //   data will be printed to the "debug output device".
 // If you don't need these formatters, simply delete this section.
 
-#include "Streamers.h"
-
-//------------------------------------------------------------
-// When NeoHWSerial is used, none of the built-in HardwareSerial
-//   variables can be used: Serial, Serial1, Serial2 and Serial3
-//   *cannot* be used.  Instead, you must use the corresponding
-//   NeoSerial, NeoSerial1, NeoSerial2 or NeoSerial3.  This define
-//   is used to substitute the appropriate Serial variable in
-//   all debug prints below.
-
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
+#include <Streamers.h>
 
 //------------------------------------------------------------
 // This object parses received characters
@@ -97,7 +78,7 @@ static NMEAGPS  gps;
 //  hold on to the various pieces as they are received from
 //  an RMC sentence.  It can be used anywhere in your sketch.
 
-static gps_fix  fix_data;
+static gps_fix  fix;
 
 //----------------------------------------------------------------
 //  This function gets called about once per second, during the GPS
@@ -111,7 +92,7 @@ static void doSomeWork()
 {
   // Print all the things!
 
-  trace_all( DEBUG_PORT, gps, fix_data );
+  trace_all( DEBUG_PORT, gps, fix );
 
 } // doSomeWork
 
@@ -120,8 +101,8 @@ static void doSomeWork()
 
 static void GPSloop()
 {
-  while (gps.available( gps_port )) {
-    fix_data = gps.read();
+  while (gps.available( gpsPort )) {
+    fix = gps.read();
     doSomeWork();
   }
 
@@ -131,7 +112,6 @@ static void GPSloop()
 
 void setup()
 {
-  // Start the normal trace output
   DEBUG_PORT.begin(9600);
   while (!DEBUG_PORT)
     ;
@@ -141,7 +121,7 @@ void setup()
   DEBUG_PORT.println( sizeof(gps.fix()) );
   DEBUG_PORT.print( F("  gps object size = ") );
   DEBUG_PORT.println( sizeof(gps) );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME) );
 
   #ifndef NMEAGPS_RECOGNIZE_ALL
     #error You must define NMEAGPS_RECOGNIZE_ALL in NMEAGPS_cfg.h!
@@ -175,11 +155,9 @@ void setup()
                         "  You should confirm this with NMEAorder.ino\n") );
 
   trace_header( DEBUG_PORT );
-
   DEBUG_PORT.flush();
 
-  // Start the UART for the GPS device
-  gps_port.begin( 9600 );
+  gpsPort.begin( 9600 );
 }
 
 //--------------------------

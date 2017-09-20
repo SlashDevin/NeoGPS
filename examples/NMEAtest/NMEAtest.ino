@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 using namespace NeoGPS;
 
@@ -22,9 +21,27 @@ using namespace NeoGPS;
 //
 //  'Serial' is for debug output to the Serial Monitor window.
 //
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
 //======================================================================
 
-#include "Streamers.h"
+#include <Streamers.h>
 
 //------------------------------------------------------------
 // Check that the config files are set up properly
@@ -289,7 +306,10 @@ static void checkLatLon
       }
       if (gps.fix().longitudeL() != lon) {
         Serial.print( F("FAILED wrong longitude ") );
-        Serial.println( gps.fix().longitudeL() );
+        Serial.print( gps.fix().longitudeL() );
+        Serial.print( F(" (expected ") );
+        Serial.print( lon );
+        Serial.println( ')' );
         failed++;
         ok = false;
       }

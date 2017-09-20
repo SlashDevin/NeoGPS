@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 
 //======================================================================
@@ -26,27 +25,27 @@
 //  
 //    Reverse Geocache idea by Mikal Hart of http://arduiniana.org/
 //
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
 //======================================================================
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
-#else  
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
-#include "GPSport.h"
-
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
+#include <GPSport.h>
 
 //------------------------------------------------------------
 // Check that the config files are set up properly
@@ -97,10 +96,10 @@ void setup()
   Serial.begin(9600);
   Serial.println( F("Debug GPS Test:") );
 
-  gps_port.begin(9600);
+  gpsPort.begin(9600);
 
   // Configure GPS (these are Adafruit GPS commands - your brand may be different)
-  gps_port.print
+  gpsPort.print
     ( F( "$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n" // RMC only...
          "$PMTK220,1000*1F\r\n" ) );    // ...and 1 Hz update rate
 
@@ -111,7 +110,7 @@ void loop()
   static uint8_t  warningState = 0;
   static uint32_t lastFixTime, lastDotTime;
 
-  while (gps.available( gps_port )) {
+  while (gps.available( gpsPort )) {
     gps_fix fix = gps.read(); // save the latest
 
     // Set the "fix" LED to on or off
@@ -258,4 +257,3 @@ void printAsFloat( Print & outs, const Location_t &loc )
   printL( outs, loc.lat() );
 //  printDMS( outs, loc.lat() );
 }
-

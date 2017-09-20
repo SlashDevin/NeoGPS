@@ -1,6 +1,23 @@
 #ifndef NMEAGPS_CFG_H
 #define NMEAGPS_CFG_H
 
+//  Copyright (C) 2014-2017, SlashDevin
+//
+//  This file is part of NeoGPS
+//
+//  NeoGPS is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  NeoGPS is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+
 #include "GPSfix_cfg.h"
 
 //------------------------------------------------------
@@ -232,6 +249,25 @@
            !defined(NMEAGPS_DERIVED_TYPES)
   #error You must define NMEAGPS_DERIVED_TYPES in NMEAGPS.h in order to parse Talker and/or Mfr IDs!
 #endif
+
+//------------------------------------------------------
+//  Becase the NMEA checksum is not very good at error detection, you can 
+//    choose to enable additional validity checks.  This trades a little more 
+//    code and execution time for more reliability.
+//
+//  Validation at the character level is a syntactic check only.  For 
+//    example, integer fields must contain characters in the range 0..9, 
+//    latitude hemisphere letters can be 'N' or 'S'.  Characters that are not 
+//    valid for a particular field will cause the entire sentence to be 
+//    rejected as an error, *regardless* of whether the checksum would pass.
+#define NMEAGPS_VALIDATE_CHARS false
+
+//  Validation at the field level is a semantic check.  For 
+//    example, latitude degrees must be in the range -90..+90.
+//    Values that are not valid for a particular field will cause the 
+//    entire sentence to be rejected as an error, *regardless* of whether the 
+//    checksum would pass.
+#define NMEAGPS_VALIDATE_FIELDS false
 
 //------------------------------------------------------
 // Some devices may omit trailing commas at the end of some 

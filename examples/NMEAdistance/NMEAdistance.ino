@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 
 //======================================================================
@@ -14,27 +13,27 @@
 //
 //  'Serial' is for debug output to the Serial Monitor window.
 //
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
 //======================================================================
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
-#else  
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
-#include "GPSport.h"
-
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
+#include <GPSport.h>
 
 //------------------------------------------------------------
 // Check that the config files are set up properly
@@ -58,15 +57,15 @@ void setup()
 {
   DEBUG_PORT.begin(9600);
   DEBUG_PORT.println( F("NMEAdistance.ino started.") );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME) );
 
-  gps_port.begin(9600);
+  gpsPort.begin(9600);
 
 } // setup
 
 void loop()
 {
-  while (gps.available( gps_port )) {
+  while (gps.available( gpsPort )) {
     gps_fix fix = gps.read(); // save the latest
 
     // When we have a location, calculate how far away we are from the base location.

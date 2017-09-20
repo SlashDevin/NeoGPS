@@ -34,7 +34,7 @@ README.md
 
 On any Arduino board, you can connect the GPS device to the `Serial` pins (0 & 1).  You can still print debug statements, and they will show up on the Serial Monitor window.  The received GPS characters will not interfere with those prints, and you will not see those characters on the Serial Monitor window.
 
-However, when you need to upload a new sketch to the Arduino, **you must disconnect the GPS TX from the Arduino RX pin 0.**  Otherwise, the GPS characters will interfere with the upload data.
+However, when you need to upload a new sketch to the Arduino over USB, **you must disconnect the GPS TX from the Arduino RX pin 0.**  Otherwise, the GPS characters will interfere with the upload data.  Some people put a switch in that connection to make it easy to upload without disturbing the wires.
 
 For Mega, Due and Teensy boards, you can connect the GPS device to the `Serial1`,  `Serial2` or `Serial3` pins.
 
@@ -64,36 +64,64 @@ Connecting the 3.3V GPS TX pin to a 5V Arduino receive pin will not damage the G
 
 ### 4. Review `Libraries/NeoGPS/src/GPSport.h`
 
-This file chooses a default serial port for each type of Arduino.  You can either declare your own `gpsPort` variable in the .INO file, or you should confirm GPSport.h will choose the correct serial port for your GPS device.
+This file declares a the serial port to be used for the GPS device.  You can either:
 
-By default, Mega Boards will use `Serial1`.  If you have installed the [NeoHWSerial](https://github.com/SlashDevin/NeoHWSerial) library and included the header before `GPSport.h`, then `NeoSerial1` will be used.
+* Use the default `GPSport.h` and connect your GPS device according to what it chooses (see below); or
+* Replace the entire contents of `GPSport.h` and insert your own declarations (see below and comments in `GPSport.h`).
 
-If you have included the `AltSoftSerial` header befor GPSport.h, its specific pins will be used for the `gpsPort` (8 & 9 on an UNO).
+#### Default choices for GPSport.h
 
-For all other Boards, a `NeoSWSerial` instance will be created on pins 3 and 4.  If your GPS is on different pins, put these `#define` lines in the INO, before the `#include "GPSport.h"` line:
+By default, Mega, Leonardo, Due, Zero/MKR1000 and Teensy boards will use `Serial1`.
 
-    #define RX_PIN 2
+All other Boards will use [AltSoftSerial](https://github.com/PaulStoffregen/AltSoftSerial) on two specific pins (see table at linked page).
+
+If you want to use a different serial port library (review step 2 above), you must edit these `#include` lines in `GPSport.h`:
+
+```
+  //#include <NeoHWSerial.h>    // NeoSerial or NeoSerial1 Interrupt-style processing
+  #include <AltSoftSerial.h>    // <-- DEFAULT.  Two specific pins required (see docs)
+  //#include <NeoICSerial.h>    // AltSoftSerial with Interrupt-style processing
+  //#include <NeoSWSerial.h>    // Any pins, only @ 9600, 19200 or 38400 baud
+  //#include <SoftwareSerial.h> // NOT RECOMMENDED!
+```
+
+Uncomment **one** of those include statements, and it will use that library for the GPS serial port.
+
+If you uncomment the `NeoSWSerial.h` include, pins 3 and 4 will be used for the GPS.  If your GPS is on different pins, you must edit these `#define` lines in `GPSport.h`:
+
+    #define RX_PIN 4
     #define TX_PIN 3
-    #include "GPSport.h"
+
+
+
+#### Choosing your own serial port
+
+If you know what serial port you want to use, you can **REPLACE EVERYTHING** in `GPSport.h' with the three declarations that are used by all example programs: 
+
+1. the `gpsPort` variable (include its library header if needed);
+2. the double-quoted C string for the `GPS_PORT_NAME` (displayed by all example programs); and
+3. the `DEBUG_PORT` to use for Serial Monitor print messages (usually `Serial`).
 
 All the example programs can use any of the following serial port types:
 
+* HardwareSerial (built-in `Serial`, `Serial1` et al. STRONGLY recommended)
 * [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) (default, works on most pins)
 * [NeoICSerial](https://github.com/SlashDevin/NeoICSerial) (only works on one specific Input Capture pin)
 * [AltSoftSerial](https://github.com/PaulStoffregen/AltSoftSerial) (only works on one specific Input Capture pin)
-* SoftwareSerial (built-in, not recommended)
+* SoftwareSerial (built-in, NOT recommended)
 
-To select one of the non-default types, simply include their header before including `GPSport.h`:
+For example, to make all examples use `Serial` for the GPS port **and** for Serial Monitor messages, `GPSport.h` should contain just these 3 declarations:
 
-    //#include <NeoHWSerial.h>
-    #include <NeoICSerial.h>
-    //#include <NeoSWSerial.h>
-    //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-    #include "GPSport.h"
+```
+#ifndef GPSport_h
+#define GPSport_h
 
-The above will cause `GPSport.h` to declare `gps_port` using the class `NeoICSerial`.
+#define gpsPort Serial
+#define GPS_PORT_NAME "Serial"
+#define DEBUG_PORT Serial
 
-Modify these defaults if necessary, or if you know what serial port to use, you can declare it yourself.  Be sure to delete the line `#include "GPSport.h"`, and delete the file `GPSport.h`.
+#endif
+```
 
 <hr>
 
@@ -123,9 +151,11 @@ Status,UTC Date/Time,Lat,Lon,Hdg,Spd,Alt,Sats,Rx ok,Rx err,Rx chars,
 3,2016-05-24 01:21:31.00,472852315,85652647,,449,24080,7,17,0,1048,
   etc.
 ```
-The default NeoGPS configuration is **Nominal**, as described [here](Configurations.md#typical-configurations).  This output can be copy & pasted into a spreadsheet for graphing or analysis, or into a text editor for saving as a CSV file.
+The default NeoGPS configuration is **Nominal**, as described [here](Configurations.md#typical-configurations).  If you do not see this output, please review the  [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section.
 
-If you do not see this output, please review the  [Troubleshooting](Troubleshooting.md#gps-device-connection-problems) section.
+This output can be copy & pasted into a into a text editor for saving as a CSV file, which can then be imported into a spreadsheet program for graphing or analysis.
+
+<img src="images/example.png"/>
 
 <hr>
 

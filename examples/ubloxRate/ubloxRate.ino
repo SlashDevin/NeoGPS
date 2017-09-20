@@ -17,6 +17,8 @@
 //      'r5' - send UBX binary command to set update rate to  5Hz
 //      'r0' - send UBX binary command to set update rate to 10Hz
 //      'r6' - send UBX binary command to set update rate to 16Hz
+//      '5'  - send NMEA PUBX text command to set baud rate to 115200
+//      '7'  - send NMEA PUBX text command to set baud rate to 57600
 //      '3'  - send NMEA PUBX text command to set baud rate to 38400
 //      '9'  - send NMEA PUBX text command to set baud rate to 9600
 //      'e'  - toggle echo of all characters received from GPS device.
@@ -53,30 +55,29 @@
 //
 //  'Serial' is for debug output to the Serial Monitor window.
 //
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
 //======================================================================
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
-#else
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
+#include <GPSport.h>
 
-#include "GPSport.h"
-
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
-
-#include "Streamers.h"
+#include <Streamers.h>
 
 static NMEAGPS  gps;
 static gps_fix  fix_data;
@@ -86,7 +87,7 @@ static char lastChar; // last command char
 static bool echoing = false;
 
 //  Use NeoTee to echo the NMEA text commands to the Serial Monitor window
-Stream *both[2] = { &Serial, &gps_port };
+Stream *both[2] = { &DEBUG_PORT, &gpsPort };
 NeoTeeStream tee( both, sizeof(both)/sizeof(both[0]) );
 
 //-------------------------------------------
@@ -121,19 +122,19 @@ const unsigned char ubxDisableZDA[] PROGMEM =
 
 void sendUBX( const unsigned char *progmemBytes, size_t len )
 {
-  gps_port.write( 0xB5 ); // SYNC1
-  gps_port.write( 0x62 ); // SYNC2
+  gpsPort.write( 0xB5 ); // SYNC1
+  gpsPort.write( 0x62 ); // SYNC2
 
   uint8_t a = 0, b = 0;
   while (len-- > 0) {
     uint8_t c = pgm_read_byte( progmemBytes++ );
     a += c;
     b += a;
-    gps_port.write( c );
+    gpsPort.write( c );
   }
 
-  gps_port.write( a ); // CHECKSUM A
-  gps_port.write( b ); // CHECKSUM B
+  gpsPort.write( a ); // CHECKSUM A
+  gpsPort.write( b ); // CHECKSUM B
 
 } // sendUBX
 
@@ -156,26 +157,40 @@ const char enableGGA[] PROGMEM = "PUBX,40,GGA,0,1,0,0,0,0";
 const char enableVTG[] PROGMEM = "PUBX,40,VTG,0,1,0,0,0,0";
 const char enableZDA[] PROGMEM = "PUBX,40,ZDA,0,1,0,0,0,0";
 
-const char baud9600 [] PROGMEM = "PUBX,41,1,3,3,9600,0";
-const char baud38400[] PROGMEM = "PUBX,41,1,3,3,38400,0";
+const char baud9600  [] PROGMEM = "PUBX,41,1,3,3,9600,0";
+const char baud38400 [] PROGMEM = "PUBX,41,1,3,3,38400,0";
+const char baud57600 [] PROGMEM = "PUBX,41,1,3,3,57600,0";
+const char baud115200[] PROGMEM = "PUBX,41,1,3,3,115200,0";
 
 //--------------------------
+
+const uint32_t COMMAND_DELAY = 250;
 
 void changeBaud( const char *textCommand, unsigned long baud )
 {
   gps.send_P( &tee, (const __FlashStringHelper *) disableRMC );
-  gps.send_P( &tee, (const __FlashStringHelper *) disableGLL );
+  delay( COMMAND_DELAY );
+//  gps.send_P( &tee, (const __FlashStringHelper *) disableGLL );
+//  delay( COMMAND_DELAY );
   gps.send_P( &tee, (const __FlashStringHelper *) disableGSV );
+  delay( COMMAND_DELAY );
   gps.send_P( &tee, (const __FlashStringHelper *) disableGSA );
+  delay( COMMAND_DELAY );
   gps.send_P( &tee, (const __FlashStringHelper *) disableGGA );
+  delay( COMMAND_DELAY );
   gps.send_P( &tee, (const __FlashStringHelper *) disableVTG );
+  delay( COMMAND_DELAY );
   gps.send_P( &tee, (const __FlashStringHelper *) disableZDA );
+  delay( 500 );
   gps.send_P( &tee, (const __FlashStringHelper *) textCommand );
+  gpsPort.flush();
+  gpsPort.end();
 
-  Serial.println( F("All sentences disabled for baud rate change.  Enter '1' to reenable sentences.") );
-  delay( 1000 );
-  gps_port.end();
-  gps_port.begin( baud );
+  DEBUG_PORT.print( F("All sentences disabled for baud rate ") );
+  DEBUG_PORT.print( baud );
+  DEBUG_PORT.println( F(" change.  Enter '1' to reenable sentences.") );
+  delay( 500 );
+  gpsPort.begin( baud );
 
 } // changeBaud
 
@@ -193,13 +208,12 @@ static void doSomeWork()
 
 void setup()
 {
-  // Start the normal trace output
   DEBUG_PORT.begin(9600);
   while (!DEBUG_PORT)
     ;
 
   DEBUG_PORT.print( F("ubloxRate.INO: started\n") );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME) );
 
   #ifdef NMEAGPS_INTERRUPT_PROCESSING
     #error You must *NOT* define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
@@ -224,7 +238,7 @@ void setup()
   #endif
 
   if (LastSentenceInInterval != LAST_SENTENCE_IN_INTERVAL) {
-    Serial.println(
+    DEBUG_PORT.println(
       F("LAST_SENTENCE_IN_INTERVAL is not properly defined in NMEAGPS_cfg.h!\n"
         "   See Prerequisite 4 above") );
   }
@@ -233,16 +247,15 @@ void setup()
   trace_header( DEBUG_PORT );
   DEBUG_PORT.flush();
 
-  // Start the UART for the GPS device
-  gps_port.begin( 9600 );
+  gpsPort.begin( 9600 );
 }
 
 void loop()
 {
   // Check for commands
   
-  if (Serial.available()) {
-    char c = Serial.read();
+  if (DEBUG_PORT.available()) {
+    char c = DEBUG_PORT.read();
 
     switch (c) {
       case '0':
@@ -250,11 +263,17 @@ void loop()
           sendUBX( ubxRate10Hz, sizeof(ubxRate10Hz) );
         } else {
           gps.send_P( &tee, (const __FlashStringHelper *) disableRMC );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) enableGLL );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) disableGSV );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) disableGSA );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) disableGGA );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) disableVTG );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) disableZDA );
           LastSentenceInInterval = NMEAGPS::NMEA_GLL;
         }
@@ -264,39 +283,54 @@ void loop()
           sendUBX( ubxRate1Hz, sizeof(ubxRate1Hz) );
         } else {
           gps.send_P( &tee, (const __FlashStringHelper *) enableRMC );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) enableGLL );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) enableGSV );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) enableGSA );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) enableGGA );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) enableVTG );
+          delay( COMMAND_DELAY );
           gps.send_P( &tee, (const __FlashStringHelper *) enableZDA );
           LastSentenceInInterval = NMEAGPS::NMEA_ZDA;
         }
         break;
       case '3':
-        changeBaud( baud38400, 38400 );
+        changeBaud( baud38400, 38400UL );
         break;
       case '5':
         if (lastChar == 'r') {
           sendUBX( ubxRate5Hz, sizeof(ubxRate5Hz) );
-        }
+        } else
+          changeBaud( baud115200, 115200UL );
         break;
       case '6':
         if (lastChar == 'r') {
           sendUBX( ubxRate16Hz, sizeof(ubxRate16Hz) );
         }
         break;
+      case '7':
+        changeBaud( baud57600, 57600UL );
+        break;
       case '9':
-        changeBaud( baud9600, 9600 );
+        changeBaud( baud9600, 9600UL );
         break;
 
       case 'd':
         sendUBX( ubxDisableRMC, sizeof(ubxDisableRMC) );
+          delay( COMMAND_DELAY );
         //sendUBX( ubxDisableGLL, sizeof(ubxDisableGLL) );
         sendUBX( ubxDisableGSV, sizeof(ubxDisableGSV) );
+          delay( COMMAND_DELAY );
         sendUBX( ubxDisableGSA, sizeof(ubxDisableGSA) );
+          delay( COMMAND_DELAY );
         sendUBX( ubxDisableGGA, sizeof(ubxDisableGGA) );
+          delay( COMMAND_DELAY );
         sendUBX( ubxDisableVTG, sizeof(ubxDisableVTG) );
+          delay( COMMAND_DELAY );
         sendUBX( ubxDisableZDA, sizeof(ubxDisableZDA) );
         LastSentenceInInterval = NMEAGPS::NMEA_GLL;
         break;
@@ -315,9 +349,9 @@ void loop()
   if (echoing) {
     // Use advanced character-oriented methods to echo received characters to
     //    the Serial Monitor window.
-    if (gps_port.available()) {
-      char c = gps_port.read();
-      Serial.write( c );
+    if (gpsPort.available()) {
+      char c = gpsPort.read();
+      DEBUG_PORT.write( c );
       gps.handle( c );
       if (gps.available()) {
         fix_data = gps.read();
@@ -327,7 +361,7 @@ void loop()
 
   } else {
     // Use the normal fix-oriented methods to display fixes
-    if (gps.available( gps_port )) {
+    if (gps.available( gpsPort )) {
       fix_data = gps.read();
       doSomeWork();
     }

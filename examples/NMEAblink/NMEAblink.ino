@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 
 //======================================================================
@@ -8,46 +7,43 @@
 //     1) NMEA.ino works with your device
 //
 //  Description:  This program will toggle the LED once per second,
-//     when a GPRMC message is received.
+//     when the LAST_SENTENCE_IN_INTERVAL is received.
 //
 //     Because no actual GPS data is used, you could disable all
-//       messages and all gps_fix members.  It would still recognize
-//       the RMC message, without using any RAM or CPU time to parse or save
-//       the (unused) values.  Essentially, this app uses the RMC message as
-//       a 1PPS signal.
+//       messages (except the LAST_SENTENCE) and all gps_fix members.
+//       It would still receive a 'fix' oncer per second, without
+//       without using any RAM or CPU time to parse or save
+//       the (unused) values.  Essentially, this app uses the LAST_SENTENCE
+//       as a 1PPS signal.
 //
-//  Note: Because this example does not use 'Serial', you
-//    could use 'Serial' for the gps_port, like this:
+//     Note: Because this example does not use 'Serial', you
+//       could use 'Serial' for the gpsPort, like this:
 //
-//       HardwareSerial & gps_port = Serial;
+//       #define gpsPort Serial
 //
-//    Of course, be sure to connect the GPS device appropriately.
-//      You may need to research whether your Arduino allows 
-//      using 'Serial' in this fashion.  For example, some Arduinos
-//      dedicate 'Serial' to the USB interface, and it cannot be
-//      "shared" with the GPS device.
-//
-//    If you don't need debug output on Serial, this would be a lot 
-//      more reliable than using SoftwareSerial for the GPS.  Be 
-//      sure to delete all 'Serial' debug statements.  If your system 
-//      is not attached to a PC when installed, you should seriously 
-//      consider using 'Serial' for the GPS device.
+//     See GPSport.h for more information.
 //      
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
 //======================================================================
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
-#else  
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
-#include "GPSport.h"
+#include <GPSport.h>
 
 static NMEAGPS   gps;
 static const int led = 13;
@@ -56,8 +52,7 @@ static const int led = 13;
 
 void setup()
 {
-  // Start the UART for the GPS device
-  gps_port.begin(9600);
+  gpsPort.begin(9600);
 
   pinMode(led, OUTPUT);
 }
@@ -66,12 +61,9 @@ void setup()
 
 void loop()
 {
-  while (gps_port.available()) {
+  if (gps.available( gpsPort)) {
+    gps.read(); // don't really do anything with the fix...
 
-    if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
-
-      if (gps.nmeaMessage == NMEAGPS::NMEA_RMC)
-        digitalWrite( led, !digitalRead(led) ); // toggle the LED
-    }
+    digitalWrite( led, !digitalRead(led) ); // toggle the LED
   }
 }

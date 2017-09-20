@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 
 //======================================================================
@@ -18,21 +17,28 @@
 //
 //  'Serial' is for debug output to the Serial Monitor window.
 //
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
 //======================================================================
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.
-
-#else  
-  // Only one serial port is available, uncomment one of the following:
-  //#include <AltSoftSerial.h>
-  //#include <NeoSWSerial.h> /* ONLY WORKS AT 9600, 19200 and 38400 */
-  #include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
-#include "GPSport.h"
-
-#include "Streamers.h"
-#define DEBUG_PORT Serial
+#include <GPSport.h>
+#include <Streamers.h>
 
 // Check configuration
 
@@ -107,7 +113,7 @@ static void tryBaud()
   DEBUG_PORT.flush();
 
 //if (baud == 9600) baud = 17000;
-  gps_port.begin( baud );
+  gpsPort.begin( baud );
   baudStartTime = millis();
 
 } // tryBaud
@@ -116,9 +122,9 @@ static void tryBaud()
 
 static void tryAnotherBaudRate()
 {
-  gps_port.end();
-  while (gps_port.available())
-    gps_port.read();
+  gpsPort.end();
+  while (gpsPort.available())
+    gpsPort.read();
 
   if (baud_index == INITIAL_BAUD_INDEX) {
     baud_index = 0;
@@ -284,10 +290,10 @@ static void listenForSomething()
 
 static void GPSloop()
 {
-  while (gps_port.available()) {
+  while (gpsPort.available()) {
     last_rx = millis();
 
-    uint8_t c = gps_port.read();
+    uint8_t c = gpsPort.read();
 
     if (someCharsIndex < MAX_SAMPLE)
       someChars[ someCharsIndex++ ] = c;
@@ -326,13 +332,12 @@ static void GPSloop()
 
 void setup()
 {
-  // Start the normal trace output
   DEBUG_PORT.begin(9600);
   while (!DEBUG_PORT)
     ;
 
   DEBUG_PORT.print( F("NMEAdiagnostic.INO: started\n") );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME) );
 
   if (sizeof(gps_fix) <= 2) {
     warnings++;
@@ -350,7 +355,6 @@ void setup()
 
   DEBUG_PORT.flush();
 
-  // Start the UART for the GPS device
   tryBaud();
 
 } // setup

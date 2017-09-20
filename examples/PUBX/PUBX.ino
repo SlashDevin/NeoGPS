@@ -16,28 +16,29 @@
 //
 //  Serial is for debug output to the Serial Monitor window.
 //
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
 //======================================================================
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
-#else  
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
-#include "GPSport.h"
+#include <GPSport.h>
 
-#include "Streamers.h"
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
+#include <Streamers.h>
 
 //------------------------------------------------------------
 // Check that the config files are set up properly
@@ -70,7 +71,7 @@
 
 //------------------------------------------------------------
 
-static ubloxNMEA gps         ; // This parses received characters
+static ubloxNMEA gps; // This parses received characters
 static gps_fix   merged;
 
 //----------------------------------------------------------------
@@ -78,10 +79,10 @@ static gps_fix   merged;
 static void poll()
 {
   #if defined( NMEAGPS_PARSE_PUBX_00 )
-    gps.send_P( &gps_port, F("PUBX,00") );
+    gps.send_P( &gpsPort, F("PUBX,00") );
   #endif
   #if defined( NMEAGPS_PARSE_PUBX_04 )
-    gps.send_P( &gps_port, F("PUBX,04") );
+    gps.send_P( &gpsPort, F("PUBX,04") );
   #endif
 }
 
@@ -101,7 +102,7 @@ static void doSomeWork()
 
 static void GPSloop()
 {  
-  while (gps.available( gps_port )) {
+  while (gps.available( gpsPort )) {
     merged = gps.read();
 
     doSomeWork();
@@ -112,7 +113,6 @@ static void GPSloop()
 
 void setup()
 {
-  // Start the normal trace output
   DEBUG_PORT.begin(9600);
   while (!DEBUG_PORT)
     ;
@@ -122,7 +122,7 @@ void setup()
   DEBUG_PORT.println( sizeof(gps.fix()) );
   DEBUG_PORT.print( F("ubloxNMEA object size = ") );
   DEBUG_PORT.println( sizeof(gps) );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME) );
 
   #ifndef NMEAGPS_PARSE_PUBX_00
     if (LAST_SENTENCE_IN_INTERVAL == (NMEAGPS::nmea_msg_t) ubloxNMEA::PUBX_00) {
@@ -140,11 +140,9 @@ void setup()
   #endif
 
   trace_header( DEBUG_PORT );
-
   DEBUG_PORT.flush();
   
-  // Start the UART for the GPS device
-  gps_port.begin(9600);
+  gpsPort.begin(9600);
 
   // Ask for the special PUBX sentences
   poll();

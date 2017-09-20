@@ -3,46 +3,67 @@
 NMEAGPS  gps; // This parses the GPS characters
 gps_fix  fix; // This holds on to the latest values
 
-//-----------------
+//======================================================================
+//  Program: NMEAGSV.ino
+//
+//  Description:  Display satellites in view, as reported by the GSV sentences.
+//
 //  Prerequisites:
 //     1) NMEA.ino works with your device (correct TX/RX pins and baud rate)
-//     2) GPS_FIX_SATELLITES is enabled in GPSfix_cfg.h
-//     3) NMEAGPS_PARSE_SATELLITES and NMEAGPS_PARSE_SATELLITE_INFO are
+//     2) NMEAGPS_PARSE_SATELLITES and NMEAGPS_PARSE_SATELLITE_INFO are
 //              enabled in NMEAGPS_cfg.h
-//     4) The GSV sentence has been enabled in NMEAGPS_cfg.h.
-//     5) Your device emits the GSV sentence (use NMEAorder.ino to confirm).
-//     6) LAST_SENTENCE_IN_INTERVAL has been set to GSV (or any other enabled sentence)
+//     3) The GSV sentence has been enabled in NMEAGPS_cfg.h.
+//     4) Your device emits the GSV sentence (use NMEAorder.ino to confirm).
+//     5) LAST_SENTENCE_IN_INTERVAL has been set to GSV (or any other enabled sentence)
 //              in NMEAGPS_cfg.h (use NMEAorder.ino).
 //
 //  'Serial' is for debug output to the Serial Monitor window.
 //
+//  License:
+//    Copyright (C) 2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
+//======================================================================
+
+#include <GPSport.h>
 
 //-----------------
-//   Choose a serial port for the GPS device:
-//
-//   BEST: For a Mega, Leonardo or Due, use the extra hardware serial port
-#define gpsPort Serial1
+// Check configuration
 
-//   2nd BEST:  For other Arduinos, use AltSoftSerial on the required pins
-//                 (8&9 for an UNO)
-// #include <AltSoftSerial.h>
-// AltSoftSerial gpsPort;  // pin 8 to GPS TX, pin 9 to GPS RX
+#ifndef NMEAGPS_PARSE_GSV
+  #error You must define NMEAGPS_PARSE_GSV in NMEAGPS_cfg.h!
+#endif
 
-//   3rd BEST:  If you can't use those specific pins (are you sure?),
-//                 use NeoSWSerial on any two pins @ 9600, 19200 or 38400
-// #include <NeoSWSerial.h>
-// NeoSWSerial gpsPort( 2, 3 ); // pin 2 to GPS TX, pin 3 to GPS RX
+#ifndef NMEAGPS_PARSE_SATELLITES
+  #error You must define NMEAGPS_PARSE_SATELLITE in NMEAGPS_cfg.h!
+#endif
 
-//   WORST:  SoftwareSerial is NOT RECOMMENDED
+#ifndef NMEAGPS_PARSE_SATELLITE_INFO
+  #error You must define NMEAGPS_PARSE_SATELLITE_INFO in NMEAGPS_cfg.h!
+#endif
 
 //-----------------
 
 void setup()
 {
-  Serial.begin(9600);
+  DEBUG_PORT.begin(9600);
   while (!Serial)
     ;
-  Serial.print( F("NeoGPS GSV example started\n") );
+  DEBUG_PORT.print( F("NeoGPS GSV example started\n") );
 
   gpsPort.begin(9600);
 
@@ -64,23 +85,23 @@ void loop()
 
 void displaySatellitesInView()
 {
-  Serial.print( gps.sat_count );
-  Serial.print( ',' );
+  DEBUG_PORT.print( gps.sat_count );
+  DEBUG_PORT.print( ',' );
 
   for (uint8_t i=0; i < gps.sat_count; i++) {
-    Serial.print( gps.satellites[i].id );
-    Serial.print( ' ' );
-    Serial.print( gps.satellites[i].elevation );
-    Serial.print( '/' );
-    Serial.print( gps.satellites[i].azimuth );
-    Serial.print( '@' );
+    DEBUG_PORT.print( gps.satellites[i].id );
+    DEBUG_PORT.print( ' ' );
+    DEBUG_PORT.print( gps.satellites[i].elevation );
+    DEBUG_PORT.print( '/' );
+    DEBUG_PORT.print( gps.satellites[i].azimuth );
+    DEBUG_PORT.print( '@' );
     if (gps.satellites[i].tracked)
-      Serial.print( gps.satellites[i].snr );
+      DEBUG_PORT.print( gps.satellites[i].snr );
     else
-      Serial.print( '-' );
-    Serial.print( F(", ") );
+      DEBUG_PORT.print( '-' );
+    DEBUG_PORT.print( F(", ") );
   }
 
-  Serial.println();
+  DEBUG_PORT.println();
 
 } // displaySatellitesInView

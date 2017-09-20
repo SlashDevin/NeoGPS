@@ -20,30 +20,29 @@
 //
 //  Serial is for debug output to the Serial Monitor window.
 //
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
 //======================================================================
 
-#if defined( UBRR1H )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  #ifdef NMEAGPS_INTERRUPT_PROCESSING
-    #include <NeoHWSerial.h>
-  #endif
-#else  
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
-#include "GPSport.h"
+#include <GPSport.h>
 
-#include "Streamers.h"
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
+#include <Streamers.h>
 
 //------------------------------------------------------------
 // Check that the config files are set up properly
@@ -277,7 +276,7 @@ public:
 } NEOGPS_PACKED;
 
 // Construct the GPS object and hook it to the appropriate serial device
-static MyGPS gps( &gps_port );
+static MyGPS gps( &gpsPort );
 
 #ifdef NMEAGPS_INTERRUPT_PROCESSING
   static void GPSisr( uint8_t c )
@@ -319,14 +318,14 @@ void setup()
   DEBUG_PORT << F("fix object size = ") << sizeof(gps.fix()) << '\n';
   DEBUG_PORT << F("ubloxGPS object size = ") << sizeof(ubloxGPS) << '\n';
   DEBUG_PORT << F("MyGPS object size = ") << sizeof(gps) << '\n';
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME) );
   DEBUG_PORT.flush();
 
   // Start the UART for the GPS device
   #ifdef NMEAGPS_INTERRUPT_PROCESSING
-    gps_port.attachInterrupt( GPSisr );
+    gpsPort.attachInterrupt( GPSisr );
   #endif
-  gps_port.begin(9600);
+  gpsPort.begin(9600);
 
   // Turn off the preconfigured NMEA standard messages
   configNMEA( 0 );
@@ -372,7 +371,7 @@ void setup()
   #endif
 
   while (!gps.running())
-    if (gps.available( gps_port ))
+    if (gps.available( gpsPort ))
       gps.read();
 }
 
@@ -380,7 +379,7 @@ void setup()
 
 void loop()
 {
-  if (gps.available( gps_port ))
+  if (gps.available( gpsPort ))
     trace_all( DEBUG_PORT, gps, gps.read() );
 
   // If the user types something, reset the message configuration
@@ -395,8 +394,8 @@ void loop()
 
     configNMEA( 1 );
     disableUBX();
-    gps_port.flush();
-    gps_port.end();
+    gpsPort.flush();
+    gpsPort.end();
 
     DEBUG_PORT.println( F("STOPPED.") );
     for (;;);

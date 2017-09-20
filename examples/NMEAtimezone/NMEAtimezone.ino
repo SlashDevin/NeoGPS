@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 
 //======================================================================
@@ -18,126 +17,167 @@
 //
 //  'Serial' is for debug output to the Serial Monitor window.
 //
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
 //======================================================================
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
-#else  
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
-#include "GPSport.h"
+static NMEAGPS  gps; // This parses received characters
+static gps_fix  fix; // This contains all the parsed pieces
 
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
+//--------------------------
+// CHECK CONFIGURATION
+
+#if !defined(GPS_FIX_TIME) | !defined(GPS_FIX_DATE)
+  #error You must define GPS_FIX_TIME and DATE in GPSfix_cfg.h!
 #endif
 
-static NMEAGPS  gps         ; // This parses received characters
-static gps_fix  fix_data;
-
-#if !defined(GPS_FIX_TIME)
-  #error You must define GPS_FIX_TIME in GPSfix_cfg.h!
+#if !defined(NMEAGPS_PARSE_RMC) & !defined(NMEAGPS_PARSE_ZDA)
+  #error You must define NMEAGPS_PARSE_RMC or ZDA in NMEAGPS_cfg.h!
 #endif
 
-#if !defined(NMEAGPS_PARSE_RMC)
-  #error You must define NMEAGPS_PARSE_RMC in NMEAGPS_cfg.h!
+#include <GPSport.h>
+
+//--------------------------
+// Set these values to the offset of your timezone from GMT
+
+static const int32_t          zone_hours   = -5L; // EST
+static const int32_t          zone_minutes =  0L; // usually zero
+static const NeoGPS::clock_t  zone_offset  =
+                                zone_hours   * NeoGPS::SECONDS_PER_HOUR +
+                                zone_minutes * NeoGPS::SECONDS_PER_MINUTE;
+
+// Uncomment one DST changeover rule, or define your own:
+#define USA_DST
+//#define EU_DST
+
+#if defined(USA_DST)
+  static const uint8_t springMonth =  3;
+  static const uint8_t springDate  = 14; // latest 2nd Sunday
+  static const uint8_t springHour  =  2;
+  static const uint8_t fallMonth   = 11;
+  static const uint8_t fallDate    =  7; // latest 1st Sunday
+  static const uint8_t fallHour    =  2;
+  #define CALCULATE_DST
+
+#elif defined(EU_DST)
+  static const uint8_t springMonth =  3;
+  static const uint8_t springDate  = 31; // latest last Sunday
+  static const uint8_t springHour  =  1;
+  static const uint8_t fallMonth   = 10;
+  static const uint8_t fallDate    = 31; // latest last Sunday
+  static const uint8_t fallHour    =  1;
+  #define CALCULATE_DST
 #endif
 
-#ifdef NMEAGPS_INTERRUPT_PROCESSING
-  #error You must *NOT* define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
-#endif
+//--------------------------
 
-//----------------------------------------------------------------
-
-static void doSomeWork( const gps_fix & fix )
+void adjustTime( NeoGPS::time_t & dt )
 {
-  // Display the local time
+  NeoGPS::clock_t seconds = dt; // convert date/time structure to seconds
 
-  if (fix.valid.time && fix.valid.date) {
-    NeoGPS::clock_t seconds = fix.dateTime;
-
-    //  USA Daylight Savings Time rule (calculated once per reset and year!)
+  #ifdef CALCULATE_DST
+    //  Calculate DST changeover times once per reset and year!
     static NeoGPS::time_t  changeover;
     static NeoGPS::clock_t springForward, fallBack;
 
-    if ((springForward == 0) || (changeover.year != fix.dateTime.year)) {
-      changeover.year    = fix.dateTime.year;
-      changeover.month   = 3;
-      changeover.date    = 14; // latest 2nd Sunday
-      changeover.hours   = 2;
+    if ((springForward == 0) || (changeover.year != dt.year)) {
+
+      //  Calculate the spring changeover time (seconds)
+      changeover.year    = dt.year;
+      changeover.month   = springMonth;
+      changeover.date    = springDate;
+      changeover.hours   = springHour;
       changeover.minutes = 0;
       changeover.seconds = 0;
       changeover.set_day();
-      // Step back to the 2nd Sunday, if day != SUNDAY
+      // Step back to a Sunday, if day != SUNDAY
       changeover.date -= (changeover.day - NeoGPS::time_t::SUNDAY);
       springForward = (NeoGPS::clock_t) changeover;
 
-      changeover.month   = 11;
-      changeover.date    = 7; // latest 1st Sunday
-      changeover.hours   = 2 - 1; // to account for the "apparent" DST +1
+      //  Calculate the fall changeover time (seconds)
+      changeover.month   = fallMonth;
+      changeover.date    = fallDate;
+      changeover.hours   = fallHour - 1; // to account for the "apparent" DST +1
       changeover.set_day();
-      // Step back to the 1st Sunday, if day != SUNDAY
+      // Step back to a Sunday, if day != SUNDAY
       changeover.date -= (changeover.day - NeoGPS::time_t::SUNDAY);
       fallBack = (NeoGPS::clock_t) changeover;
     }
+  #endif
 
-    // Set these values to the offset of your timezone from GMT
-    static const int32_t         zone_hours   = -5L; // EST
-    static const int32_t         zone_minutes =  0L; // usually zero
-    static const NeoGPS::clock_t zone_offset  =
-                      zone_hours   * NeoGPS::SECONDS_PER_HOUR +
-                      zone_minutes * NeoGPS::SECONDS_PER_MINUTE;
+  //  First, offset from UTC to the local timezone
+  seconds += zone_offset;
 
-    seconds += zone_offset;
-
+  #ifdef CALCULATE_DST
+    //  Then add an hour if DST is in effect
     if ((springForward <= seconds) && (seconds < fallBack))
       seconds += NeoGPS::SECONDS_PER_HOUR;
+  #endif
 
-    NeoGPS::time_t localTime( seconds );
+  dt = seconds; // convert seconds back to a date/time structure
 
-    DEBUG_PORT << localTime;
-  }
-  DEBUG_PORT.println();
+} // adjustTime
 
-} // doSomeWork
-
-//------------------------------------
+//--------------------------
 
 static void GPSloop()
 {  
-  while (gps.available( gps_port ))
-    doSomeWork( gps.read() );
+  while (gps.available( gpsPort )) {
+    fix = gps.read();
+    // Display the local time
+
+    if (fix.valid.time && fix.valid.date) {
+      adjustTime( fix.dateTime );
+
+      DEBUG_PORT << fix.dateTime;
+    }
+    DEBUG_PORT.println();
+  }
 
 } // GPSloop
 
 //--------------------------
 
+#ifdef NMEAGPS_INTERRUPT_PROCESSING
+  static void GPSisr( uint8_t c )
+  {
+    gps.handle( c );
+  }
+#endif
+
+//--------------------------
+
 void setup()
 {
-  // Start the normal trace output
   DEBUG_PORT.begin(9600);
   while (!DEBUG_PORT)
     ;
 
   DEBUG_PORT.print( F("NMEAtimezone.INO: started\n") );
-  DEBUG_PORT.print( F("fix object size = ") );
-  DEBUG_PORT.println( sizeof(gps.fix()) );
-  DEBUG_PORT.print( F("NMEAGPS object size = ") );
-  DEBUG_PORT.println( sizeof(gps) );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME ) );
   DEBUG_PORT.println( F("Local time") );
   DEBUG_PORT.flush();
   
-  // Start the UART for the GPS device
-  gps_port.begin( 9600 );
+  gpsPort.begin( 9600 );
+  #ifdef NMEAGPS_INTERRUPT_PROCESSING
+    gpsPort.attachInterrupt( GPSisr );
+  #endif
 }
 
 //--------------------------

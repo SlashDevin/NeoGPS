@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 
 //======================================================================
@@ -22,28 +21,28 @@
 //
 //  'Serial' is for debug output to the Serial Monitor window.
 //
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
 //======================================================================
 
-#if defined( UBRR1H ) | defined( ID_USART0 )
-  // Default is to use Serial1 when available.  You could also
-  // use NeoHWSerial, especially if you want to handle GPS characters
-  // in an Interrupt Service Routine.
-  //#include <NeoHWSerial.h>
-#else  
-  // Only one serial port is available, uncomment one of the following:
-  //#include <NeoICSerial.h>
-  //#include <AltSoftSerial.h>
-  #include <NeoSWSerial.h>
-  //#include <SoftwareSerial.h> /* NOT RECOMMENDED */
-#endif
-#include "GPSport.h"
+#include <GPSport.h>
   
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT Serial
-#endif
-
 //------------------------------------------------------------
 // Check configuration
 
@@ -105,10 +104,10 @@ static void printSentenceOrder()
 
 static void GPSloop()
 {  
-  while (gps_port.available()) {
+  while (gpsPort.available()) {
     last_rx = millis();
 
-    if (gps.decode( gps_port.read() ) == NMEAGPS::DECODE_COMPLETED) {
+    if (gps.decode( gpsPort.read() ) == NMEAGPS::DECODE_COMPLETED) {
 
       if (last_sentence_in_interval == NMEAGPS::NMEA_UNKNOWN) {
         // Still building the list
@@ -216,7 +215,6 @@ static void watchForLastSentence()
 
 void setup()
 {
-  // Start the normal trace output
   DEBUG_PORT.begin(9600);
   while (!DEBUG_PORT)
     ;
@@ -226,11 +224,10 @@ void setup()
   DEBUG_PORT.println( sizeof(gps.fix()) );
   DEBUG_PORT.print( F("NMEAGPS object size = ") );
   DEBUG_PORT.println( sizeof(gps) );
-  DEBUG_PORT.println( F("Looking for GPS device on " USING_GPS_PORT) );
+  DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME) );
   DEBUG_PORT.flush();
   
-  // Start the UART for the GPS device
-  gps_port.begin( 9600 );
+  gpsPort.begin( 9600 );
 }
 
 //--------------------------

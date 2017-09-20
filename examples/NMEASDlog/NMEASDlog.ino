@@ -17,34 +17,29 @@
 //
 //  'Serial' is for debug output to the Serial Monitor window.
 //
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
 //======================================================================
 
-#if defined( UBRR1H )
+#include <GPSport.h>
 
-  // Serial1 is available.  Use NeoSerial1 for the gps_port.
-
-  #include <NeoHWSerial.h>
-  // NOTE: There is an issue with IDEs before 1.6.6.  The above include 
-  // must be commented out for non-Mega boards, even though it is
-  // conditionally included.  If you are using an earlier IDE, 
-  // comment the above include.
-
-#else  
-
-  // Only one serial port is available, use a software serial on two other pins.
-  
-  // Uncomment one of the following includes.
-  //   Using NeoICSerial on pins 8 & 9 (UNO) is *strongly* recommended
-  //#include <NeoICSerial.h>
-  #include <NeoSWSerial.h>
-
-  // If you are using NeoSWSerial, you can define RX_PIN and TX_PIN here or
-  //    in GPSport.h
-
-#endif
-#include "GPSport.h"
-
-//#include "Streamers.h"
+//#include <Streamers.h>
 
 //----------------------------------------------------------------
 // Check configuration
@@ -59,18 +54,6 @@
 
 #ifndef NMEAGPS_INTERRUPT_PROCESSING
   #error You must define NMEAGPS_INTERRUPT_PROCESSING in NMEAGPS_cfg.h!
-#endif
-
-//----------------------------------------------------------------
-// If you are using NeoHWSerial, all Serial prints *must* use NeoSerial.print
-//    This define lets you use "DEBUG_PORT.print" everywhere below.  It is
-//    defined here to use the appropriate Serial or NeoSerial instance.
-#ifdef NeoHWSerial_h
-  #define DEBUG_PORT_TYPE NeoHWSerial
-  #define DEBUG_PORT NeoSerial
-#else
-  #define DEBUG_PORT_TYPE HardwareSerial
-  #define DEBUG_PORT Serial
 #endif
 
 static const int LED = 13;
@@ -95,7 +78,7 @@ const int chipSelect = 8;
 
 #ifdef SIMULATE_SD
 
-  DEBUG_PORT_TYPE &logfile = DEBUG_PORT;
+  auto &logfile = DEBUG_PORT;
 
 #else
 
@@ -343,7 +326,6 @@ static void waitForFix()
 
 void setup()
 {
-  // Start the normal trace output
   DEBUG_PORT.begin(9600);
   while (!DEBUG_PORT)
     ; // wait for serial port to connect. 
@@ -357,76 +339,18 @@ void setup()
   if (gps.merging != NMEAGPS::EXPLICIT_MERGING)
     DEBUG_PORT.println( F("Warning: EXPLICIT_MERGING should be enabled for best results!") );
 
-  // Start the GPS device
-  gps_port.attachInterrupt( GPSisr );
-  gps_port.begin( 9600 );
+  gpsPort.attachInterrupt( GPSisr );
+  gpsPort.begin( 9600 );
 
   //  Configure the GPS.  These are commands for MTK GPS devices.  Other
   //    brands will have different commands.
-  gps.send_P( &gps_port, F("PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0") ); // RMC only for MTK GPS devices
-  gps.send_P( &gps_port, F("PMTK220,100") ); // 10Hz update rate for MTK GPS devices
+  gps.send_P( &gpsPort, F("PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0") ); // RMC only for MTK GPS devices
+  gps.send_P( &gpsPort, F("PMTK220,100") ); // 10Hz update rate for MTK GPS devices
 
   // Enable the LED for blinking feedback
   pinMode( LED, OUTPUT );
 
-#ifdef SIMULATE_SD
-
-  DEBUG_PORT.println( F("  Simulating SD.") );
-  
-#else
-
-  DEBUG_PORT.println( F("Initializing SD card...") );
-
-  // see if the card is present and can be initialized:
-  if (!SD.begin(chipSelect)) {
-    DEBUG_PORT.println( F("  SD card failed, or not present") );
-    // don't do anything more:
-
-    // Flicker the LED
-    while (true) {
-      digitalWrite(LED,HIGH);
-      delay(75);
-      digitalWrite(LED,LOW);
-      delay(75);
-    }
-  }
-
-  DEBUG_PORT.println( F("  SD card initialized.") );
-
-  // Pick a numbered filename, 00 to 99.
-  char filename[15] = "data_##.txt";
-
-  for (uint8_t i=0; i<100; i++) {
-    filename[5] = '0' + i/10;
-    filename[6] = '0' + i%10;
-    if (!SD.exists(filename)) {
-      // Use this one!
-      break;
-    }
-  }
-
-  logfile = SD.open(filename, FILE_WRITE);
-  if (!logfile) {
-    DEBUG_PORT.print( F("Couldn't create ") ); 
-    DEBUG_PORT.println(filename);
-
-    // If the file can't be created for some reason this leaves the LED on
-    //   so I know there is a problem
-    digitalWrite(LED,HIGH);
-
-    while (true) {}
-  }
-
-  DEBUG_PORT.print( F("Writing to ") ); 
-  DEBUG_PORT.println(filename);
-
-  // GPS Visualizer requires a header to identify the CSV fields.
-  // If you are saving other data or don't need this, simply remove/change it
-  logfile.println( F("latitude,longitude,time,loggingTime") ); 
-
-  //trace_header( logfile ); // and uncomment #include Streamers.h
-  
-#endif
+  initSD();
 
   waitForFix();
 
@@ -443,3 +367,67 @@ void loop()
     DEBUG_PORT.println( F("DATA OVERRUN: fix data lost!") );
   }
 }
+
+//----------------------------------------------------------------
+
+void initSD()
+{
+  #ifdef SIMULATE_SD
+
+    DEBUG_PORT.println( F("  Simulating SD.") );
+    
+  #else
+
+    DEBUG_PORT.println( F("Initializing SD card...") );
+
+    // see if the card is present and can be initialized:
+    if (!SD.begin(chipSelect)) {
+      DEBUG_PORT.println( F("  SD card failed, or not present") );
+      // don't do anything more:
+
+      // Flicker the LED
+      while (true) {
+        digitalWrite(LED,HIGH);
+        delay(75);
+        digitalWrite(LED,LOW);
+        delay(75);
+      }
+    }
+
+    DEBUG_PORT.println( F("  SD card initialized.") );
+
+    // Pick a numbered filename, 00 to 99.
+    char filename[15] = "data_##.txt";
+
+    for (uint8_t i=0; i<100; i++) {
+      filename[5] = '0' + i/10;
+      filename[6] = '0' + i%10;
+      if (!SD.exists(filename)) {
+        // Use this one!
+        break;
+      }
+    }
+
+    logfile = SD.open(filename, FILE_WRITE);
+    if (!logfile) {
+      DEBUG_PORT.print( F("Couldn't create ") ); 
+      DEBUG_PORT.println(filename);
+
+      // If the file can't be created for some reason this leaves the LED on
+      //   so I know there is a problem
+      digitalWrite(LED,HIGH);
+
+      while (true) {}
+    }
+
+    DEBUG_PORT.print( F("Writing to ") ); 
+    DEBUG_PORT.println(filename);
+
+    // GPS Visualizer requires a header to identify the CSV fields.
+    // If you are saving other data or don't need this, simply remove/change it
+    logfile.println( F("latitude,longitude,time,loggingTime") ); 
+
+    //trace_header( logfile ); // and uncomment #include Streamers.h
+    
+  #endif
+} // initSD

@@ -1,6 +1,23 @@
 #ifndef UBX_CFG_H
 #define UBX_CFG_H
 
+//  Copyright (C) 2014-2017, SlashDevin
+//
+//  This file is part of NeoGPS
+//
+//  NeoGPS is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  NeoGPS is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+
 //--------------------------------------------------------------------
 // Enable/disable the parsing of specific UBX messages.
 //
@@ -17,6 +34,7 @@
 //#define UBLOX_PARSE_SVINFO
 //#define UBLOX_PARSE_CFGNAV5
 //#define UBLOX_PARSE_MONVER
+//#define UBLOX_PARSE_HNR_PVT
 
 //--------------------------------------------------------------------
 // Identify the last UBX message in an update interval.
@@ -24,18 +42,23 @@
 // For coherency, you must determine which UBX message is last!
 // This section *should* pick the correct last UBX message for NEO-6M devices.
 
-#define UBX_LAST_MSG_CLASS_IN_INTERVAL ublox::UBX_NAV
-
-#if defined(UBLOX_PARSE_DOP)
-  #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_DOP
-#elif defined(UBLOX_PARSE_VELNED)
-  #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_VELNED
-#elif defined(UBLOX_PARSE_POSLLH)
-  #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_POSLLH
-#elif defined(UBLOX_PARSE_SVINFO)
-  #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_SVINFO
+#if defined(UBLOX_PARSE_HNR_PVT)
+  #define UBX_LAST_MSG_CLASS_IN_INTERVAL ublox::UBX_HNR
+  #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_HNR_PVT
 #else
-  #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_STATUS
+  #define UBX_LAST_MSG_CLASS_IN_INTERVAL ublox::UBX_NAV
+
+  #if defined(UBLOX_PARSE_DOP)
+    #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_DOP
+  #elif defined(UBLOX_PARSE_VELNED)
+    #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_VELNED
+  #elif defined(UBLOX_PARSE_POSLLH)
+    #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_POSLLH
+  #elif defined(UBLOX_PARSE_SVINFO)
+    #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_SVINFO
+  #else
+    #define UBX_LAST_MSG_ID_IN_INTERVAL    ublox::UBX_NAV_STATUS
+  #endif
 #endif
 
 #endif

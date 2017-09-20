@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <NMEAGPS.h>
 
 //======================================================================
@@ -13,9 +12,27 @@
 //     
 //  'Serial' is for debug output to the Serial Monitor window.
 //
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
 //======================================================================
 
-#include "Streamers.h"
+#include <Streamers.h>
 
 static NMEAGPS gps;
 
@@ -42,7 +59,6 @@ static uint32_t time_it( const char *data )
 
 void setup()
 {
-  // Start the normal trace output
   Serial.begin(9600);
   Serial.println( F("NMEAbenchmark: started") );
   Serial.print( F("fix object size = ") );
@@ -53,12 +69,7 @@ void setup()
   trace_header( Serial );
 
   Serial.flush();
-}
 
-//--------------------------
-
-void loop()
-{
   const char *gga =
     "$GPGGA,092725.00,4717.11399,N,00833.91590,E,"
     "1,8,1.01,499.6,M,48.0,M,,0*5B\r\n";
@@ -87,6 +98,8 @@ void loop()
     Serial << F("GSV time = ") << time_it( gsv ) << '\n';
     trace_all( Serial, gps, gps.fix() );
   #endif
-
-  for (;;);
 }
+
+//--------------------------
+
+void loop() {}

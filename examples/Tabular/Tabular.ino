@@ -1,21 +1,61 @@
-#include <NeoSWSerial.h>
 #include <NMEAGPS.h>
 
 NMEAGPS     gps;
-//NeoSWSerial gpsPort(4, 3);
-#define gpsPort Serial1
 
-static const NeoGPS::Location_t London( 51.508131, -0.128002 );
+//======================================================================
+//  Program: SyncTime.ino
+//
+//  Description:  This program displays all GPS fields in the default configuration
+//     in a tabular display.  To be comparable to other libraries' tabular displays,
+//     you must also enable HDOP in GPSfix_cfg.h.
+//
+//     Most NeoGPS examples display *all* configured GPS fields in a CSV format
+//     (e.g., NMEA.ino).
+//
+//  Prerequisites:
+//     1) NMEA.ino works with your device (correct TX/RX pins and baud rate)
+//     2) GPS_FIX_HDOP is defined in GPSfix_cfg.h
+//
+//  'Serial' is for debug output to the Serial Monitor window.
+//
+//  License:
+//    Copyright (C) 2014-2017, SlashDevin
+//
+//    This file is part of NeoGPS
+//
+//    NeoGPS is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    NeoGPS is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
+//
+//======================================================================
+
+#include <GPSport.h>
+
+//-----------------
+// Check configuration
 
 #ifndef GPS_FIX_HDOP
   #error You must uncomment GPS_FIX_HDOP in GPSfix_cfg.h!
 #endif
 
+//-----------------
+
+static const NeoGPS::Location_t London( 51.508131, -0.128002 );
+
 void setup()
 {
-  Serial.begin(9600);
+  DEBUG_PORT.begin(9600);
   
-  Serial.println
+  DEBUG_PORT.println
     (
       F( "Testing NeoGPS library\n\n"
          "Sats HDOP Latitude  Longitude  Date       Time     Alt    Speed  Heading    -- To London --    Chars Sentences Errors\n"
@@ -26,6 +66,8 @@ void setup()
 
   gpsPort.begin(9600);
 }
+
+//-----------------
 
 void loop()
 {
@@ -52,21 +94,22 @@ void loop()
     print( gps.statistics.ok    , true,  6 );
     print( gps.statistics.errors, true,  6 );
 
-    Serial.println();
+    DEBUG_PORT.println();
   }
 }
 
+//-----------------
 //  Print utilities
 
 static void repeat( char c, int8_t len )
 {
   for (int8_t i=0; i<len; i++)
-    Serial.write( c );
+    DEBUG_PORT.write( c );
 }
 
 static void printInvalid( int8_t len )
 {
-  Serial.write( ' ' );
+  DEBUG_PORT.write( ' ' );
   repeat( '*', abs(len)-1 );
 }
 
@@ -77,7 +120,7 @@ static void print( float val, bool valid, int8_t len, int8_t prec )
   } else {
     char s[16];
     dtostrf( val, len, prec, s );
-    Serial.print( s );
+    DEBUG_PORT.print( s );
   }
 }
 
@@ -89,7 +132,7 @@ static void print( int32_t val, bool valid, int8_t len )
     char s[16];
     ltoa( val, s, 10 );
     repeat( ' ', len - strlen(s) );
-    Serial.print( s );
+    DEBUG_PORT.print( s );
   }
 }
 
@@ -100,7 +143,7 @@ static void print( const __FlashStringHelper *str, bool valid, int8_t len )
   } else {
     int slen = strlen_P( (const char *) str );
     repeat( ' ', len-slen );
-    Serial.print( str );
+    DEBUG_PORT.print( str );
   }
 }
 
@@ -109,7 +152,7 @@ static void print( const NeoGPS::time_t & dt, bool valid, int8_t len )
   if (!valid) {
     printInvalid( len );
   } else {
-    Serial.write( ' ' );
+    DEBUG_PORT.write( ' ' );
     Serial << dt; // this "streaming" operator outputs date and time
   }
 }
