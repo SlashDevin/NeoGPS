@@ -92,7 +92,7 @@ GpsPort setup(char *usbDev)
   DEBUG_PORT.print( "\n  gps object size = " );
   DEBUG_PORT.print( (uint32_t)sizeof(gps) );
   DEBUG_PORT.print( "\nLooking for GPS device on " );
-  DEBUG_PORT.print( usbDev == nullptr ? "default" : usbDev );
+  DEBUG_PORT.print( usbDev );
 
   #ifndef NMEAGPS_RECOGNIZE_ALL
     #error You must define NMEAGPS_RECOGNIZE_ALL in NMEAGPS_cfg.h!

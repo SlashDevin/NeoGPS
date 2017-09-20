@@ -75,7 +75,7 @@ bool data_available(serial_dev_t fd)
     FD_ZERO(&rfds);
     FD_SET(fd, &rfds);
     
-    int retval = select(1, &rfds, NULL, NULL, &tv);
+    int retval = select(1, &rfds, NULL, NULL, &tv) > 0;
     if (retval == -1) {
       printf("Error select: %s\n", strerror(errno));
     }
