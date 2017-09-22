@@ -105,6 +105,7 @@ If you know what serial port you want to use, you can **REPLACE EVERYTHING** in 
 All the example programs can use any of the following serial port types:
 
 * HardwareSerial (built-in `Serial`, `Serial1` et al. STRONGLY recommended)
+* [NeoHWSerial](https://github.com/SlashDevin/NeoHWSerial) (required for NMEA_isr and NMEASDlog on built-in serial ports)
 * [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) (default, works on most pins)
 * [NeoICSerial](https://github.com/SlashDevin/NeoICSerial) (only works on one specific Input Capture pin)
 * [AltSoftSerial](https://github.com/PaulStoffregen/AltSoftSerial) (only works on one specific Input Capture pin)
