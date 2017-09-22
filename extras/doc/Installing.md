@@ -40,7 +40,7 @@ For Mega, Due and Teensy boards, you can connect the GPS device to the `Serial1`
 
 For Micro and Leo (and other 32U4-based Arduinos), you can connect the GPS device to the `Serial1` pins.
 
-**2nd Best**:  If you can't connect the GPS device to a HardwareSerial port, you should download and install the [AltSoftSerial](https://github.com/PaulStoffregen/AltSoftSerial) or [NeoICSerial](https://github.com/SlashDevin/NeoICSerial) library.  These libraries only work on two specific pins (8 & 9 on an UNO).  This library is very efficient and reliable.  It uses one of the hardware TIMERs, so it may conflict with libraries that use TIMERs or PWM output (e.g., servo).
+**2nd Best**:  If you can't connect the GPS device to a `HardwareSerial` port, you should download and install the [AltSoftSerial](https://github.com/PaulStoffregen/AltSoftSerial) or [NeoICSerial](https://github.com/SlashDevin/NeoICSerial) library.  These libraries only work on two specific pins (8 & 9 on an UNO).  This library is very efficient and reliable.  It uses one of the hardware TIMERs, so it may conflict with libraries that use TIMERs or PWM output (e.g., servo).
 
 **3rd Best**:  If you can't use the pins required by `AltSoftSerial`, and your GPS device runs at 9600, 19200 or 38400 baud, you should download and install the [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) library.  This library is almost as efficient.  It will help you avoid common timing problems caused by `SoftwareSerial`.  It does not need an extra TIMER, so it can be used with most other libraries.  It does use Pin Change Interrupts, but there is an option in the header file that allows you to coordinate other PCI usage with `NeoSWSerial`.
 
@@ -66,7 +66,7 @@ Connecting the 3.3V GPS TX pin to a 5V Arduino receive pin will not damage the G
 
 This file declares a the serial port to be used for the GPS device.  You can either:
 
-* Use the default `GPSport.h` and connect your GPS device according to what it chooses (see below); or
+* Use the default `GPSport.h` and connect your GPS device according to what it chooses; or
 * Replace the entire contents of `GPSport.h` and insert your own declarations (see below and comments in `GPSport.h`).
 
 #### Default choices for GPSport.h
@@ -78,7 +78,7 @@ All other Boards will use [AltSoftSerial](https://github.com/PaulStoffregen/AltS
 If you want to use a different serial port library (review step 2 above), you must edit these `#include` lines in `GPSport.h`:
 
 ```
-  //#include <NeoHWSerial.h>    // NeoSerial or NeoSerial1 Interrupt-style processing
+  //#include <NeoHWSerial.h>    // NeoSerial or NeoSerial1 for INTERRUPT_PROCESSING
   #include <AltSoftSerial.h>    // <-- DEFAULT.  Two specific pins required (see docs)
   //#include <NeoICSerial.h>    // AltSoftSerial with Interrupt-style processing
   //#include <NeoSWSerial.h>    // Any pins, only @ 9600, 19200 or 38400 baud
@@ -98,18 +98,20 @@ If you uncomment the `NeoSWSerial.h` include, pins 3 and 4 will be used for the 
 
 If you know what serial port you want to use, you can **REPLACE EVERYTHING** in `GPSport.h' with the three declarations that are used by all example programs: 
 
-1. the `gpsPort` variable (include its library header if needed);
+1. the `gpsPort` variable **(include its library header if needed)**;
 2. the double-quoted C string for the `GPS_PORT_NAME` (displayed by all example programs); and
 3. the `DEBUG_PORT` to use for Serial Monitor print messages (usually `Serial`).
 
 All the example programs can use any of the following serial port types:
 
 * HardwareSerial (built-in `Serial`, `Serial1` et al. STRONGLY recommended)
-* [NeoHWSerial](https://github.com/SlashDevin/NeoHWSerial) (required for NMEA_isr and NMEASDlog on built-in serial ports)
-* [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) (default, works on most pins)
+* [AltSoftSerial](https://github.com/PaulStoffregen/AltSoftSerial) **DEFAULT** (only works on one specific Input Capture pin)
 * [NeoICSerial](https://github.com/SlashDevin/NeoICSerial) (only works on one specific Input Capture pin)
-* [AltSoftSerial](https://github.com/PaulStoffregen/AltSoftSerial) (only works on one specific Input Capture pin)
+* [NeoHWSerial](https://github.com/SlashDevin/NeoHWSerial) (required for NMEA_isr and NMEASDlog on built-in serial ports)
+* [NeoSWSerial](https://github.com/SlashDevin/NeoSWSerial) (works on most pins)
 * SoftwareSerial (built-in, NOT recommended)
+
+Be sure to download the library you have selected (NOTE: `HardwareSerial` and `SoftwareSerial` are pre-installed by the Arduino IDE and do not need to be downloaded).
 
 For example, to make all examples use `Serial` for the GPS port **and** for Serial Monitor messages, `GPSport.h` should contain just these 3 declarations:
 
@@ -119,6 +121,20 @@ For example, to make all examples use `Serial` for the GPS port **and** for Seri
 
 #define gpsPort Serial
 #define GPS_PORT_NAME "Serial"
+#define DEBUG_PORT Serial
+
+#endif
+```
+
+Or, to make all examples use `AltSoftSerial` for the GPS port and `Serial` for Serial Monitor messages, `GPSport.h` should contain just these statements:
+
+```
+#ifndef GPSport_h
+#define GPSport_h
+
+#include <AltSoftSerial.h>
+AltSoftSerial gpsPort;
+#define GPS_PORT_NAME "AltSoftSerial"
 #define DEBUG_PORT Serial
 
 #endif
