@@ -98,10 +98,11 @@
 #endif
 
 //------------------------------------------------------------------------
-// The PROGMEM definitions are not correct for Zero and MKR1000
+// The PROGMEM definitions are not correct for Zero, MKR1000 and
+//    earlier versions of Teensy boards
 
-#if !defined(__AVR__)
-  // TODO: use the Zero/MKR1000-specific symbols
+#if defined(ARDUINO_SAMD_MKRZERO) | defined(ARDUINO_SAMD_ZERO) |   \
+    (defined(TEENSYDUINO) && (TEENSYDUINO < 139))
   #undef pgm_read_ptr
   #define pgm_read_ptr(addr) (*(const void **)(addr))
 #endif
