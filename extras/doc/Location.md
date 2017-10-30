@@ -6,7 +6,7 @@ This class also provides geographic distance, bearing and offset functions.  Fur
 
 The example program [NMEAaverage.ino](/examples/NMEAaverage/NMEAaverage.ino) shows several techniques for performing 2D calculations.
 
-###Distance
+### Distance
 
 To calculate the distance between a pre-determined point and the current fix,
 
@@ -26,7 +26,7 @@ void loop()
 
 `DistanceMiles` is also available
 
-###Bearing
+### Bearing
 
 To calculate the bearing from one point to another (in radians, CW from North),
 
@@ -36,7 +36,7 @@ To calculate the bearing from one point to another (in radians, CW from North),
 ```
 Radians is returned by `BearingTo`.
 
-###Offsetting a Location
+### Offsetting a Location
 
 To move a location by a specified distance, in a specified direction,
 
@@ -50,7 +50,7 @@ To move a location by a specified distance, in a specified direction,
 ```
 Notice that the distance is specified in *radians*.  To convert from km to radians, divide by the Earth's radius in km.  To convert from miles, divide the miles by the Earth's radius in miles.
 
-###NeoGPS namespace
+### NeoGPS namespace
 Because the `Location_t` is inside the `NeoGPS` namespace, any time you want to declare your own instance, use any of the constants in that class (anything that requires the `Location_t` name), you must prefix it with `NeoGPS::` (shown above).  As with any C++ namespace, you can relax that requirement by putting this statement anywhere after the NeoGPS includes:
 
 ```
