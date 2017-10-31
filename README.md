@@ -64,7 +64,7 @@ Don't believe it?  Check out these detailed sections:
 
 Section  |  Description
 -------- |  ------------
-[License](extras/doc/License.md) | The Fine Print
+[License](LICENSE) | The Fine Print
 [Installing](extras/doc/Installing.md) | Copying files
 [Data Model](extras/doc/Data%20Model.md) | How to parse and use GPS data
 [Configurations](extras/doc/Configurations.md) | Tailoring NeoGPS to your needs
