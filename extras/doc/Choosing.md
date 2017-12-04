@@ -224,6 +224,8 @@ This table illustrates the poor design of the NMEA message set: it requires mult
 While the manufacturer's specification will document all sentences supported for your device, you can also find general descriptions of many NMEA sentences [here](http://www.gpsinformation.org/dale/nmea.htm), [here](http://aprs.gids.nl/nmea/) or [here](http://www.catb.org/gpsd/NMEA.txt).
 
 <hr>
-<sub><sup>1</sup>  The NMEA proprietary messages "PUBX" are only availble in the `ubloxNMEA` class.  See [ublox-specific](ublox.md) instructions for adding this class to your configuration.</sub>
+
+
+<sub><sup>1</sup>  The NMEA proprietary messages "PUBX" are only availble in the `ubloxNMEA` class.  See [ublox-specific instructions](ublox.md)  for adding this class to your configuration.</sub>
 
 <sub><sup>2</sup>  Date and time are both stored in one member of `gps_fix`, called `dateTime`.  The `fix.dateTime` member is a C++ class that has both date-oriented members (Date, Month and Year) and time-oriented members (Hours, Minutes and Seconds). See [NeoTime.h](/src/NeoTime.h) for the complete description and capabilities of the `dateTime` member, such as date/time arithmetic and conversion to/from seconds since the epoch.  Hundredths of a second are stored in a separate member of `gps_fix`, called `dateTime_cs`, and can also be accessed with the functions `dateTime_ms()` and `dateTime_us()`.</sub>
