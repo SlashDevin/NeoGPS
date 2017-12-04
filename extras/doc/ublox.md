@@ -7,7 +7,7 @@ To use either ublox-specific NMEA messages ($PUBX) or the UBX binary protocol, y
 #define NMEAGPS_DERIVED_TYPES
 ```
 
-##ublox-specific NMEA messages
+## ublox-specific NMEA messages
 **NeoGPS** implements the following additional NMEA messages:
 
 #NMEA 0183 Proprietary Messages
@@ -22,7 +22,7 @@ The derived class `ubloxNMEA` has the following configuration items near the top
 #define NMEAGPS_PARSE_PUBX_04
 ```
 
-##ublox-specific binary protocol
+## ublox-specific binary protocol
 
 **NeoGPS** implements the following messages in the UBX binary protocol:
 
