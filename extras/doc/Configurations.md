@@ -47,7 +47,7 @@ This is used to determine when the GPS quiet time begins and when a batch of coh
 #define LAST_SENTENCE_IN_INTERVAL NMEAGPS::NMEA_GLL
 ```
 You can use `NMEAorder.ino` to determine the last sentence sent by your device.
-####Enable/Disable No, Implicit, Explicit Merging
+#### Enable/Disable No, Implicit, Explicit Merging
 If you want NO merging, comment out both defines.  Otherwise, uncomment the IMPLICIT or EXPLICIT define.
 ```
 #define NMEAGPS_EXPLICIT_MERGING
