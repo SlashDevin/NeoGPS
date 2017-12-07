@@ -15,43 +15,48 @@
 //  You should have received a copy of the GNU General Public License
 //  along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "NeoTime.h"
+
+// Just to be sure.  This file should only be included in NeoTime.h which
+// protects against multiple includes already.
+#pragma once
+
+#include "NeoTime.header.h"
 
 // For strtoul declaration
 #include <stdlib.h>
 
-#include <Print.h>
-
-Print & operator<<( Print& outs, const NeoGPS::time_t& t )
+NEO_GPS_PRINT & operator<<( NEO_GPS_PRINT& outs, const NeoGPS::time_t& t )
 {
-  outs.print( t.full_year( t.year ) );
-  outs.write( '-' );
-  if (t.month < 10) outs.write( '0' );
-  outs.print( t.month );
-  outs.write( '-' );
-  if (t.date < 10) outs.write( '0' );
-  outs.print( t.date );
-  outs.write( ' ' );
-  if (t.hours < 10) outs.write( '0' );
-  outs.print( t.hours );
-  outs.write( ':' );
-  if (t.minutes < 10) outs.write( '0' );
-  outs.print( t.minutes );
-  outs.write( ':' );
-  if (t.seconds < 10) outs.write( '0' );
-  outs.print( t.seconds );
+  outs << +t.full_year( t.year );
+  outs << '-';
+  if (t.month < 10) outs << '0';
+  outs << +t.month;
+  outs << '-';
+  if (t.date < 10) outs << '0';
+  outs << +t.date;
+  outs << ' ';
+  if (t.hours < 10) outs << '0';
+  outs << +t.hours;
+  outs << ':';
+  if (t.minutes < 10) outs << '0';
+  outs << +t.minutes;
+  outs << ':';
+  if (t.seconds < 10) outs << '0';
+  outs << +t.seconds;
 
   return outs;
 }
 
-using NeoGPS::time_t;
-
-bool time_t::parse(str_P s)
+bool NeoGPS::time_t::parse(str_P s)
 {
-  static size_t BUF_MAX = 32;
-  char buf[BUF_MAX];
-  strcpy_P(buf, s);
-  char* sp = &buf[0];
+  #ifdef AVR
+    static size_t BUF_MAX = 32;
+    char buf[BUF_MAX];
+    strcpy_P(buf, s);
+    char* sp = &buf[0];
+  #else
+    char* sp = (char *)&s[0];
+  #endif
   uint16_t value = strtoul(sp, &sp, 10);
 
   if (*sp != '-') return false;
@@ -82,17 +87,17 @@ bool time_t::parse(str_P s)
 }
 
 #ifdef TIME_EPOCH_MODIFIABLE
-  uint16_t time_t::s_epoch_year    = Y2K_EPOCH_YEAR;
-  uint8_t  time_t::s_epoch_offset  = 0;
-  uint8_t  time_t::s_epoch_weekday = Y2K_EPOCH_WEEKDAY;
-  uint8_t  time_t::s_pivot_year    = 0;
+  uint16_t NeoGPS::time_t::s_epoch_year    = Y2K_EPOCH_YEAR;
+  uint8_t  NeoGPS::time_t::s_epoch_offset  = 0;
+  uint8_t  NeoGPS::time_t::s_epoch_weekday = Y2K_EPOCH_WEEKDAY;
+  uint8_t  NeoGPS::time_t::s_pivot_year    = 0;
 #endif
 
-const uint8_t time_t::days_in[] __PROGMEM = {
+const uint8_t NeoGPS::time_t::days_in[] __PROGMEM = {
   0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 
-time_t::time_t(clock_t c)
+NeoGPS::time_t::time_t(clock_t c)
 {
   uint16_t dayno = c / SECONDS_PER_DAY;
   c -= dayno * (uint32_t) SECONDS_PER_DAY;
@@ -133,7 +138,7 @@ time_t::time_t(clock_t c)
   seconds = c_ms - (minutes * SECONDS_PER_MINUTE);
 }
 
-void time_t::init()
+void NeoGPS::time_t::init()
 {
   seconds =
   hours   =
@@ -144,7 +149,7 @@ void time_t::init()
   day     = epoch_weekday();
 }
 
-time_t::operator clock_t() const
+NeoGPS::time_t::operator clock_t() const
 {
   clock_t c = days() * SECONDS_PER_DAY;
   if (hours < 18)
@@ -157,7 +162,7 @@ time_t::operator clock_t() const
   return (c);
 }
 
-uint16_t time_t::days() const
+uint16_t NeoGPS::time_t::days() const
 {
   uint16_t day_count = day_of_year();
 
@@ -168,7 +173,7 @@ uint16_t time_t::days() const
   return (day_count);
 }
 
-uint16_t time_t::day_of_year() const
+uint16_t NeoGPS::time_t::day_of_year() const
 {
   uint16_t dayno = date - 1;
   bool leap_year = is_leap();
@@ -182,7 +187,7 @@ uint16_t time_t::day_of_year() const
 }
 
 #ifdef TIME_EPOCH_MODIFIABLE
-  void time_t::use_fastest_epoch()
+  void NeoGPS::time_t::use_fastest_epoch()
   {
     // Figure out when we were compiled and use the year for a really
     // fast epoch_year. Format "MMM DD YYYY"
@@ -196,7 +201,7 @@ uint16_t time_t::day_of_year() const
     epoch_year      ( Y2K_EPOCH_YEAR );
     epoch_weekday   ( Y2K_EPOCH_WEEKDAY );
 
-    time_t this_year(0);
+    NeoGPS::time_t this_year(0);
     this_year.year = compile_year % 100;
     this_year.set_day();
     uint8_t compile_weekday = this_year.day;

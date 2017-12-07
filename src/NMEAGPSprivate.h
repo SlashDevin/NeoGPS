@@ -15,6 +15,9 @@
 //  You should have received a copy of the GNU General Public License
 //  along with NeoGPS.  If not, see <http://www.gnu.org/licenses/>.
 
+// This pragma doesn't make much sense, but will make some IDEs happy.
+#pragma once
+
   protected:
     //.......................................................................
     // Table entry for NMEA sentence type string and its offset
@@ -86,16 +89,16 @@
     //  Control access to this object.  This preserves atomicity when
     //     the processing style is interrupt-driven.
 
-    void lock() const
+    void lock() const NEO_GPS_SYSTEM_DEFAULT_IMPL_WARN
       {
         if (processing_style == PS_INTERRUPT)
-          noInterrupts();
+          NEO_GPS_SYSTEM::lock();
       }
 
-    void unlock() const
+    void unlock() const NEO_GPS_SYSTEM_DEFAULT_IMPL_WARN
       {
         if (processing_style == PS_INTERRUPT)
-          interrupts();
+          NEO_GPS_SYSTEM::unlock();
       }
 
   protected:
