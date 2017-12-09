@@ -627,7 +627,9 @@ const __FlashStringHelper *NMEAGPS::string_for( nmea_msg_t msg ) const
   if (msg == NMEA_UNKNOWN)
     return F("UNK");
 
-  const msg_table_t *msgs = msg_table();
+  #ifdef NMEAGPS_DERIVED_TYPES
+    const msg_table_t *msgs = msg_table();
+  #endif
 
   for (;;) {
     #ifdef NMEAGPS_DERIVED_TYPES
@@ -1211,15 +1213,25 @@ bool NMEAGPS::parseFix( char chr )
       m_fix.status = gps_fix::STATUS_NONE;
     else if ((chr == '2') || (chr == 'D'))
       m_fix.status = gps_fix::STATUS_DGPS;
+    else if (chr == '3')
+      m_fix.status = gps_fix::STATUS_PPS;
+    else if (chr == '4')
+      m_fix.status = gps_fix::STATUS_RTK_FIXED;
+    else if (chr == '5')
+      m_fix.status = gps_fix::STATUS_RTK_FLOAT;
     else if ((chr == '6') || (chr == 'E'))
       m_fix.status = gps_fix::STATUS_EST;
     else {
-      if (validateChars() | validateFields())
+      if (validateChars() | validateFields()) {
         sentenceInvalid();
+      }
       ok = false;
     }
     if (ok)
       m_fix.valid.status = true;
+  } if ((validateChars() | validateFields()) && ((chrCount > 1) || (chr != ','))) {
+Serial.print( chr );
+    sentenceInvalid();
   }
 
   return true;

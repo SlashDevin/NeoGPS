@@ -232,7 +232,10 @@ public:
     STATUS_EST,
     STATUS_TIME_ONLY,
     STATUS_STD,
-    STATUS_DGPS
+    STATUS_DGPS,
+    STATUS_RTK_FLOAT,
+    STATUS_RTK_FIXED,
+    STATUS_PPS // Precise Position System, *NOT* Pulse-per-second
   };
 
   status_t  status NEOGPS_BF(8);
