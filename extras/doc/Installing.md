@@ -23,6 +23,7 @@ extras
 examples
 src
 library.properties
+LICENSE
 README.md
 ```
 
