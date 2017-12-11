@@ -1230,7 +1230,6 @@ bool NMEAGPS::parseFix( char chr )
     if (ok)
       m_fix.valid.status = true;
   } if ((validateChars() | validateFields()) && ((chrCount > 1) || (chr != ','))) {
-Serial.print( chr );
     sentenceInvalid();
   }
 
