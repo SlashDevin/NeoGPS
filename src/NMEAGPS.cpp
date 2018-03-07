@@ -1848,7 +1848,7 @@ bool NMEAGPS::parse_lat_err( char chr )
       NMEAGPS_INVALIDATE( lat_err );
     if (parseFloat( m_fix.lat_err_cm, chr, 2 )) {
       if (validateFields() &&
-          (negative || (m_fix.valid.alt_err > MAX_ERROR_CM)))
+          (negative || (m_fix.valid.lat_err > MAX_ERROR_CM)))
         sentenceInvalid();
       else
         m_fix.valid.lat_err = (chrCount != 0);
