@@ -45,12 +45,12 @@ public:
     int32_t  lat() const      { return _lat; };
     void     lat( int32_t l ) { _lat = l; };
     float    latF() const     { return ((float) lat()) * LOC_SCALE; };
-    void     latF( float v )  { _lat = v * LOC_SCALE; };
+    void     latF( float v )  { _lat = v / LOC_SCALE; };
 
     int32_t  lon() const { return _lon; };
     void     lon( int32_t l ) { _lon = l; };
     float    lonF() const     { return ((float) lon()) * LOC_SCALE; };
-    void     lonF( float v )  { _lon = v * LOC_SCALE; };
+    void     lonF( float v )  { _lon = v / LOC_SCALE; };
 
     void init() { _lat = _lon = 0; };
 
@@ -66,23 +66,23 @@ public:
       {
         return DistanceRadians( p1, p2 ) * EARTH_RADIUS_KM;
       }
-    float DistanceKm( const Location_t & p2 )
+    float DistanceKm( const Location_t & p2 ) const
       { return DistanceKm( *this, p2 ); }
 
     static float DistanceMiles( const Location_t & p1, const Location_t & p2 )
       {
         return DistanceRadians( p1, p2 ) * EARTH_RADIUS_KM * MI_PER_KM;
       }
-    float DistanceMiles( const Location_t & p2 )
+    float DistanceMiles( const Location_t & p2 ) const
       { return DistanceMiles( *this, p2 ); }
 
     static float DistanceRadians( const Location_t & p1, const Location_t & p2 );
-    float DistanceRadians( const Location_t & p2 )
+    float DistanceRadians( const Location_t & p2 ) const
       { return DistanceRadians( *this, p2 ); }
 
     static float EquirectDistanceRadians
       ( const Location_t & p1, const Location_t & p2 );
-    float EquirectDistanceRadians( const Location_t & p2 )
+    float EquirectDistanceRadians( const Location_t & p2 ) const
       { return EquirectDistanceRadians( *this, p2 ); }
 
     static float EquirectDistanceKm( const Location_t & p1, const Location_t & p2 )
