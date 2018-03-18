@@ -739,15 +739,31 @@ bool ubloxGPS::parseNavVelNED( uint8_t chr )
         ok = parseTOW( chr );
         break;
 
-      #ifdef GPS_FIX_SPEED
-        //  Use the speed_3D field at offset 20
-        case 20:
-          NMEAGPS_INVALIDATE( speed );
-        case 21: case 22: case 23:
-          // Temporarily store the 32-bit cm/s in the spd member
-          ((uint8_t *)&m_fix.spd) [ chrCount-20 ] = chr;
+      #ifdef GPS_FIX_VELNED
+        case 4:
+          NMEAGPS_INVALIDATE( velned );
+        case 5: case 6: case 7:
+          ((uint8_t *)&m_fix.velocity_north) [ chrCount-4 ] = chr;
+          break;
+        case 8: case 9: case 10: case 11:
+          ((uint8_t *)&m_fix.velocity_east ) [ chrCount-8 ] = chr;
+          break;
+        case 12: case 13: case 14: case 15:
+          ((uint8_t *)&m_fix.velocity_down ) [ chrCount-12 ] = chr;
+          if (chrCount == 15)
+            m_fix.valid.velned = true;
+          break;
+      #endif
 
-          if (chrCount == 23) {
+      #ifdef GPS_FIX_SPEED
+        //  Use the speed_3D field at offset 16
+        case 16:
+          NMEAGPS_INVALIDATE( speed );
+        case 17: case 18: case 19:
+          // Temporarily store the 32-bit cm/s in the spd member
+          ((uint8_t *)&m_fix.spd) [ chrCount-16 ] = chr;
+
+          if (chrCount == 19) {
             gps_fix::whole_frac *spdp = &m_fix.spd;
 //trace << F("spd = ");
 //trace << (*((uint32_t *)spdp));

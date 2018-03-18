@@ -77,6 +77,10 @@ const char gps_fix_header[] __PROGMEM =
     "Spd,"
   #endif
 
+  #ifdef GPS_FIX_VELNED
+    "Vel N,E,D,"
+  #endif
+
   #if defined(GPS_FIX_ALTITUDE)
     "Alt,"
   #endif
@@ -216,6 +220,17 @@ Print & operator <<( Print &outs, const gps_fix &fix )
         outs.print( fix.speed(), 3 ); // knots
       outs << ',';
     #endif
+    #ifdef GPS_FIX_VELNED
+      if (fix.valid.velned)
+        outs.print( fix.velocity_north ); // cm/s
+      outs << ',';
+      if (fix.valid.velned)
+        outs.print( fix.velocity_east  ); // cm/s
+      outs << ',';
+      if (fix.valid.velned)
+        outs.print( fix.velocity_down  ); // cm/s
+      outs << ',';
+    #endif
     #ifdef GPS_FIX_ALTITUDE
       if (fix.valid.altitude)
         outs.print( fix.altitude(), 2 );
@@ -291,6 +306,17 @@ Print & operator <<( Print &outs, const gps_fix &fix )
     #ifdef GPS_FIX_SPEED
       if (fix.valid.speed)
         outs << fix.speed_mkn();
+      outs << ',';
+    #endif
+    #ifdef GPS_FIX_VELNED
+      if (fix.valid.velned)
+        outs.print( fix.velocity_north ); // cm/s
+      outs << ',';
+      if (fix.valid.velned)
+        outs.print( fix.velocity_east  ); // cm/s
+      outs << ',';
+      if (fix.valid.velned)
+        outs.print( fix.velocity_down  ); // cm/s
       outs << ',';
     #endif
     #ifdef GPS_FIX_ALTITUDE

@@ -127,6 +127,12 @@ public:
     float   altitude_ft() const { return altitude() * 3.28084; };
   #endif
 
+  #ifdef GPS_FIX_VELNED
+    int32_t  velocity_north;    // cm/s
+    int32_t  velocity_east;     // cm/s
+    int32_t  velocity_down;     // cm/s
+  #endif
+
   #ifdef GPS_FIX_SPEED
     whole_frac    spd; // .001 nautical miles per hour
 
@@ -271,6 +277,10 @@ public:
       bool speed NEOGPS_BF(1);
     #endif
 
+    #ifdef GPS_FIX_VELNED
+      bool velned NEOGPS_BF(1);
+    #endif
+
     #ifdef GPS_FIX_HEADING
       bool heading NEOGPS_BF(1);
     #endif
@@ -344,6 +354,12 @@ public:
 
     #ifdef GPS_FIX_SPEED
       spd.init();
+    #endif
+
+    #ifdef GPS_FIX_VELNED
+      velocity_north =
+      velocity_east  =
+      velocity_down  = 0;
     #endif
 
     #ifdef GPS_FIX_HEADING
@@ -447,6 +463,14 @@ public:
     #ifdef GPS_FIX_SPEED
       if (r.valid.speed)
         spd = r.spd;
+    #endif
+
+    #ifdef GPS_FIX_VELNED
+      if (r.valid.velned) {
+        velocity_north = r.velocity_north;
+        velocity_east  = r.velocity_east;
+        velocity_down  = r.velocity_down;
+      }
     #endif
 
     #ifdef GPS_FIX_SATELLITES

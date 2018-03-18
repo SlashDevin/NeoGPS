@@ -37,6 +37,7 @@ class ubloxGPS : public ubloxNMEA
 {
     ubloxGPS & operator =( const ubloxGPS & );
     ubloxGPS( const ubloxGPS & );
+    ubloxGPS();
 
 public:
 
