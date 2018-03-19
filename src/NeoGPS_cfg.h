@@ -83,6 +83,7 @@
 //
 //  TODO: Evaluate the requirement for the "static" keyword.
 //  TODO: Evaluate using a C++ version preprocessor symbol for the #if.
+//          #if __cplusplus >= 201103L  (from XBee.h)
 //
 //  The CONST_CLASS_DATA define will expand to the appropriate keywords.
 //
@@ -101,7 +102,9 @@
 // The PROGMEM definitions are not correct for Zero, MKR1000 and
 //    earlier versions of Teensy boards
 
-#if defined(ARDUINO_SAMD_MKRZERO) | defined(ARDUINO_SAMD_ZERO) |   \
+#if defined(ARDUINO_SAMD_MKRZERO) | \
+    defined(ARDUINO_SAMD_ZERO)    | \
+    defined(ARDUINO_SAM_DUE)      | \
     (defined(TEENSYDUINO) && (TEENSYDUINO < 139))
   #undef pgm_read_ptr
   #define pgm_read_ptr(addr) (*(const void **)(addr))
