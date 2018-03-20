@@ -82,6 +82,7 @@ bool ubloxNMEA::parsePUBX_00( char chr )
       case  8: return parseFix( chr );
       case 11: return parseSpeed( chr ); // kph!
       case 12: return parseHeading( chr );
+      case 13: return parseVelocityDown( chr );
       case 15: return parseHDOP( chr );
       case 16: return parseVDOP( chr );
       case 18: return parseSatellites( chr );
@@ -143,5 +144,31 @@ bool ubloxNMEA::parseFix( char chr )
   
   return true;
 }
+
+//---------------------------------------------
+
+bool ubloxNMEA::parseVelocityDown( char chr )
+{
+  #ifdef GPS_FIX_VELNED
+    if (chrCount == 0)
+      NMEAGPS_INVALIDATE( velned );
+
+    gps_fix::whole_frac *temp = (gps_fix::whole_frac *) &m_fix.velocity_down; // an alias for parsing
+
+    if (parseFloat( *temp, chr, 3 )) { // 0.001 m/s
+
+      if (chr == ',') {
+        // convert the temporary whole_frac values in place
+        m_fix.valid.velned = (chrCount > 0);
+        if (m_fix.valid.velned) {
+          m_fix.velocity_down = (temp->int32_000() + 5) / 10L; // mm/s to cm/s
+        }
+      }
+    }
+  #endif
+  
+  return true;
+
+} // parseVelocityDown
 
 #endif

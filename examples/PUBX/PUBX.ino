@@ -72,7 +72,7 @@
 //------------------------------------------------------------
 
 static ubloxNMEA gps; // This parses received characters
-static gps_fix   merged;
+static gps_fix   fix;
 
 //----------------------------------------------------------------
 
@@ -91,7 +91,7 @@ static void poll()
 static void doSomeWork()
 {
   // Print all the things!
-  trace_all( DEBUG_PORT, gps, merged );
+  trace_all( DEBUG_PORT, gps, fix );
 
   //  Ask for the proprietary messages again
   poll();
@@ -103,7 +103,11 @@ static void doSomeWork()
 static void GPSloop()
 {  
   while (gps.available( gpsPort )) {
-    merged = gps.read();
+    fix = gps.read();
+
+    #if defined(GPS_FIX_VELNED) && defined(NMEAGPS_PARSE_PUBX_00)
+      fix.calculateNorthAndEastVelocityFromSpeedAndHeading();
+    #endif
 
     doSomeWork();
   }

@@ -103,6 +103,8 @@ protected:
     bool parseField( char chr );
 
     bool parseFix( char chr );
+    bool parseVelocityDown( char chr );
+
 } NEOGPS_PACKED;
 
 #endif // NMEAGPS_DERIVED_TYPES enabled

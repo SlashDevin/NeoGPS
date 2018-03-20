@@ -131,6 +131,21 @@ public:
     int32_t  velocity_north;    // cm/s
     int32_t  velocity_east;     // cm/s
     int32_t  velocity_down;     // cm/s
+
+    void calculateNorthAndEastVelocityFromSpeedAndHeading()
+    {
+      #if defined( GPS_FIX_HEADING ) && defined( GPS_FIX_SPEED )
+        if (valid.heading && valid.speed && valid.velned) {
+
+          float course         = heading() * NeoGPS::Location_t::RAD_PER_DEG;
+          float speed_cm_per_s = speed_metersph() * (100.0 / 3600.0);
+          velocity_north = round( speed_cm_per_s * cos( course ) );
+          velocity_east  = round( speed_cm_per_s * sin( course ) );
+          // velocity_down has already been set.
+
+        }
+      #endif
+    }
   #endif
 
   #ifdef GPS_FIX_SPEED
@@ -143,7 +158,7 @@ public:
     CONST_CLASS_DATA float KM_PER_NMI = 1.852;
     float    speed_kph () const { return speed() * KM_PER_NMI; };
 
-    CONST_CLASS_DATA uint16_t M_PER_NMI = 1852;
+    CONST_CLASS_DATA uint32_t M_PER_NMI = 1852;
     uint32_t speed_metersph() const { return (spd.whole * M_PER_NMI) + (spd.frac * M_PER_NMI)/1000; };
 
     CONST_CLASS_DATA float MI_PER_NMI = 1.150779;
