@@ -61,7 +61,7 @@ public:
 
     //-----------------------------------
     // Distance calculations
-    
+
     static float DistanceKm( const Location_t & p1, const Location_t & p2 )
       {
         return DistanceRadians( p1, p2 ) * EARTH_RADIUS_KM;
