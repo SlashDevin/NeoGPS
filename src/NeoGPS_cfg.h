@@ -105,6 +105,7 @@
 #if defined(ARDUINO_SAMD_MKRZERO) | \
     defined(ARDUINO_SAMD_ZERO)    | \
     defined(ARDUINO_SAM_DUE)      | \
+    defined(ARDUINO_ARCH_ARC32)   | \
     (defined(TEENSYDUINO) && (TEENSYDUINO < 139))
   #undef pgm_read_ptr
   #define pgm_read_ptr(addr) (*(const void **)(addr))
