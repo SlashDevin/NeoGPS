@@ -184,7 +184,7 @@ Once you have verified the GPS device connection and build process with this fir
 
 If you are logging information to an SD card, you should next try `NMEA_isr.ino`.  It is identical to `NMEA.ino`, except that it handles the GPS characters during the RX char interrupt.  Interrupt handling will require one of the NeoXXSerial libraries to be installed (e.g. [NeoHWSerial](https://github.com/SlashDevin/NeoHWSerial)).
 
-If you are working on a drone or other autonomous system, you should you should read about [Coherency](Coherency.md) and the interrupt-driven technique in [NMEA_isr](/examples/NMEA_isr/NMEA_isr.ino).
+If you are working on a drone or other autonomous system, you should read about [Coherency](Coherency.md) and the interrupt-driven technique in [NMEA_isr](/examples/NMEA_isr/NMEA_isr.ino).
 
 You can also try other configurations.  Please see [Choosing Your Configuration](Choosing.md) for more information, and then simply edit `GPSfix_cfg.h` and/or `NMEAGPS_cfg.h`, or select an [example configuration](../configs) and copy these three files into your application directory: `NeoGPS_cfg.h`, `GPSfix_cfg.h`, and `NMEAGPS_cfg.h`.
 
