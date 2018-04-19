@@ -75,7 +75,7 @@ gps_fix fix;
     * `fix.valid.altitude`
     * `fix.valid.speed`
     * `fix.valid.heading`
-    * `fix.valid.hdop`, `fix.valid.vdop` and `fix.valid.hpop`
+    * `fix.valid.hdop`, `fix.valid.vdop` and `fix.valid.pdop`
     * `fix.valid.lat_err`, `fix.valid.lon_err` and `fix.valid.alt_err`
     * `fix.valid.geoidHeight`
 
