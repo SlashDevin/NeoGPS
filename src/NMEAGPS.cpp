@@ -1300,18 +1300,29 @@ bool NMEAGPS::parseFloat( uint16_t & val, char chr, uint8_t max_decimal )
   }
 
   if (chr == ',') {
-    if (val)
-      while (decimal++ <= max_decimal)
-        val *= 10;
-    if (negative)
-      val = -val;
+    if (val) {
+      if (!decimal)
+        decimal = 1;
+      while (decimal++ <= max_decimal) {
+        if (validateFields() && (val > 6553)) // 65535/10
+          sentenceInvalid();
+        else
+          val *= 10;
+      }
+      if (negative)
+        val = -val;
+    }
     done = true;
   } else if (chr == '.') {
     decimal = 1;
   } else if (validateChars() && !isdigit(chr)) {
     sentenceInvalid();
-  } else if (decimal++ <= max_decimal) {
-    val = val*10 + (chr - '0');
+  } else if (!decimal || (decimal++ <= max_decimal)) {
+    if (validateFields() && 
+        ((val > 6553) || ((val == 6553) && (chr > '5'))))
+      sentenceInvalid();
+    else
+      val = val*10 + (chr - '0');
   }
 
   return done;
@@ -1846,7 +1857,7 @@ bool NMEAGPS::parsePDOP( char chr )
 
 //----------------------------------------------------------------
 
-static const uint16_t MAX_ERROR_CM = 2000; // 20m is a large STD error
+static const uint16_t MAX_ERROR_CM = 20000; // 200m is a large STD
 
 bool NMEAGPS::parse_lat_err( char chr )
 {
