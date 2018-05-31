@@ -28,7 +28,7 @@ gps_fix fix;
         * `fix.longitudeDMS.EW()` (char values `E` or `W`)
         * `fix.latitudeDMS.NS()` (char values `N` or `S`)
       * NOTE: An integer degree value (scaled by 10<sup>7</sup> can be used to set the DMS structure by using `fix.latitudeDMS.From( otherLatitude );`
-  * an altitude (above ellipsoid, not Mean Sea Level), accessed with
+  * an altitude (above ellipsoid, aka Mean Sea Level), accessed with
     * `fix.altitude_cm()`, in integer centimeters
     * `fix.altitude()`, in floating-point meters
     * `fix.alt.whole`, in integer meters

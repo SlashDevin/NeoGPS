@@ -1,7 +1,8 @@
 Extending NeoGPS
 =========
 Using features that are unique to your device fall into three categories:
-####1. Configuring the device with special commands
+
+#### 1. Configuring the device with special commands
 Many devices allow you to configure which standard messages are emitted, or the rate at which they are emitted.  It may be as simple as sending a proprietary command to the device.  Simply use the NMEAGPS `send` or `send_P` method.
 
 For example, to set the baudrate of the ublox NEO-6M gps device, send it a 
@@ -9,7 +10,8 @@ For example, to set the baudrate of the ublox NEO-6M gps device, send it a
 ```
   gps.send_P( F("PUBX,41,1,0007,0003,19200,0") );
 ```
-####2. Parsing additional message types
+
+#### 2. Parsing additional message types
 Some devices provide additional messages with extra information, or more efficient groupings.  This will require deriving a class from `NMEAGPS`.  The derived class needs to
 * declare a PROGMEM table of the new message types,
 * point that table back to the NMEAGPS table
@@ -17,7 +19,7 @@ Some devices provide additional messages with extra information, or more efficie
 
 Please see ubxNMEA.h and .cpp for an example of adding two ublox-proprietary messages.
 
-####3. Handling new protocols
+#### 3. Handling new protocols
 Some devices provide additional protocols.  They are frequently binary, which requires 
 fewer bytes than NMEA 0183.  Because they can both be transmitted on the same port, it is 
 very likely that they can be distinguished at the message framing level.
