@@ -22,7 +22,17 @@
 #include "ublox/ubxGPS.h"
 
 // Check configurations
- 
+
+#if !defined(UBLOX_PARSE_STATUS)  & !defined(UBLOX_PARSE_TIMEGPS) & \
+    !defined(UBLOX_PARSE_TIMEUTC) & !defined(UBLOX_PARSE_POSLLH)  & \
+    !defined(UBLOX_PARSE_DOP)     & !defined(UBLOX_PARSE_PVT)     & \
+    !defined(UBLOX_PARSE_VELNED)  & !defined(UBLOX_PARSE_SVINFO)  & \
+    !defined(UBLOX_PARSE_HNR_PVT)
+
+  // No UBX messages enabled, Ignore rest of the file
+
+#else
+
 #if defined( UBLOX_PARSE_POSLLH ) & \
     ( defined( GPS_FIX_LAT_ERR ) | \
       defined( GPS_FIX_LON_ERR ) | \
@@ -241,7 +251,6 @@ ubloxGPS::decode_t ubloxGPS::decode( char c )
             //  This implements coherency.
             intervalComplete( intervalCompleted() );
           }
-//Serial.print( '!' );
           rxState = (rxState_t) UBX_IDLE;
           break;
 
@@ -465,7 +474,7 @@ bool ubloxGPS::parseField( char c )
   switch (rx().msg_class) {
 
     case UBX_NAV: //=================================================
-//if (chrCount == 0) Serial << F( " NAV ") << (uint8_t) rx().msg_id;
+//if (chrCount == 0) Serial << F(" NAV ") << (uint8_t) rx().msg_id;
       switch (rx().msg_id) {
         case UBX_NAV_STATUS : return parseNavStatus ( chr );
         case UBX_NAV_POSLLH : return parseNavPosLLH ( chr );
@@ -1216,5 +1225,7 @@ bool ubloxGPS::parseFix( uint8_t c )
 
   const ubloxGPS::msg_t *test2 = (const ubloxGPS::msg_t *) &test2_data[0];
 #endif
+
+#endif // UBX messages enabled
 
 #endif // NMEAGPS_DERIVED_TYPES enabled

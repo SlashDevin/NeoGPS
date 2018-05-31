@@ -56,15 +56,8 @@
     !defined(UBLOX_PARSE_VELNED) & !defined(UBLOX_PARSE_SVINFO)  & \
     !defined(UBLOX_PARSE_DOP)
 
-  #error No UBX binary messages enabled: no fix data available for fusing.
+  #error No UBX binary messages enabled: no fix data available.
 
-#endif
-
-#if defined(UBLOX_PARSE_DOP) & \
-    ( !defined(GPS_FIX_HDOP) & \
-      !defined(GPS_FIX_VDOP) & \
-      !defined(GPS_FIX_PDOP) )
-  #warning UBX DOP message is enabled, but all GPS_fix DOP members are disabled.
 #endif
 
 #ifndef NMEAGPS_RECOGNIZE_ALL
@@ -203,18 +196,14 @@ public:
     {
       bool enabled_msg_with_time = false;
 
-      #if (defined(GPS_FIX_LOCATION) | \
-           defined(GPS_FIX_LOCATION_DMS) | \
-           defined(GPS_FIX_ALTITUDE)) & \
-          defined(UBLOX_PARSE_POSLLH)
+      #if defined(UBLOX_PARSE_POSLLH)
         if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_POSLLH ))
           DEBUG_PORT.println( F("enable POSLLH failed!") );
 
         enabled_msg_with_time = true;
       #endif
 
-      #if (defined(GPS_FIX_SPEED) | defined(GPS_FIX_HEADING)) & \
-          defined(UBLOX_PARSE_VELNED)
+      #if defined(UBLOX_PARSE_VELNED)
         if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_VELNED ))
           DEBUG_PORT.println( F("enable VELNED failed!") );
 
@@ -230,8 +219,7 @@ public:
         enabled_msg_with_time = true;
       #endif
 
-      #if (defined(GPS_FIX_SATELLITES) | defined(NMEAGPS_PARSE_SATELLITES)) & \
-          defined(UBLOX_PARSE_SVINFO)
+      #if defined(UBLOX_PARSE_SVINFO)
         if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_SVINFO ))
           DEBUG_PORT.println( F("enable SVINFO failed!") );
         

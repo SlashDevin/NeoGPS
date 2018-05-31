@@ -49,12 +49,12 @@
     !defined( NMEAGPS_PARSE_ZDA ) & !defined( NMEAGPS_PARSE_GST ) & \
     !defined( NMEAGPS_PARSE_PUBX_00 ) & !defined( NMEAGPS_PARSE_PUBX_04 )
 
-  #error No NMEA sentences enabled: no fix data available for fusing.
+  #error No NMEA sentences enabled: no fix data available.
 
 #endif
 
 #if !defined( NMEAGPS_PARSE_PUBX_00 ) & !defined( NMEAGPS_PARSE_PUBX_04 )
-  #error No PUBX messages enabled!  You must enable one or more in ubxNMEA.h!
+  #error No PUBX messages enabled!  You must enable one or more in PUBX_cfg.h!
 #endif
 
 #ifndef NMEAGPS_DERIVED_TYPES
@@ -128,17 +128,14 @@ void setup()
   DEBUG_PORT.println( sizeof(gps) );
   DEBUG_PORT.println( F("Looking for GPS device on " GPS_PORT_NAME) );
 
-  #ifndef NMEAGPS_PARSE_PUBX_00
-    if (LAST_SENTENCE_IN_INTERVAL == (NMEAGPS::nmea_msg_t) ubloxNMEA::PUBX_00) {
-      DEBUG_PORT.println( F("ERROR! LAST_SENTENCE_IN_INTERVAL PUBX_00 not enabled!\n"
-                            "  Either change LAST_SENTENCE or enable PUBX_00")      );
+  #ifdef NMEAGPS_PARSE_PUBX_04
+    if (LAST_SENTENCE_IN_INTERVAL != (NMEAGPS::nmea_msg_t) ubloxNMEA::PUBX_04) {
+      DEBUG_PORT.println( F("ERROR! LAST_SENTENCE_IN_INTERVAL should be PUBX_04") );
       for(;;);
     }
-  #endif
-  #ifndef NMEAGPS_PARSE_PUBX_04
-    if (LAST_SENTENCE_IN_INTERVAL == (NMEAGPS::nmea_msg_t) ubloxNMEA::PUBX_04) {
-      DEBUG_PORT.println( F("ERROR! LAST_SENTENCE_IN_INTERVAL PUBX_04 not enabled!\n"
-                            "  Either change LAST_SENTENCE or enable PUBX_04")      );
+  #else
+    if (LAST_SENTENCE_IN_INTERVAL != (NMEAGPS::nmea_msg_t) ubloxNMEA::PUBX_00) {
+      DEBUG_PORT.println( F("ERROR! LAST_SENTENCE_IN_INTERVAL should be PUBX_00") );
       for(;;);
     }
   #endif

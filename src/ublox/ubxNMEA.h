@@ -25,15 +25,7 @@
 
 #include "NMEAGPS.h"
 
-//------------------------------------------------------------
-// Enable/disable the parsing of specific proprietary NMEA sentences.
-//
-// Configuring out a sentence prevents its fields from being parsed.
-// However, the sentence type may still be recognized by /decode/ and 
-// stored in member /nmeaMessage/.  No valid flags would be available.
-
-//#define NMEAGPS_PARSE_PUBX_00
-//#define NMEAGPS_PARSE_PUBX_04
+#include "PUBX_cfg.h"
 
 // Ublox proprietary messages do not have a message type.  These
 // messages start with "$PUBX," which ends with the manufacturer ID.  The
@@ -43,7 +35,15 @@
 // field is completed by /parseField/, it may change /nmeamessage/ to one 
 // of the other PUBX message types.
 
-#if (defined(NMEAGPS_PARSE_PUBX_00) | defined(NMEAGPS_PARSE_PUBX_04))
+#if !defined(NMEAGPS_PARSE_PUBX_00) & !defined(NMEAGPS_PARSE_PUBX_04)
+
+  // No ublox Proprietary messages defined, ignore rest of file.
+  #define UBLOXGPS_BASE NMEAGPS
+  #define UBLOXGPS_BASE_LAST_MSG NMEA_LAST_MSG
+#else
+
+  #define UBLOXGPS_BASE ubloxNMEA
+  #define UBLOXGPS_BASE_LAST_MSG  PUBX_LAST_MSG
 
   #if !defined(NMEAGPS_PARSE_PROPRIETARY)
     #error NMEAGPS_PARSE_PROPRIETARY must be defined in NMEAGPS_cfg.h in order to parse PUBX messages!
@@ -52,7 +52,6 @@
   #if !defined(NMEAGPS_PARSE_MFR_ID)
     #error NMEAGPS_PARSE_MFR_ID must be defined in NMEAGPS_cfg.h in order to parse PUBX messages!
   #endif
-#endif
 
 //=============================================================
 // NMEA 0183 Parser for ublox Neo-6 GPS Modules.
@@ -106,6 +105,8 @@ protected:
     bool parseVelocityDown( char chr );
 
 } NEOGPS_PACKED;
+
+#endif // at least one PUBX message enabled
 
 #endif // NMEAGPS_DERIVED_TYPES enabled
 

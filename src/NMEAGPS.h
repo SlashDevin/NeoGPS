@@ -208,7 +208,7 @@ public:
     //.......................................................................
     // Most recent NMEA sentence type received.
 
-    enum nmea_msg_t nmeaMessage NEOGPS_BF(8);
+    nmea_msg_t nmeaMessage NEOGPS_BF(8);
 
     //.......................................................................
     //  Storage for Talker and Manufacturer IDs
