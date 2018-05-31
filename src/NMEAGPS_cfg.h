@@ -47,8 +47,12 @@
 
 #define LAST_SENTENCE_IN_INTERVAL NMEAGPS::NMEA_RMC
 
-// NOTE: For PUBX-only configs, use
+// NOTE: For PUBX-only, PGRM and UBX configs, use
 //          (NMEAGPS::nmea_msg_t)(NMEAGPS::NMEA_LAST_MSG+1)
+//       Otherwise, use one of the standard NMEA messages:
+//          NMEAGPS::NMEA_RMC
+//
+//    ==>  CONFIRM THIS WITH NMEAorder.INO  <==
 //
 // If the NMEA_LAST_SENTENCE_IN_INTERVAL is not chosen 
 // correctly, GPS data may be lost because the sketch
