@@ -24,7 +24,7 @@ The "GP" prefix usually indicates an original [GPS](https://en.wikipedia.org/wik
 
 This means that GLRMC, GBRMC or BDRMC, GARMC and GNRMC from the latest GPS devices (e.g., ublox M8N) will also be correctly parsed.  See discussion of Talker IDs in [Configurations](extras/doc/Configurations.md#enabledisable-the-talker-id-and-manufacturer-id-processing).
 
-Most applications can be fully implemented with the standard NMEA messages above.  They are supported by almost all GPS manufacturers.  Additional messages can be added through derived classes.
+Most applications can be fully implemented with the standard NMEA messages above.  They are supported by almost all GPS manufacturers.  Additional messages can be added through derived classes (see ublox and Garmin sections below).
 
 Most applications will use this simple, familiar loop structure:
 ```
@@ -75,5 +75,6 @@ Section  |  Description
 [Troubleshooting](extras/doc/Troubleshooting.md) | Troubleshooting
 [Extending NeoGPS](extras/doc/Extending.md) | Using specific devices
 [ublox](extras/doc/ublox.md) | ublox-specific code
+[Garmin](extras/doc/Garmin.md) | Garmin-specific code
 [Tradeoffs](extras/doc/Tradeoffs.md) | Comparing to other libraries
 [Acknowledgements](extras/doc/Acknowledgements.md) | Thanks!
