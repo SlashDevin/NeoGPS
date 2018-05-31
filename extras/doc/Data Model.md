@@ -103,6 +103,7 @@ There is additional information that is not related to a fix.  Instead, it conta
     * `gps.satellies[i].azimuth`, satellite azimuth in 0-359 integer degrees
     * `gps.satellies[i].snr`, satellite signal-to-noise ratio in 0-99 integer dBHz
     * `gps.satellies[i].tracked`, satellite being tracked flag, a boolean
+  * `gps.sat_count`, the number of elements in the `gps.satellites[]` array
   * `gps.talker_id[]`, talker ID, a two-character array (not NUL-terminated)
   * `gps.mfr_id[]`, manufacturer ID, a three-character array (not NUL-terminated)
   * an internal fix structure,  `gps.fix()`.  Most sketches **should not** use `gps.fix()` directly!
