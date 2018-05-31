@@ -1,8 +1,6 @@
 #ifndef NEOGPS_LOCATION_H
 #define NEOGPS_LOCATION_H
 
-#include <Arduino.h>
-
 #include "NeoGPS_cfg.h"
 
 //  Copyright (C) 2014-2017, SlashDevin
