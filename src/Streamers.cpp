@@ -109,6 +109,18 @@ const char gps_fix_header[] __PROGMEM =
     "Alt err,"
   #endif
 
+  #if defined(GPS_FIX_SPD_ERR)
+    "Spd err,"
+  #endif
+
+  #if defined(GPS_FIX_HDG_ERR)
+    "Hdg err,"
+  #endif
+
+  #if defined(GPS_FIX_TIME_ERR)
+    "Time err,"
+  #endif
+
   #if defined(GPS_FIX_GEOID_HEIGHT)
     "Geoid Ht,"
   #endif
@@ -268,6 +280,21 @@ Print & operator <<( Print &outs, const gps_fix &fix )
         outs.print( fix.alt_err(), 2 );
       outs << ',';
     #endif
+    #ifdef GPS_FIX_SPD_ERR
+      if (fix.valid.spd_err)
+        outs.print( fix.spd_err(), 2 );
+      outs << ',';
+    #endif
+    #ifdef GPS_FIX_HDG_ERR
+      if (fix.valid.hdg_err)
+        outs.print( fix.hdg_err(), 2 );
+      outs << ',';
+    #endif
+    #ifdef GPS_FIX_TIME_ERR
+      if (fix.valid.time_err)
+        outs.print( fix.time_err(), 2 );
+      outs << ',';
+    #endif
 
     #ifdef GPS_FIX_GEOID_HEIGHT
       if (fix.valid.geoidHeight)
@@ -354,6 +381,21 @@ Print & operator <<( Print &outs, const gps_fix &fix )
     #ifdef GPS_FIX_ALT_ERR
       if (fix.valid.alt_err)
         outs << fix.alt_err_cm;
+      outs << ',';
+    #endif
+    #ifdef GPS_FIX_SPD_ERR
+      if (fix.valid.spd_err)
+        outs.print( fix.spd_err_mmps );
+      outs << ',';
+    #endif
+    #ifdef GPS_FIX_HDG_ERR
+      if (fix.valid.hdg_err)
+        outs.print( fix.hdg_errE5 );
+      outs << ',';
+    #endif
+    #ifdef GPS_FIX_TIME_ERR
+      if (fix.valid.time_err)
+        outs.print( fix.time_err_ns );
       outs << ',';
     #endif
 

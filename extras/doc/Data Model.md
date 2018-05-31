@@ -48,6 +48,13 @@ gps_fix fix;
   * latitude, longitude and altitude error, accessed with
     * `fix.lat_err_cm`, `fix.lon_err_cm` and `fix.alt_err_cm`, in integer centimeters
     * `fix.lat_err()`, `fix.lon_err()` and `fix.alt_err()`, in floating-point meters
+  * speed, heading and time **errors**, accessed with
+    * `fix.spd_err_mmps`, in integer mm/s
+    * `fix.hdg_errE5`, in integer degrees * 100000
+    * `fix.time_err_ns`, in integer nanoseconds<br>**or with**
+    * `fix.spd_err()` in floating-point m/s
+    * `fix.hdg_err()` in floating-point degrees
+    * `fix.time_err()` in floating-point seconds
   * geoid height above ellipsoid (see [here](https://en.wikipedia.org/wiki/Geoid) for description), accessed with
     * `fix.geoidHeight_cm`, in integer centimeters
     * `fix.geoidHeight()`, in floating-point meters

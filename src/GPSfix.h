@@ -192,21 +192,36 @@ public:
   #endif
 
   //--------------------------------------------------------
-  //  Error estimates for latitude, longitude and altitude, in centimeters.
+  //  Error estimates for lat, lon, altitude, speed, heading and time
 
   #ifdef GPS_FIX_LAT_ERR
     uint16_t lat_err_cm;
-    float lat_err() const { return lat_err_cm / 100.0; }
+    float lat_err() const { return lat_err_cm / 100.0; }    // m
   #endif
 
   #ifdef GPS_FIX_LON_ERR
     uint16_t lon_err_cm;
-    float lon_err() const { return lon_err_cm / 100.0; }
+    float lon_err() const { return lon_err_cm / 100.0; }    // m
   #endif
 
   #ifdef GPS_FIX_ALT_ERR
     uint16_t alt_err_cm;
-    float alt_err() const { return alt_err_cm / 100.0; }
+    float alt_err() const { return alt_err_cm / 100.0; }    // m
+  #endif
+
+  #ifdef GPS_FIX_SPD_ERR
+    uint16_t spd_err_mmps;
+    float spd_err() const { return spd_err_mmps / 1000.0; } // m/s
+  #endif
+
+  #ifdef GPS_FIX_HDG_ERR
+    uint16_t hdg_errE5;    // 0.00001 deg
+    float hdg_err() const { return hdg_errE5 / 1.0e5; } // deg
+  #endif
+
+  #ifdef GPS_FIX_TIME_ERR
+    uint16_t time_err_ns;
+    float time_err() const { return time_err_ns / 1.0e9; } // s
   #endif
 
   //--------------------------------------------------------
@@ -326,6 +341,18 @@ public:
       bool alt_err NEOGPS_BF(1);
     #endif
 
+    #ifdef GPS_FIX_SPD_ERR
+      bool spd_err NEOGPS_BF(1);
+    #endif
+
+    #ifdef GPS_FIX_HDG_ERR
+      bool hdg_err NEOGPS_BF(1);
+    #endif
+
+    #ifdef GPS_FIX_TIME_ERR
+      bool time_err NEOGPS_BF(1);
+    #endif
+
     #ifdef GPS_FIX_GEOID_HEIGHT
       bool geoidHeight NEOGPS_BF(1);
     #endif
@@ -399,6 +426,15 @@ public:
     #endif
     #ifdef GPS_FIX_ALT_ERR
       alt_err_cm = 0;
+    #endif
+    #ifdef GPS_FIX_SPD_ERR
+      spd_err_mmps = 0;
+    #endif
+    #ifdef GPS_FIX_HDG_ERR
+      hdg_errE5 = 0;
+    #endif
+    #ifdef GPS_FIX_TIME_ERR
+      time_err_ns = 0;
     #endif
 
     #ifdef GPS_FIX_GEOID_HEIGHT
@@ -521,6 +557,21 @@ public:
     #ifdef GPS_FIX_ALT_ERR
       if (r.valid.alt_err)
         alt_err_cm = r.alt_err_cm;
+    #endif
+
+    #ifdef GPS_FIX_SPD_ERR
+      if (r.valid.spd_err)
+        spd_err_mmps = r.spd_err_mmps;
+    #endif
+
+    #ifdef GPS_FIX_HDG_ERR
+      if (r.valid.hdg_err)
+        hdg_errE5 = r.hdg_errE5;
+    #endif
+
+    #ifdef GPS_FIX_TIME_ERR
+      if (r.valid.time_err)
+        time_err_ns = r.time_err_ns;
     #endif
 
     #ifdef GPS_FIX_GEOID_HEIGHT

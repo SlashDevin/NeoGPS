@@ -822,6 +822,27 @@ bool ubloxGPS::parseNavVelNED( uint8_t chr )
           }
           break;
       #endif
+
+      #ifdef GPS_FIX_SPD_ERR
+        case 28:
+          NMEAGPS_INVALIDATE( spd_err );
+        case 29: case 30: case 31:
+          ((uint8_t *)&m_fix.spd_err_mmps) [ chrCount-28 ] = chr;
+          if (chrCount == 31)
+            m_fix.valid.spd_err = true;
+          break;
+      #endif
+
+      #ifdef GPS_FIX_HDG_ERR
+        case 32:
+          NMEAGPS_INVALIDATE( hdg_err );
+        case 33: case 34: case 35:
+          ((uint8_t *)&m_fix.hdg_errE5) [ chrCount-32 ] = chr;
+          if (chrCount == 35)
+            m_fix.valid.hdg_err = true;
+          break;
+      #endif
+
     }
   #endif
   
@@ -866,6 +887,18 @@ bool ubloxGPS::parseNavTimeGPS( uint8_t chr )
           }
           break;
       #endif
+
+      #if defined( GPS_FIX_TIME_ERR )
+        case 12:
+          NMEAGPS_INVALIDATE( time_err );
+        case 13: case 14: case 15:
+          ((uint8_t *)&m_fix.time_err_ns) [ chrCount-12 ] = chr;
+          if (chrCount == 15) {
+            m_fix.valid.time_err = true;
+          }
+          break;
+      #endif
+
     }
   #endif
   

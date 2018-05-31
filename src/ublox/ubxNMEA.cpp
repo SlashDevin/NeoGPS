@@ -82,6 +82,24 @@ bool ubloxNMEA::parsePUBX_00( char chr )
       PARSE_LOC(3);
       case  7: return parseAlt( chr );
       case  8: return parseFix( chr );
+      case  9: // use Horizontal accuracy for both lat and lon errors
+        #if defined(GPS_FIX_LAT_ERR)
+          ok = parse_lat_err( chr );
+          #if defined(GPS_FIX_LON_ERR)
+            // When the lat_err field is finished,
+            //   copy it to the lon_err field.
+            if (chr == ',') {
+              m_fix.valid.lon_err = m_fix.valid.lat_err;
+              if (m_fix.valid.lon_err)
+                m_fix.lon_err_cm = m_fix.lat_err_cm;
+            }
+          #endif
+
+        #elif defined(GPS_FIX_LON_ERR)
+          ok = parse_lon_err( chr );
+        #endif
+        break;
+      case 10: return parse_alt_err( chr ); // vertical accuracy
       case 11:
         #ifdef GPS_FIX_SPEED
           ok = parseSpeed( chr ); // PUBX,00 provides speed in km/h!
