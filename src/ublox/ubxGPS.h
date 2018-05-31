@@ -300,6 +300,7 @@ private:
     bool parseNavStatus ( uint8_t chr );
     bool parseNavDOP    ( uint8_t chr );
     bool parseNavPosLLH ( uint8_t chr );
+    bool parseNavPvt    ( uint8_t chr );
     bool parseNavVelNED ( uint8_t chr );
     bool parseNavTimeGPS( uint8_t chr );
     bool parseNavTimeUTC( uint8_t chr );

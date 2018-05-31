@@ -43,6 +43,10 @@ gps_fix fix;
   * a heading, accessed with
     * `fix.heading_cd()`, in integer hundredths of a degree
     * `fix.heading()`, in floating-point degrees
+  * velocity components in the North, East and Down directions, accessed with
+    * `fix.velocity_north`, in integer cm/s
+    * `fix.velocity_east`, in integer cm/s
+    * `fix.velocity_down`, in integer cm/s
   * `fix.hdop`, `fix.vdop` and `fix.pdop`, in integer thousandths of the DOP.
     * [Dilution of Precision](https://en.wikipedia.org/wiki/Dilution_of_precision_(navigation)) is a unitless measure of the current satellite constellation geometry WRT how 'good' it is for determining a position.  This is _independent_ of signal strength and many other factors that may be internal to the receiver. &nbsp;&nbsp;**It cannot be used to determine position accuracy in meters.**  Instead, use the LAT/LON/ALT error in cm members, which are populated by GST sentences.
   * latitude, longitude and altitude error, accessed with

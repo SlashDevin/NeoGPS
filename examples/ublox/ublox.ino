@@ -51,10 +51,11 @@
   #error You must "#define NMEAGPS_DERIVED_TYPES" in NMEAGPS_cfg.h!
 #endif
 
-#if !defined(UBLOX_PARSE_STATUS) & !defined(UBLOX_PARSE_TIMEGPS) & \
-    !defined(UBLOX_PARSE_TIMEUTC) & !defined(UBLOX_PARSE_POSLLH) & \
-    !defined(UBLOX_PARSE_VELNED) & !defined(UBLOX_PARSE_SVINFO)  & \
-    !defined(UBLOX_PARSE_DOP)
+#if !defined(UBLOX_PARSE_STATUS)  & !defined(UBLOX_PARSE_TIMEGPS) & \
+    !defined(UBLOX_PARSE_TIMEUTC) & !defined(UBLOX_PARSE_POSLLH)  & \
+    !defined(UBLOX_PARSE_DOP)     & !defined(UBLOX_PARSE_PVT)     & \
+    !defined(UBLOX_PARSE_VELNED)  & !defined(UBLOX_PARSE_SVINFO)  & \
+    !defined(UBLOX_PARSE_HNR_PVT)
 
   #error No UBX binary messages enabled: no fix data available.
 
@@ -199,6 +200,13 @@ public:
       #if defined(UBLOX_PARSE_POSLLH)
         if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_POSLLH ))
           DEBUG_PORT.println( F("enable POSLLH failed!") );
+
+        enabled_msg_with_time = true;
+      #endif
+
+      #if defined(UBLOX_PARSE_PVT)
+        if (!enable_msg( ublox::UBX_NAV, ublox::UBX_NAV_PVT ))
+          DEBUG_PORT.println( F("enable PVT failed!") );
 
         enabled_msg_with_time = true;
       #endif
