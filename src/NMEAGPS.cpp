@@ -1725,6 +1725,26 @@ bool NMEAGPS::parseSpeed( char chr )
 
 //----------------------------------------------------------------
 
+bool NMEAGPS::parseSpeedKph( char chr )
+{
+  #ifdef GPS_FIX_SPEED
+    parseSpeed( chr );
+
+    if ((chr == ',') && m_fix.valid.speed) {
+      uint32_t kph    = m_fix.spd.int32_000();
+      // Convert to Nautical Miles/Hour
+      uint32_t nmiph  = (kph * 1000) / gps_fix::M_PER_NMI;
+      m_fix.spd.whole = nmiph / 1000;
+      m_fix.spd.frac  = (nmiph - m_fix.spd.whole*1000);
+    }
+  #endif
+
+  return true;
+
+} // parseSpeedKph
+
+//----------------------------------------------------------------
+
 bool NMEAGPS::parseHeading( char chr )
 {
   #ifdef GPS_FIX_HEADING

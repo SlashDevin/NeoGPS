@@ -238,6 +238,7 @@
     bool parseLon        ( char chr );
     bool parseEW         ( char chr );
     bool parseSpeed      ( char chr );
+    bool parseSpeedKph   ( char chr );
     bool parseHeading    ( char chr );
     bool parseAlt        ( char chr );
     bool parseGeoidHeight( char chr );

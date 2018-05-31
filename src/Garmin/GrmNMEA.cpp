@@ -82,7 +82,7 @@ bool GarminNMEA::parseF( char chr )
         PARSE_LOC(6);
         //case 10: return parseFix( char ); // not needed, because next field sets status
         case 11: return parseFix( chr );
-        //case 12: return parseSpeed( chr ); // a little messier because units are km/h, not kts/h
+        case 12: return parseSpeedKph( chr );
         case 13: return parseHeading( chr );
         case 14: return parsePDOP( chr );
         //case 15: return parseTDOP( chr ); // not yet supported
