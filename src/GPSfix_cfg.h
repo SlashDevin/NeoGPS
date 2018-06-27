@@ -22,7 +22,7 @@
  * Enable/disable the storage for the members of a fix.
  *
  * Disabling a member prevents it from being parsed from a received message.
- * The disabled member cannot be accessed or stored, and its validity flag 
+ * The disabled member cannot be accessed or stored, and its validity flag
  * would not be available.  It will not be declared, and code that uses that
  * member will not compile.
  *
@@ -32,6 +32,8 @@
  * See also note regarding the DOP members, below.
  *
  */
+#ifndef NEOGPS_EXTERNAL_GPS_FIX_CFG_DEFINES /* Allows these defines to be changed in your own code, so there will
+be no need to change this library directly (like when using "lib_deps" in PlatformIO) */
 
 #define GPS_FIX_DATE
 #define GPS_FIX_TIME
@@ -52,5 +54,7 @@
 //#define GPS_FIX_HDG_ERR
 //#define GPS_FIX_TIME_ERR
 //#define GPS_FIX_GEOID_HEIGHT
+
+#endif
 
 #endif
