@@ -65,7 +65,7 @@ gps_fix fix;
     * `fix.geoidHt.whole`, in integer meters
     * `fix.geoidHt.frac`, in integer centimeters to be added to the whole part
   * `fix.satellites`, a satellite count
-  * a date/time structure (see [Time.h](/src/Time.h)), accessed with
+  * a date/time structure (see [NeoTime.h](/src/NeoTime.h)), accessed with
     * `fix.dateTime.year`,
     * `fix.dateTime.month`,
     * `fix.dateTime.date`, the day-of-month,
