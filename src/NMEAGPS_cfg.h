@@ -30,14 +30,14 @@
 // sentences contain time information.  Both date and time are 
 // required if you will be doing time_t-to-clock_t operations.
 
-#define NMEAGPS_PARSE_GGA
-//#define NMEAGPS_PARSE_GLL
-//#define NMEAGPS_PARSE_GSA
-//#define NMEAGPS_PARSE_GSV
-//#define NMEAGPS_PARSE_GST
-#define NMEAGPS_PARSE_RMC
-//#define NMEAGPS_PARSE_VTG
-//#define NMEAGPS_PARSE_ZDA
+#define NMEAGPS_PARSE_GGA				//	System fix data
+//#define NMEAGPS_PARSE_GLL			//	Geographic Latitude and Longitude
+//#define NMEAGPS_PARSE_GSA			//	DOP and active satellites
+//#define NMEAGPS_PARSE_GSV  		//	Satellites in View
+//#define NMEAGPS_PARSE_GST			//	Pseudo Range Error Statistics
+#define NMEAGPS_PARSE_RMC				//	Recommended Minimum specific GPS/Transit data
+//#define NMEAGPS_PARSE_VTG			//	Course over ground and Ground speed
+//#define NMEAGPS_PARSE_ZDA			//	UTC Time and Date
 
 //------------------------------------------------------
 // Select which sentence is sent *last* by your GPS device
