@@ -200,10 +200,14 @@ for (uint8_t i=0; i < gps.sat_count; i++) {
   if (gps.satellites[i].tracked) {
     if (gps.satellites[i] . id <= 32)
       GPS_satellites++;
-    if (gps.satellites[i] . id <= 64)
+    else if (gps.satellites[i] . id <= 64)
       SBAS_satellites++;
-    if (gps.satellites[i] . id <= 96)
+    else if (gps.satellites[i] . id <= 96)
       GLONASS_satellites++;
+    else if ((gps.satellites[i] . id >= 193) and (gps.satellites[i] . id <= 200))
+      QZSS_satellites++;
+    else if ((gps.satellites[i] . id >= 201) and (gps.satellites[i] . id <= 235))
+      BAIDU_satellites++;
   }
 }
 ```
