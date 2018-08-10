@@ -19,7 +19,7 @@ In general, using the fix-oriented methods `available` and `read` are atomically
 If you are using the advanced [character-oriented methods](/extras/doc/CharOriented.md):
 
 *  You must wait to access the internal `gps.fix()` until after the entire sentence has been parsed.
-*  Only 3 example programs use these methods: NMEAblink, NMEAorder and NMEAdiagnostic.  These examples simply `decode` until a sentence is COMPLETED.  See `GPSloop()` in [NMEAdiagnostic.ino](/examples/NMEAdiagnostoc/NMEAdiagnostic.ino).
+*  Only 3 example programs use these methods: NMEAblink, NMEAorder and NMEAdiagnostic.  These examples simply `decode` until a sentence is COMPLETED.  See `GPSloop()` in [NMEAdiagnostic.ino](/examples/NMEAdiagnostic/NMEAdiagnostic.ino).
 *  Member function `gps.is_safe()` can also be used to determine when it is safe to access the internal `gps.fix()`.
 *  Received data errors can cause invalid field values to be set in the internal fix *before* the CRC is fully computed.  The CRC will
 catch most of those, and the internal fix members will then be marked as invalid.
