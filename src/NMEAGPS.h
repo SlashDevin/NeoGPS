@@ -28,6 +28,8 @@
 #include "GPSfix.h"
 #include "NMEAGPS_cfg.h"
 
+#include <Wire.h>
+
 //------------------------------------------------------
 //
 // NMEA 0183 Parser for generic GPS Modules.
@@ -117,6 +119,56 @@ public:
         if (processing_style == PS_POLLING)
           while (port.available())
             handle( port.read() );
+        return _available();
+      }
+    
+	//I2C handler for ublox modules
+	#define I2C_BUFFER_LENGTH 32 //TODO pull this based on platform
+	
+	byte _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8 series
+	//This can be changed using the ublox configuration software
+	
+	uint8_t available( TwoWire & port )
+      {
+        if (processing_style == PS_POLLING)
+		{
+			//Get the number of bytes available from the module
+			uint16_t bytesAvailable = 0;
+			port.beginTransmission(_gpsI2Caddress);
+			port.write(0xFD); //0xFD and 0xFE are the registers that contain number of bytes available
+			if (port.endTransmission(false) != 0) //Send a restart command. Do not release bus.
+				return(0); //Sensor did not ACK
+
+			port.requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)2);
+			if (port.available())
+			{
+				uint8_t msb = port.read();
+				uint8_t lsb = port.read();
+				bytesAvailable = (uint16_t)msb << 8 | lsb;
+			}
+			
+			while(bytesAvailable)
+			{
+				port.beginTransmission(_gpsI2Caddress);
+				port.write(0xFF); //0xFF is the register to read general NMEA data from
+				if (port.endTransmission(false) != 0) //Send a restart command. Do not release bus.
+					return(0); //Sensor did not ACK
+
+				//Block/limit to 32 bytes or whatever the buffer limit is for given platform
+				int bytesToRead = bytesAvailable;
+				if (bytesToRead > I2C_BUFFER_LENGTH) bytesToRead = I2C_BUFFER_LENGTH;
+				
+				port.requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)bytesAvailable & 0xFF);
+				if (port.available())
+				{
+					handle( port.read() ); //Grab the actual character and handle it
+				}
+				else
+					return (0); //Sensor did not respond
+
+				bytesAvailable -= bytesToRead;
+			}
+		}
         return _available();
       }
     uint8_t available() const volatile { return _available(); };
