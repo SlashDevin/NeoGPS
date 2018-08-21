@@ -122,54 +122,63 @@ public:
         return _available();
       }
     
-	//I2C handler for ublox modules
+	//I2C handler for ublox modules. Pieces came from https://forum.u-blox.com/index.php/20528/how-to-use-i2c-to-get-the-nmea-frames
 	#define I2C_BUFFER_LENGTH 32 //TODO pull this based on platform
-	
-	byte _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8 series
-	//This can be changed using the ublox configuration software
+	uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8 series. This can be changed via UBX-CFG-PRT command.
+	const uint8_t I2C_POLLING_WAIT_MS = 25; //Limit checking of new characters to every X ms
+	unsigned long _lastCheck = 0;
 	
 	uint8_t available( TwoWire & port )
       {
         if (processing_style == PS_POLLING)
 		{
-			//Get the number of bytes available from the module
-			uint16_t bytesAvailable = 0;
-			port.beginTransmission(_gpsI2Caddress);
-			port.write(0xFD); //0xFD and 0xFE are the registers that contain number of bytes available
-			if (port.endTransmission(false) != 0) //Send a restart command. Do not release bus.
-				return(0); //Sensor did not ACK
-
-			port.requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)2);
-			if (port.available())
+			if (millis() - _lastCheck >= I2C_POLLING_WAIT_MS)
 			{
-				uint8_t msb = port.read();
-				uint8_t lsb = port.read();
-				bytesAvailable = (uint16_t)msb << 8 | lsb;
-			}
-			
-			while(bytesAvailable)
-			{
+				//Get the number of bytes available from the module
+				uint16_t bytesAvailable = 0;
 				port.beginTransmission(_gpsI2Caddress);
-				port.write(0xFF); //0xFF is the register to read general NMEA data from
+				port.write(0xFD); //0xFD (MSB) and 0xFE (LSB) are the registers that contain number of bytes available
 				if (port.endTransmission(false) != 0) //Send a restart command. Do not release bus.
 					return(0); //Sensor did not ACK
 
-				//Block/limit to 32 bytes or whatever the buffer limit is for given platform
-				int bytesToRead = bytesAvailable;
-				if (bytesToRead > I2C_BUFFER_LENGTH) bytesToRead = I2C_BUFFER_LENGTH;
-				
-				port.requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)bytesAvailable & 0xFF);
+				port.requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)2);
 				if (port.available())
 				{
-					handle( port.read() ); //Grab the actual character and handle it
+					uint8_t msb = port.read();
+					uint8_t lsb = port.read();
+					bytesAvailable = (uint16_t)msb << 8 | lsb;
 				}
-				else
-					return (0); //Sensor did not respond
+				
+				if(bytesAvailable == 0)
+					_lastCheck = millis(); //Put off checking to avoid I2C bus traffic
+				
+				while(bytesAvailable)
+				{
+					port.beginTransmission(_gpsI2Caddress);
+					port.write(0xFF); //0xFF is the register to read general NMEA data from
+					if (port.endTransmission(false) != 0) //Send a restart command. Do not release bus.
+						return(0); //Sensor did not ACK
 
-				bytesAvailable -= bytesToRead;
-			}
-		}
-        return _available();
+					//Block/limit to 32 bytes or whatever the buffer limit is for given platform
+					uint16_t bytesToRead = bytesAvailable;
+					if (bytesToRead > I2C_BUFFER_LENGTH) bytesToRead = I2C_BUFFER_LENGTH;
+					
+					port.requestFrom((uint8_t)_gpsI2Caddress, (uint8_t)bytesToRead);
+					if (port.available())
+					{
+						for (uint16_t x = 0 ; x < bytesToRead ; x++)
+						{
+							handle( port.read() ); //Grab the actual character and handle it
+						}
+					}
+					else
+						return (0); //Sensor did not respond
+
+					bytesAvailable -= bytesToRead;
+				} 
+			} //end timed read
+		} //end PS_POLLING
+        return _available(); //Returns the number of fixes available
       }
     uint8_t available() const volatile { return _available(); };
 
