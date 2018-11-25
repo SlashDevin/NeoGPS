@@ -17,10 +17,10 @@ gps_fix fix;
     * NOTE: these lat/lon values are
       * positive for North or East degrees and negative for South or West degrees.
       * stored in a 'fix.location' structure, like a 2D coordinate.  The `location_t` class provides additional methods for distance, bearing and offset calculations, as described [here](Location.md).
-    * `fix.latitudeDMS` and `fix.latitudeDMS` are structures (see DMS.h) that each contain
-      * `fix.longitudeDMS.degrees` in integer degrees
-      * `fix.latitudeDMS.degrees`, in integer minutes
-      * `fix.longitudeDMS.seconds_whole`, in integer seconds
+    * `fix.latitudeDMS` and `fix.longitudeDMS` are structures (see DMS.h) that each contain
+      * `fix.latitudeDMS.degrees` in integer degrees
+      * `fix.latitudeDMS.minutes`, in integer minutes
+      * `fix.latitudeDMS.seconds_whole`, in integer seconds
       * `fix.latitudeDMS.seconds_frac`, in integer thousandths of a second
       * `fix.latitudeDMS.secondsF()`, in floating-point seconds
       * hemisphere indicator, accessed with
