@@ -72,7 +72,8 @@ static const NeoGPS::clock_t  zone_offset  =
   static const uint8_t springHour  =  2;
   static const uint8_t fallMonth   = 11;
   static const uint8_t fallDate    =  7; // latest 1st Sunday
-  static const uint8_t fallHour    =  2;
+  static const uint8_t fallHour    =  2; 
+  bool northenHemisphere = 1; //Northen Hemisphere = 1
   #define CALCULATE_DST
 
 #elif defined(EU_DST)
@@ -82,7 +83,19 @@ static const NeoGPS::clock_t  zone_offset  =
   static const uint8_t fallMonth   = 10;
   static const uint8_t fallDate    = 31; // latest last Sunday
   static const uint8_t fallHour    =  1;
+  bool northenHemisphere = 1; //Northen Hemisphere = 1
   #define CALCULATE_DST
+
+#elif defined(AUS_DST)
+  static const uint8_t springMonth =  10;
+  static const uint8_t springDate  = 7; // latest last Sunday
+  static const uint8_t springHour  =  2;
+  static const uint8_t fallMonth   = 4; //Autumn
+  static const uint8_t fallDate    = 7; // latest last Sunday
+  static const uint8_t fallHour    =  2;
+  bool NorthenHemisphere = 0; //Northen Hemisphere = 1
+  #define CALCULATE_DST
+
 #endif
 
 //--------------------------
@@ -125,9 +138,18 @@ void adjustTime( NeoGPS::time_t & dt )
   seconds += zone_offset;
 
   #ifdef CALCULATE_DST
-    //  Then add an hour if DST is in effect
-    if ((springForward <= seconds) && (seconds < fallBack))
+    //  Then add an hour if DST is in effect for northen hemisphere
+  if(northenHemisphere){
+      if ((springForward <= seconds) && (seconds < fallBack)) {
       seconds += NeoGPS::SECONDS_PER_HOUR;
+      }
+  } 
+    //separate case for southern hemisphere
+  else {  
+      if (!((springForward >= seconds) && (seconds > fallBack))) {
+      seconds += NeoGPS::SECONDS_PER_HOUR;
+      }
+  }
   #endif
 
   dt = seconds; // convert seconds back to a date/time structure
