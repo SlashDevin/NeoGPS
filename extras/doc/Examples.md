@@ -25,7 +25,7 @@ Preprocessor symbol `USE_FLOAT` can be used in [Streamers.cpp](/src/Streamers.cp
 
 See also important information in `NMEAorder.ino` below, and the [Installing](Installing.md), [Configurations](Configurations.md) and [Troubleshooting](Troubleshooting.md) sections.
 
-##Diagnostics
+## Diagnostics
 Several programs are provided to help diagnose GPS device problems:
 
 ### Connection and Baud Rate
