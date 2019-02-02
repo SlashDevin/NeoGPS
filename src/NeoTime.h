@@ -41,7 +41,7 @@ const uint8_t  MINUTES_PER_HOUR   = 60;
 const uint16_t SECONDS_PER_HOUR   = (uint16_t) SECONDS_PER_MINUTE * MINUTES_PER_HOUR;
 const uint8_t  HOURS_PER_DAY      = 24;
 const uint32_t SECONDS_PER_DAY    = (uint32_t) SECONDS_PER_HOUR * HOURS_PER_DAY;
-const uint8_t  DAYS_PER_WEEK      = 7;
+const uint8_t  NEO_DAYS_PER_WEEK      = 7;
 
 /**
  * Common date/time structure
@@ -192,7 +192,7 @@ struct time_t {
    */
   static uint8_t weekday_for(uint16_t dayno)
   {
-    return ((dayno+epoch_weekday()-1) % DAYS_PER_WEEK) + 1;
+    return ((dayno+epoch_weekday()-1) % NEO_DAYS_PER_WEEK) + 1;
   }
 
   /**
