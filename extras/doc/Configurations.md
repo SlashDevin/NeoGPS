@@ -242,7 +242,7 @@ A few common configurations are defined as follows
 **DTL**: date, time, lat/lon, GPRMC messsage only.
 
 **Nominal**: date, time, lat/lon, altitude, speed, heading, number of 
-satellites, HDOP, GPRMC and GPGGA messages.
+satellites, GPRMC and GPGGA messages.
 
 **Full**: Nominal plus talker ID, VDOP, PDOP, lat/lon/alt errors, satellite array with satellite info, all messages, and parser statistics.
 
