@@ -45,7 +45,9 @@
 // to determine when the GPS quiet time begins, and thus
 // when you can perform "some" time-consuming operations.
 
+#ifndef LAST_SENTENCE_IN_INTERVAL
 #define LAST_SENTENCE_IN_INTERVAL NMEAGPS::NMEA_RMC
+#endif
 
 // NOTE: For PUBX-only, PGRM and UBX configs, use
 //          (NMEAGPS::nmea_msg_t)(NMEAGPS::NMEA_LAST_MSG+1)
