@@ -200,7 +200,7 @@ static void GPSloop()
 
       // If you like the CSV format implemented in Streamers.h,
       //   you could replace all these prints with 
-      // trace_all( logFile, fix ); // uncomment include Streamers.h
+      // trace_all( logFile, gps, fix ); // uncomment include Streamers.h
 
       printL( logfile, fix.latitudeL() );
       logfile.print( ',' );
