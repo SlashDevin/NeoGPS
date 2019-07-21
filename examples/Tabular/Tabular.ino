@@ -3,7 +3,7 @@
 NMEAGPS     gps;
 
 //======================================================================
-//  Program: SyncTime.ino
+//  Program: Tabular.ino
 //
 //  Description:  This program displays all GPS fields in the default configuration
 //     in a tabular display.  To be comparable to other libraries' tabular displays,
