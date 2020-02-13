@@ -27,7 +27,7 @@
 // will be completely ignored.  (See also NMEAGPS_RECOGNIZE_ALL, below)
 //
 // FYI: Only RMC and ZDA contain date information.  Other
-// sentences contain time information.  Both date and time are 
+// sentences contain time information.  Both date and time are
 // required if you will be doing time_t-to-clock_t operations.
 
 #define NMEAGPS_PARSE_GGA
@@ -45,7 +45,9 @@
 // to determine when the GPS quiet time begins, and thus
 // when you can perform "some" time-consuming operations.
 
-#define LAST_SENTENCE_IN_INTERVAL NMEAGPS::NMEA_RMC
+#ifndef LAST_SENTENCE_IN_INTERVAL
+  #define LAST_SENTENCE_IN_INTERVAL NMEAGPS::NMEA_RMC
+#endif
 
 // NOTE: For PUBX-only, PGRM and UBX configs, use
 //          (NMEAGPS::nmea_msg_t)(NMEAGPS::NMEA_LAST_MSG+1)
@@ -54,10 +56,10 @@
 //
 //    ==>  CONFIRM THIS WITH NMEAorder.INO  <==
 //
-// If the NMEA_LAST_SENTENCE_IN_INTERVAL is not chosen 
+// If the NMEA_LAST_SENTENCE_IN_INTERVAL is not chosen
 // correctly, GPS data may be lost because the sketch
 // takes too long elsewhere when this sentence is received.
-// Also, fix members may contain information from different 
+// Also, fix members may contain information from different
 // time intervals (i.e., they are not coherent).
 //
 // If you don't know which sentence is the last one,
@@ -68,17 +70,17 @@
 //------------------------------------------------------
 // Choose how multiple sentences are merged into a fix:
 //   1) No merging
-//        Each sentence fills out its own fix; there could be 
+//        Each sentence fills out its own fix; there could be
 //        multiple sentences per interval.
 //   2) EXPLICIT_MERGING
 //        All sentences in an interval are *safely* merged into one fix.
 //        NMEAGPS_FIX_MAX must be >= 1.
 //        An interval is defined by NMEA_LAST_SENTENCE_IN_INTERVAL.
 //   3) IMPLICIT_MERGING
-//        All sentences in an interval are merged into one fix, with 
-//        possible data loss.  If a received sentence is rejected for 
+//        All sentences in an interval are merged into one fix, with
+//        possible data loss.  If a received sentence is rejected for
 //        any reason (e.g., a checksum error), all the values are suspect.
-//        The fix will be cleared; no members will be valid until new 
+//        The fix will be cleared; no members will be valid until new
 //        sentences are received and accepted.  This uses less RAM.
 //        An interval is defined by NMEA_LAST_SENTENCE_IN_INTERVAL.
 // Uncomment zero or one:
@@ -105,7 +107,7 @@
     #define NMEAGPS_NO_MERGING
   #endif
 
-  // When NOT accumulating (not IMPLICIT), invalidate the entire fix 
+  // When NOT accumulating (not IMPLICIT), invalidate the entire fix
   // at the beginning of every sentence...
   #define NMEAGPS_INIT_FIX(m) m.valid.init()
 
@@ -162,7 +164,7 @@
 //      "tt" is the talker ID, and
 //      "ccc" is the variable-length sentence type (i.e., command).
 //
-//    For example, "$GPGLL,..." is a GLL sentence (Geographic Lat/Long) 
+//    For example, "$GPGLL,..." is a GLL sentence (Geographic Lat/Long)
 //    transmitted by talker "GP".  This is the most common talker ID.  Some
 //    devices may report "$GNGLL,..." when a mix of GPS and non-GPS
 //    satellites have been used to determine the GLL data.
@@ -236,7 +238,7 @@
 //------------------------------------------------------
 // Configuration item for allowing derived types of NMEAGPS.
 // If you derive classes from NMEAGPS, you *must* define NMEAGPS_DERIVED_TYPES.
-// If not defined, virtuals are not used, with a slight size (2 bytes) and 
+// If not defined, virtuals are not used, with a slight size (2 bytes) and
 // execution time savings.
 
 //#define NMEAGPS_DERIVED_TYPES
@@ -255,34 +257,34 @@
 #endif
 
 //------------------------------------------------------
-//  Becase the NMEA checksum is not very good at error detection, you can 
-//    choose to enable additional validity checks.  This trades a little more 
+//  Becase the NMEA checksum is not very good at error detection, you can
+//    choose to enable additional validity checks.  This trades a little more
 //    code and execution time for more reliability.
 //
-//  Validation at the character level is a syntactic check only.  For 
-//    example, integer fields must contain characters in the range 0..9, 
-//    latitude hemisphere letters can be 'N' or 'S'.  Characters that are not 
-//    valid for a particular field will cause the entire sentence to be 
+//  Validation at the character level is a syntactic check only.  For
+//    example, integer fields must contain characters in the range 0..9,
+//    latitude hemisphere letters can be 'N' or 'S'.  Characters that are not
+//    valid for a particular field will cause the entire sentence to be
 //    rejected as an error, *regardless* of whether the checksum would pass.
 #define NMEAGPS_VALIDATE_CHARS false
 
-//  Validation at the field level is a semantic check.  For 
+//  Validation at the field level is a semantic check.  For
 //    example, latitude degrees must be in the range -90..+90.
-//    Values that are not valid for a particular field will cause the 
-//    entire sentence to be rejected as an error, *regardless* of whether the 
+//    Values that are not valid for a particular field will cause the
+//    entire sentence to be rejected as an error, *regardless* of whether the
 //    checksum would pass.
 #define NMEAGPS_VALIDATE_FIELDS false
 
 //------------------------------------------------------
-// Some devices may omit trailing commas at the end of some 
-// sentences.  This may prevent the last field from being 
-// parsed correctly, because the parser for some types keep 
-// the value in an intermediate state until the complete 
-// field is received (e.g., parseDDDMM, parseFloat and 
+// Some devices may omit trailing commas at the end of some
+// sentences.  This may prevent the last field from being
+// parsed correctly, because the parser for some types keep
+// the value in an intermediate state until the complete
+// field is received (e.g., parseDDDMM, parseFloat and
 // parseZDA).
 //
-// Enabling this will inject a simulated comma when the end 
-// of a sentence is received and the last field parser 
+// Enabling this will inject a simulated comma when the end
+// of a sentence is received and the last field parser
 // indicated that it still needs one.
 
 #define NMEAGPS_COMMA_NEEDED
@@ -291,7 +293,7 @@
 //  Some applications may want to recognize a sentence type
 //  without actually parsing any of the fields.  Uncommenting
 //  this define will allow the nmeaMessage member to be set
-//  when *any* standard message is seen, even though that 
+//  when *any* standard message is seen, even though that
 //  message is not enabled by a NMEAGPS_PARSE_xxx define above.
 //  No valid flags will be true for those sentences.
 
@@ -306,29 +308,29 @@
 //------------------------------------------------------
 // If you need to know the exact UTC time at *any* time,
 //   not just after a fix arrives, you must calculate the
-//   offset between the Arduino micros() clock and the UTC 
+//   offset between the Arduino micros() clock and the UTC
 //   time in a received fix.  There are two ways to do this:
 //
-// 1) When the GPS quiet time ends and the new update interval begins.  
-//    The timestamp will be set when the first character (the '$') of 
+// 1) When the GPS quiet time ends and the new update interval begins.
+//    The timestamp will be set when the first character (the '$') of
 //    the new batch of sentences arrives from the GPS device.  This is fairly
 //    accurate, but it will be delayed from the PPS edge by the GPS device's
 //    fix calculation time (usually ~100us).  There is very little variance
-//    in this calculation time (usually < 30us), so all timestamps are 
+//    in this calculation time (usually < 30us), so all timestamps are
 //    delayed by a nearly-constant amount.
 //
-//    NOTE:  At update rates higher than 1Hz, the updates may arrive with 
+//    NOTE:  At update rates higher than 1Hz, the updates may arrive with
 //    some increasing variance.
 
 //#define NMEAGPS_TIMESTAMP_FROM_INTERVAL
 
-// 2) From the PPS pin of the GPS module.  It is up to the application 
+// 2) From the PPS pin of the GPS module.  It is up to the application
 //    developer to decide how to capture that event.  For example, you could:
 //
 //    a) simply poll for it in loop and call UTCsecondStart(micros());
-//    b) use attachInterrupt to call a Pin Change Interrupt ISR to save 
+//    b) use attachInterrupt to call a Pin Change Interrupt ISR to save
 //       the micros() at the time of the interrupt (see NMEAGPS.h), or
-//    c) connect the PPS to an Input Capture pin.  Set the 
+//    c) connect the PPS to an Input Capture pin.  Set the
 //       associated TIMER frequency, calculate the elapsed time
 //       since the PPS edge, and add that to the current micros().
 
