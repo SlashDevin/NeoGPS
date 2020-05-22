@@ -161,6 +161,8 @@ public:
     CONST_CLASS_DATA uint32_t M_PER_NMI = 1852;
     uint32_t speed_metersph() const { return (spd.whole * M_PER_NMI) + (spd.frac * M_PER_NMI)/1000; };
 
+    float speed_metersps() const { return (speed_metersph() / 3600.0); };
+
     CONST_CLASS_DATA float MI_PER_NMI = 1.150779;
     float  speed_mph() const { return speed() * MI_PER_NMI; };
   #endif
