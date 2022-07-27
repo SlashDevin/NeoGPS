@@ -115,11 +115,11 @@ bool ubloxGPS::rxEnd()
 
 //---------------------------------------------------------
 
-static char toHexDigit( uint8_t val )
-{
-  val &= 0x0F;
-  return (val >= 10) ? ((val - 10) + 'A') : (val + '0');
-}
+// static char toHexDigit( uint8_t val )
+// {
+//   val &= 0x0F;
+//   return (val >= 10) ? ((val - 10) + 'A') : (val + '0');
+// }
 
 //---------------------------------------------------------
 
@@ -916,6 +916,7 @@ bool ubloxGPS::parseNavPvt( uint8_t chr )
     }
   #endif
 
+    return ok;
 } // parseNavPvt
 
 //---------------------------------------------------------

@@ -28,7 +28,7 @@ bool ubloxNMEA::parseField(char chr)
 {
   if (nmeaMessage >= (nmea_msg_t) PUBX_FIRST_MSG) {
 
-    switch (nmeaMessage) {
+    switch ((pubx_msg_t) nmeaMessage) {
 
       case PUBX_00: return parsePUBX_00( chr );
 
