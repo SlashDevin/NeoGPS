@@ -916,6 +916,8 @@ bool ubloxGPS::parseNavPvt( uint8_t chr )
     }
   #endif
 
+  return ok;
+
 } // parseNavPvt
 
 //---------------------------------------------------------
