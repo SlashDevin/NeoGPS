@@ -861,6 +861,12 @@ bool NMEAGPS::parseGSV( char chr )
     #endif
 
     if (sat_count < NMEAGPS_MAX_SATELLITES) {
+
+      // GSV talker_id
+      satellites[sat_count].talker_id[0] = talker_id[0];
+      satellites[sat_count].talker_id[1] = talker_id[1];
+      satellites[sat_count].talker_id[2] = (char)'\0';
+
       if (fieldIndex >= 4) {
 
         switch (fieldIndex % 4) {

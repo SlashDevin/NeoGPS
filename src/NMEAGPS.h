@@ -250,6 +250,7 @@ public:
           uint16_t azimuth;   // 0..359 deg
           uint8_t  snr     NEOGPS_BF(7); // 0..99 dBHz
           bool     tracked NEOGPS_BF(1);
+          char     talker_id[3];  // GSV Talker ID
         #endif
       } NEOGPS_PACKED;
 
